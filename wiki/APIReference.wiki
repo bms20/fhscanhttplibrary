@@ -1,0 +1,51 @@
+#summary Small tutorial of how develop using HTTP CORE API.
+
+= Introduction =
+
+FHSCAN HTTP API is C++ library that can be easily embedded into different projects just by adding an include file. IF you need more information about what is currently supported take a look to http://code.google.com/p/fhscanhttplibrary/wiki/fhscan
+
+
+= Details =
+
+The main HTTP Class is named HTTPAPI. Each instance, once initialized, have their own connection and handle pools so most times you will only need an HTTP instance.
+
+Here is an example of a functional program that initializes Fhscan HTTP API. Note that under windows a new HTTPAPI instance will also initialize the wsasockets.
+
+{{{
+#include "HTTP.h"
+
+void main(int argc, char *argv[])
+{
+ HTTPAPI *api = new HTTPAPI;
+ //Do stuff
+ delete api;
+}
+}}}
+
+To continue working with HTTP we first need to learn about Handles. On Fhscan a handle, defined as *HTTPHANDLE* is an structure that contains information about a remote host like:
+ * Hostname
+ * TCP Port
+ * SSL Protocol required (for example for HTTPS)
+
+An HTTPHANDLE is required for managing HTTP requests and responses and the initialization of the HANDLE is not going to stablish any connection, its just storing and allocating sensitive information into internal structures. Here is en examxple of how an HTTPHANDLE is allocated.
+
+{{{
+#include "HTTP.h"
+
+void main(int argc, char *argv[])
+{
+ HTTPAPI *api = new HTTPAPI;
+ HTTPHANDLE Handle = api->InitHTTPConnectionHandle("www.google.com",80,0);
+ if (Handle!=INVALID_HHTPHANDLE_VALUE)
+ {
+   //Do stuff
+  api->EndHTTPConnectionHandle(Handle);
+ }
+ delete api;
+}
+}}}
+
+Note that the main HTTPHANDLE allocator is the function {api->InitHTTPConnectionHandle()} and once the work have been finished the HTTPHANDLE must be released with {api->EndHTTPConnectionHandle()}. The maximum number of HTTPHANDLEs that could be allocated by each api instance is 4096 (defined at HTTP.h)
+
+
+*TODO..*: This guide isnt finished yet :)
