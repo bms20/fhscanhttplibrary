@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HTTPCoreClass", "HTTPCoreClass.vcproj", "{CCB4BE89-C110-4B7B-A10E-D06CC3A09F8B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5278886C-3137-4B5B-A72A-5BA381531E59}"
+	ProjectSection(SolutionItems) = preProject
+		release\FHScan_release.dat = release\FHScan_release.dat
+		release\KnownRouters.ini = release\KnownRouters.ini
+		release\KnownWebservers.ini = release\KnownWebservers.ini
+		release\RouterAuth.ini = release\RouterAuth.ini
+		release\tmpl.dat = release\tmpl.dat
+		release\UserListMulti-simple.ini = release\UserListMulti-simple.ini
+		release\UserListMulti.ini = release\UserListMulti.ini
+		release\UserListSingle.ini = release\UserListSingle.ini
+		release\webforms.ini = release\webforms.ini
+		release\Webservers.ini = release\Webservers.ini
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SubversionScc) = preSolution
+		Svn-Managed = True
+		Manager = AnkhSVN - Subversion Support for Visual Studio
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CCB4BE89-C110-4B7B-A10E-D06CC3A09F8B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CCB4BE89-C110-4B7B-A10E-D06CC3A09F8B}.Debug|Win32.Build.0 = Debug|Win32
+		{CCB4BE89-C110-4B7B-A10E-D06CC3A09F8B}.Release|Win32.ActiveCfg = Release|Win32
+		{CCB4BE89-C110-4B7B-A10E-D06CC3A09F8B}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
