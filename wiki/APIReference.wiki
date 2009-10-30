@@ -1,14 +1,16 @@
 #summary Small tutorial of how develop using HTTP CORE API.
+#labels Phase-Implementation,Featured
 
 = Introduction =
 
-FHSCAN HTTP API is C++ library that can be easily embedded into different projects just by adding an include file. IF you need more information about what is currently supported take a look to http://code.google.com/p/fhscanhttplibrary/wiki/fhscan
+FHSCAN HTTP API is C++ library that can be easily embedded into different projects just by adding an include file. IF you need more information about what is currently supported take a look to <a href="http://code.google.com/p/fhscanhttplibrary/wiki/fhscan">FHScan Wikin</a>
 
 
 = Details =
 
 The main HTTP Class is named HTTPAPI. Each instance, once initialized, have their own connection and handle pools so most times you will only need an HTTP instance.
 
+== HTTP API Constructor ==
 Here is an example of a functional program that initializes Fhscan HTTP API. Note that under windows a new HTTPAPI instance will also initialize the wsasockets.
 
 {{{
@@ -22,12 +24,14 @@ void main(int argc, char *argv[])
 }
 }}}
 
+== HTTP HANDLES ==
 To continue working with HTTP we first need to learn about Handles. On Fhscan a handle, defined as *HTTPHANDLE* is an structure that contains information about a remote host like:
  * Hostname
  * TCP Port
  * SSL Protocol required (for example for HTTPS)
+Of Course there are a lot of additional information stored there but we will look at it later.
 
-An HTTPHANDLE is required for managing HTTP requests and responses and the initialization of the HANDLE is not going to stablish any connection, its just storing and allocating sensitive information into internal structures. Here is en examxple of how an HTTPHANDLE is allocated.
+An HTTPHANDLE is required for managing HTTP requests and responses and the initialization of the HANDLE is not going to stablish any connection, its just storing and allocating sensitive information into internal structures. Here is en example of how an HTTPHANDLE is allocated.
 
 {{{
 #include "HTTP.h"
@@ -35,17 +39,44 @@ An HTTPHANDLE is required for managing HTTP requests and responses and the initi
 void main(int argc, char *argv[])
 {
  HTTPAPI *api = new HTTPAPI;
+
  HTTPHANDLE Handle = api->InitHTTPConnectionHandle("www.google.com",80,0);
  if (Handle!=INVALID_HHTPHANDLE_VALUE)
  {
    //Do stuff
   api->EndHTTPConnectionHandle(Handle);
  }
+
  delete api;
 }
 }}}
 
-Note that the main HTTPHANDLE allocator is the function {api->InitHTTPConnectionHandle()} and once the work have been finished the HTTPHANDLE must be released with {api->EndHTTPConnectionHandle()}. The maximum number of HTTPHANDLEs that could be allocated by each api instance is 4096 (defined at HTTP.h)
+Note that the main HTTPHANDLE allocator is the function  	 `api->InitHTTPConnectionHandle()` and once the work have been finished the HTTPHANDLE must be released with `api->EndHTTPConnectionHandle()`. The maximum number of HTTPHANDLEs that could be allocated by each api instance is 4096 (defined at HTTP.h)
+
+InitiHTTPConnectionHandle() requires two or three parameters (the last one is optional):
+ * *Host*: Null Terminated string containing the ip or dns name of the remote host.
+ * *Port*: TCP port where the remote webserver is listening (for example 80)
+ * *SSL*: If the remote host is running an HTTPS server you must set the value to '1'
+
+If all goes well, the returned value will be equal or greater than 0, otherwise *INVALID_HHTPHANDLE_VALUE* is returned (for example if the remote dns couldnt be resolved or SSL is not available).
+
+== Send HTTP Requests ==
+
+Once we have our handle we can deal with requests. The function for sending HTTP requests is *SendHttpRequest()*. easy ? :)
+There are different function prototypes however we are going to explain just the first one here:
+{{{
+	PHTTP_DATA BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);	
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword,int AuthMethod);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request);		
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url) ;
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword,int AuthMethod);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url) ;
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR url) ;
+	PREQUEST   SendHttpRequest(HTTPCSTR Fullurl);
+	PREQUEST   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, unsigned int HeaderSize, HTTPCSTR postdata, unsigned int PostDataSize);	
+}}}
 
 
 *TODO..*: This guide isnt finished yet :)
