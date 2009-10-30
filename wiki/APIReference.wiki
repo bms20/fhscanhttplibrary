@@ -63,30 +63,59 @@ If all goes well, the returned value will be equal or greater than 0, otherwise 
 == Send HTTP Requests ==
 
 Once we have our handle we can deal with requests. The function for sending HTTP requests is *SendHttpRequest()*. easy ? :)
-There are different function prototypes however we are going to explain just the first Two ones here:
+There are different function prototypes however we are going to explain just the first one here:
 {{{
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR url) ;
-	PREQUEST   SendHttpRequest(HTTPCSTR Fullurl);
+//Simple:
+PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR Postdata,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
+PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR Postdata);
+PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath);
+PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR lpPath);
+PREQUEST   SendHttpRequest(HTTPCSTR Fullurl);
+
+//Advanced
+PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
+PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request);
+
+//Complete
+PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR Postdata,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	
 }}}
 
 Parameters:
 
  * *HTTPHandle:* HTTP Handle returned by a previous call to `InitiHTTPConnectionHandle()`.
- * *VHost:* The value sent into the "Host" header. If this value is set to NULL the same value specified when calling `InitiHTTPConnectionHandle()` will be used.
  * *HTTPMethod:* HTTP verb. This value could be "GET","HEAD", "POST", or whatever HTTP method you want
- * *url:* HTTP path of the request like "/" or "/index.html".
+ * *path:* HTTP path of the remote resource like "/" or "/index.html".
  * *Postdata:* Optional data to be sent on a GET,POST, PUT,.. request.
- * *PostDataSize:* lenght of the Postdata struct.
  * *lpUsername:* Optional username to be sent if the remote host requires authentication.
  * *lpPassword:* Optional username to be sent if the remote host requires authentication.
+
+So, its time for an example:
+
+{{{
+#include "HTTP.h"
+
+void main(int argc, char *argv[])
+{
+ HTTPAPI *api = new HTTPAPI;
+
+ HTTPHANDLE Handle = api->InitHTTPConnectionHandle("www.google.com",80,0);
+ if (Handle!=INVALID_HHTPHANDLE_VALUE)
+ {
+  api->SendHttpRequest(Handle,"GET","/index.html");
+  api->EndHTTPConnectionHandle(Handle);
+ }
+
+ delete api;
+}
+}}}
+
+The HTTP Api will send something like:
+{{{
+GET /index.html HTTP/1.1
+Host: www.google.com
+User-Agent: Mozilla/5.0 (compatible; MSIE 7.0; FHScan Core 1.3)
+}}}
 
 
 *TODO..*: This guide isnt finished yet :)
