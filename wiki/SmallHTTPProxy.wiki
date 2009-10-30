@@ -14,9 +14,9 @@ Fhscan HTTP Api is really easy to use. You just need two lines of code to create
  api->InitHTTPProxy("127.0.0.1","8080");
 }}}
 
-By using *Callbacks* some of your application funtions will be notified each time an event is created. Some basic events are for example http request sent or http response arrived, and the called function will receive an struct that contains all the exchanged information betwen your host and the remote HTTP server.
+By using *Callbacks*m some of your application funtions will be notified each time an event is created. Some basic events are created for example when an http request is sent or when http responses arrive. The callback function will receive an struct that contains all the exchanged information betwen your host and the remote HTTP server.
 
-If the previos HTTP proxy example its too simple and you need something more advanced, for example logging all the HTTP Traffic, the following Callback example is all what you need.
+If the previous HTTP proxy example its too simple and you need something more advanced, for example logging all the HTTP Traffic, the following Callback example is all what you need.
 
 *proxy.cpp ( HTTP Proxy Source code ):*
 
