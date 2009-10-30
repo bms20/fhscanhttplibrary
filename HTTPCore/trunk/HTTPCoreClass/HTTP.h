@@ -23,7 +23,7 @@ enum HttpOptions
 	ConfigProtocolversion  = 0x40,
 	ConfigMaxDownloadSpeed = 0x80,
 	ConfigHTTPHost         = 0x100,
-	ConfigHTTPPort		   = 0x200,
+	ConfigHTTPPort         = 0x200,
 	ConfigAsyncronousProxy = 0x400,
 	ConfigSSLSupported     = 0x800,
 	ConfigSSLConnection    = 0x1000,
@@ -35,12 +35,12 @@ enum HttpOptions
 /* Options for SetHTTPProxyConfig() */
 enum HttpProxyoptions 
 {  
-	ProxyAllowConnect		=			0x00,
-	ProxyAnonymous			=			0x01,
-	ProxyAsynRequest		=			0x02,
-	ProxyDisableCache		=			0x03,
-	ProxyOriginalUserAgent	=			0x04,
-	ProxyDefaultPorts		=			0x05
+	ProxyAllowConnect      = 0x00,
+	ProxyAnonymous         = 0x01,
+	ProxyAsynRequest       = 0x02,
+	ProxyDisableCache      = 0x03,
+	ProxyOriginalUserAgent = 0x04,
+	ProxyDefaultPorts      = 0x05
 };
 
 /* CancelHttpRequest() options */
@@ -49,11 +49,11 @@ enum HttpProxyoptions
 
 /* Important Handle values */
 #define	INVALID_HHTPHANDLE_VALUE ((HTTPHANDLE)-1)
-#define	GLOBAL_HTTP_CONFIG		 ((HTTPHANDLE)-2)
+#define	GLOBAL_HTTP_CONFIG       ((HTTPHANDLE)-2)
 
 
-#define MAXIMUM_OPENED_HANDLES					4096
-#define MAX_OPEN_CONNECTIONS					1024 /* Our Connection table is able to handle 1024 concurrent connections */
+#define MAXIMUM_OPENED_HANDLES	 4096
+#define MAX_OPEN_CONNECTIONS     1024 /* Our Connection table is able to handle 1024 concurrent connections */
 
 
 /*!\STRUCT PREQUEST
@@ -138,7 +138,6 @@ class HTTPAPI
 	int   GetFirstUnUsedConnection() ;
 	void  BuildBasicAuthHeader(HTTPCSTR Header,HTTPCSTR lpUsername, HTTPCSTR lpPassword,HTTPSTR destination, int dstsize);
 	PHTTP_DATA DispatchHTTPRequest(HTTPHANDLE HTTPHandle, PHTTP_DATA request);
-
 	int   ParseRequest(HTTPSTR line, HTTPSTR method,  HTTPSTR host, HTTPSTR path, int *port);
 	int   SkipHeader(HTTPSTR header);
 	void  *ListenConnection(void *foo);
@@ -154,37 +153,36 @@ public:
 	HTTPAPI();
 	~HTTPAPI();
 
-	HTTPHANDLE	InitHTTPConnectionHandle(HTTPSTR lpHostName, int port);
-	HTTPHANDLE	InitHTTPConnectionHandle(HTTPSTR lpHostName, int port, int ssl);	
-	int			EndHTTPConnectionHandle(HTTPHANDLE);
+	HTTPHANDLE InitHTTPConnectionHandle(HTTPSTR lpHostName, int port);
+	HTTPHANDLE InitHTTPConnectionHandle(HTTPSTR lpHostName, int port, int ssl);	
+	int	       EndHTTPConnectionHandle(HTTPHANDLE);
 
-	int			SetHTTPConfig(HTTPHANDLE HTTPHandle, enum HttpOptions opt, HTTPCSTR parameter);
-	int 		SetHTTPConfig(HTTPHANDLE HTTPHandle, enum HttpOptions opt, int parameter);
-	HTTPSTR		GetHTTPConfig(HTTPHANDLE HTTPHandle, enum HttpOptions opt);
+	int        SetHTTPConfig(HTTPHANDLE HTTPHandle, enum HttpOptions opt, HTTPCSTR parameter);
+	int        SetHTTPConfig(HTTPHANDLE HTTPHandle, enum HttpOptions opt, int parameter);
+	HTTPSTR    GetHTTPConfig(HTTPHANDLE HTTPHandle, enum HttpOptions opt);
 	
+	PHTTP_DATA BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);	
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request);	
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword,int AuthMethod);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url) ;
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword,int AuthMethod);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url) ;
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR url) ;
+	PREQUEST   SendHttpRequest(HTTPCSTR Fullurl);
+	PREQUEST   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, unsigned int HeaderSize, HTTPCSTR postdata, unsigned int PostDataSize);	
 
-	PHTTP_DATA  BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);	
-	PREQUEST	SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request);	
-	PREQUEST	SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword,int AuthMethod);
-	PREQUEST	SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);
-	PREQUEST	SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);
-	PREQUEST	SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url) ;
-	PREQUEST    SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword,int AuthMethod);
-	PREQUEST	SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url) ;
-	PREQUEST	SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR url) ;
-	PREQUEST	SendHttpRequest(HTTPCSTR Fullurl);
-	PREQUEST	SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, unsigned int HeaderSize, HTTPCSTR postdata, unsigned int PostDataSize);	
+	int        InitHTTPProxy(HTTPCSTR hostname, unsigned short port);
+	int	       InitHTTPProxy(HTTPCSTR hostname, HTTPCSTR port);
+	void       SetHTTPProxyConfig(enum HttpProxyoptions opt,HTTPSTR parameter);
+	void       SetHTTPProxyConfig(enum HttpProxyoptions opt,int parameter);
+	int	       StopHTTPProxy();
 
-	int			InitHTTPProxy(HTTPCSTR hostname, unsigned short port);
-	int			InitHTTPProxy(HTTPCSTR hostname, HTTPCSTR port);
-	void		SetHTTPProxyConfig(enum HttpProxyoptions opt,HTTPSTR parameter);
-	void		SetHTTPProxyConfig(enum HttpProxyoptions opt,int parameter);
-	int			StopHTTPProxy();
-
-	int			RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,HTTPCSTR Description);
-	int 		CancelHttpRequest(HTTPHANDLE HTTPHandle, int what);
-	void 	    doSpider(HTTPSTR host,HTTPSTR FullPath, PHTTP_DATA  response);
-};
+	int	       RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,HTTPCSTR Description);
+	int        CancelHttpRequest(HTTPHANDLE HTTPHandle, int what);
+	void       doSpider(HTTPSTR host,HTTPSTR FullPath, PHTTP_DATA  response);
+};	
 
 
 #ifndef __AFXISAPI_H_ // these symbols may come from WININET.H
