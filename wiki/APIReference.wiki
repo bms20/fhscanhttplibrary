@@ -63,20 +63,30 @@ If all goes well, the returned value will be equal or greater than 0, otherwise 
 == Send HTTP Requests ==
 
 Once we have our handle we can deal with requests. The function for sending HTTP requests is *SendHttpRequest()*. easy ? :)
-There are different function prototypes however we are going to explain just the first one here:
+There are different function prototypes however we are going to explain just the first Two ones here:
 {{{
-	PHTTP_DATA BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);	
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword,int AuthMethod);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request);		
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR Postdata,unsigned int PostDataSize);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url) ;
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword,int AuthMethod);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url) ;
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR url) ;
 	PREQUEST   SendHttpRequest(HTTPCSTR Fullurl);
-	PREQUEST   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, unsigned int HeaderSize, HTTPCSTR postdata, unsigned int PostDataSize);	
+	
 }}}
+
+Parameters:
+
+ * *HTTPHANDLE HTTPHandle:* HTTP Handle returned by a previous call to `InitiHTTPConnectionHandle()`.
+ * *HTTPCSTR VHost:* The value sent into the "Host" header. If this value is set to NULL the same value specified when calling `InitiHTTPConnectionHandle()` will be used.
+ * *HTTPCSTR HTTPMethod:* HTTP verb. This value could be "GET","HEAD", "POST", or whatever HTTP method you want
+ * *HTTPCSTR url:* HTTP path of the request like "/" or "/index.html".
+ * *HTTPCSTR Postdata:* Optional data to be sent on a GET,POST, PUT,.. request.
+ * *unsigned int PostDataSize:* lenght of the Postdata struct.
+ * *HTTPCSTR lpUsername:* Optional username to be sent if the remote host requires authentication.
+ * *HTTPCSTR lpPassword:* Optional username to be sent if the remote host requires authentication.
 
 
 *TODO..*: This guide isnt finished yet :)
