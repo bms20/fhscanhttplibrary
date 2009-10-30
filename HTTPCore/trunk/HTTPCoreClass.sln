@@ -5,16 +5,26 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HTTPCoreClass", "HTTPCoreCl
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5278886C-3137-4B5B-A72A-5BA381531E59}"
 	ProjectSection(SolutionItems) = preProject
+		Scanner\app.ico = Scanner\app.ico
+		Scanner\app.rc = Scanner\app.rc
+		release\dh1024.pem = release\dh1024.pem
+		release\fhscan.exe = release\fhscan.exe
 		release\FHScan_release.dat = release\FHScan_release.dat
 		release\KnownRouters.ini = release\KnownRouters.ini
 		release\KnownWebservers.ini = release\KnownWebservers.ini
+		release\libeay32.dll = release\libeay32.dll
+		release\root.pem = release\root.pem
 		release\RouterAuth.ini = release\RouterAuth.ini
+		release\css\scripts.js = release\css\scripts.js
+		release\server.pem = release\server.pem
+		release\ssleay32.dll = release\ssleay32.dll
 		release\tmpl.dat = release\tmpl.dat
 		release\UserListMulti-simple.ini = release\UserListMulti-simple.ini
 		release\UserListMulti.ini = release\UserListMulti.ini
 		release\UserListSingle.ini = release\UserListSingle.ini
 		release\webforms.ini = release\webforms.ini
 		release\Webservers.ini = release\Webservers.ini
+		release\zlib1.dll = release\zlib1.dll
 	EndProjectSection
 EndProject
 Global

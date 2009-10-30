@@ -4,8 +4,8 @@
 
 #include "../CallBacks.h"
 #ifdef __WIN32__RELEASE__
-	#include "../Includes/Zlib/zlib.h"
-	#include "../Includes/Zlib/zconf.h"
+	#include "../../Includes/Zlib/zlib.h"
+	#include "../../Includes/Zlib/zconf.h"
 	typedef int (*INFLATE_FUNC)(z_streamp ,int);
 	typedef int (*INFLATEINIT_FUNC)(z_streamp,const char *, int);
 	typedef int (*INFLATEEND_FUNC)(z_streamp);

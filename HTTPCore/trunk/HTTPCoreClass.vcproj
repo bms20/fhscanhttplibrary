@@ -115,7 +115,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_OPENSSL_SUPPORT_;_ZLIB_SUPPORT_"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -226,7 +226,15 @@
 					>
 				</File>
 				<File
+					RelativePath=".\HTTPCoreClass\Modules\Encoding_Chunked.h"
+					>
+				</File>
+				<File
 					RelativePath=".\HTTPCoreClass\Modules\Encoding_Deflate.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\HTTPCoreClass\Modules\Encoding_Deflate.h"
 					>
 				</File>
 			</Filter>
@@ -238,7 +246,15 @@
 					>
 				</File>
 				<File
+					RelativePath=".\HTTPCoreClass\Authentication\base64.h"
+					>
+				</File>
+				<File
 					RelativePath=".\HTTPCoreClass\Authentication\digest.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\HTTPCoreClass\Authentication\digest.h"
 					>
 				</File>
 				<File
@@ -246,7 +262,15 @@
 					>
 				</File>
 				<File
+					RelativePath=".\HTTPCoreClass\Authentication\md5.h"
+					>
+				</File>
+				<File
 					RelativePath=".\HTTPCoreClass\Authentication\ntlm.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\HTTPCoreClass\Authentication\ntlm.h"
 					>
 				</File>
 			</Filter>
@@ -258,7 +282,19 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Scanner\config.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Scanner\estructuras.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Scanner\FHScan.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Scanner\FHScan.h"
 					>
 				</File>
 				<File
@@ -266,7 +302,19 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Scanner\ProxyScanner.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Scanner\resource.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Scanner\RouterAuth.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Scanner\RouterAuth.h"
 					>
 				</File>
 				<File
@@ -274,11 +322,23 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Scanner\update.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Scanner\webforms.cpp"
 					>
 				</File>
 				<File
+					RelativePath=".\Scanner\webforms.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Scanner\webservers.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Scanner\webservers.h"
 					>
 				</File>
 				<Filter
@@ -288,12 +348,20 @@
 						RelativePath=".\Scanner\Reporting\LogSettings.cpp"
 						>
 					</File>
+					<File
+						RelativePath=".\Scanner\Reporting\LogSettings.h"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="Input"
 					>
 					<File
 						RelativePath=".\Scanner\Input\InputHosts.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Scanner\Input\InputHosts.h"
 						>
 					</File>
 				</Filter>
@@ -305,10 +373,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\HTTPCoreClass\Authentication\base64.h"
-				>
-			</File>
-			<File
 				RelativePath=".\HTTPCoreClass\Build.h"
 				>
 			</File>
@@ -317,35 +381,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Scanner\config.h"
-				>
-			</File>
-			<File
 				RelativePath=".\HTTPCoreClass\ConnectionHandling.h"
 				>
 			</File>
 			<File
 				RelativePath=".\HTTPCoreClass\CookieHandling.h"
-				>
-			</File>
-			<File
-				RelativePath=".\HTTPCoreClass\Authentication\digest.h"
-				>
-			</File>
-			<File
-				RelativePath=".\HTTPCoreClass\Modules\Encoding_Chunked.h"
-				>
-			</File>
-			<File
-				RelativePath=".\HTTPCoreClass\Modules\Encoding_Deflate.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Scanner\estructuras.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Scanner\FHScan.h"
 				>
 			</File>
 			<File
@@ -369,39 +409,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Scanner\Input\InputHosts.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Scanner\Reporting\LogSettings.h"
-				>
-			</File>
-			<File
-				RelativePath=".\HTTPCoreClass\Authentication\md5.h"
-				>
-			</File>
-			<File
 				RelativePath=".\HTTPCoreClass\misc.h"
-				>
-			</File>
-			<File
-				RelativePath=".\HTTPCoreClass\Authentication\ntlm.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Scanner\ProxyScanner.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Scanner\resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Scanner\RouterAuth.h"
 				>
 			</File>
 			<File
@@ -412,24 +420,16 @@
 				RelativePath=".\HTTPCoreClass\Tree.h"
 				>
 			</File>
-			<File
-				RelativePath=".\Scanner\update.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Scanner\webforms.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Scanner\webservers.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Archivos de recursos"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+			<File
+				RelativePath=".\Scanner\app.rc"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\release\dh1024.pem"

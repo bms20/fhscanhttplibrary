@@ -168,75 +168,70 @@ int ParseHosts( char *lphosts)
 			for (i = 0; i < 4; i++) 
 			{
 				if (IP1[i] < 0 || IP1[i] > 255) {
-					printf("octet out of range");
+					printf("Invalid IP Address");
 					exit(1);
 				}  
 				ipaddr |= IP1[i] << 8*(3-i);
 			} 
-			 //printf("la ip1 es %x\n",ipaddr);
-			 //printf("la ip addr es %x\n",ntohl(inet_addr(chunk)));
-				if (p=strchr(chunk, '-'))
+			if (p=strchr(chunk, '-'))
+			{
+				i = sscanf(p+1, "%d.%d.%d.%d", &IP2[0], &IP2[1], &IP2[2], &IP2[3]);
+				switch (i)
 				{
-					i = sscanf(p+1, "%d.%d.%d.%d", &IP2[0], &IP2[1], &IP2[2], &IP2[3]);
-					switch (i)
-					{
-						case 0:
-							exit(1);
-						case 1:
-							IP2[3]=IP2[0];
-							IP2[2]=IP1[2];
-							IP2[1]=IP1[1];
-							IP2[0]=IP1[0];
-							break;
-						case 2:
-							IP2[3]=IP2[1];
-							IP2[2]=IP2[0];
-							IP2[1]=IP1[1];
-							IP2[0]=IP1[0];
-							break;
-						case 3:
-							IP2[3]=IP2[2];
-							IP2[2]=IP2[1];
-							IP2[1]=IP2[0];
-							IP2[0]=IP1[0];
-							break;
-						default:
-						exit(1);
-					}
-				} else {
-					i=0;
-				}
-
-				//	printf("Tenemos: %i.%i.%i.%i-%i.%i.%i.%i\n",IP1[0],IP1[1],IP1[2],IP1[3],IP2[0],IP2[1],IP2[2],IP2[3]);
-				for (i = 0; i < 4; i++)
-				{
-					if (IP2[i] < 0 || IP2[i] > 255) 
-					{
-						exit(1);
-					}  
-					endipaddr |= IP2[i] << 8*(3-i);
-				}
-				//printf("la ip2 es %x\n",endipaddr);
-				//printf("n IPS: %i\n", endipaddr - ipaddr);
-				if (ipaddr > endipaddr)
-				{
-					//printf("IP Range error %s\n",chunk);
+				case 0:
 					exit(1);
-				}
-
-				do {
-					for(int k=0;k<nports;k++)
+				case 1:
+					IP2[3]=IP2[0];
+					IP2[2]=IP1[2];
+					IP2[1]=IP1[1];
+					IP2[0]=IP1[0];
+					break;
+				case 2:
+					IP2[3]=IP2[1];
+					IP2[2]=IP2[0];
+					IP2[1]=IP1[1];
+					IP2[0]=IP1[0];
+					break;
+				case 3:
+					IP2[3]=IP2[2];
+					IP2[2]=IP2[1];
+					IP2[1]=IP2[0];
+					IP2[0]=IP1[0];
+					break;
+				default:
+					exit(1);
+					for (i = 0; i < 4; i++)
 					{
-						AddNewTarget(ipaddr,NULL,ports[k].port,ports[k].ssl);
-						total++;
+						if (IP2[i] < 0 || IP2[i] > 255) 
+						{
+							exit(1);
+						}  
+						endipaddr |= IP2[i] << 8*(3-i);
 					}
-					ipaddr++;
-				} while (ipaddr <= endipaddr);
+					if (ipaddr > endipaddr)
+					{
+						exit(1);
+					}
 
+					do {
+						for(int k=0;k<nports;k++)
+						{
+							AddNewTarget(ipaddr,NULL,ports[k].port,ports[k].ssl);
+							total++;
+						}
+						ipaddr++;
+					} while (ipaddr <= endipaddr);
 
+				}
+			} else 
+			{
+				for(int k=0;k<nports;k++)
+				{
+					AddNewTarget(ipaddr,NULL,ports[k].port,ports[k].ssl);
+					total++;
+				}
+			}
 		}
-
-
 		chunk=strtok(NULL,",");
 	}
 	return(total);
