@@ -40,7 +40,7 @@ void main(int argc, char *argv[])
 {
  HTTPAPI *api = new HTTPAPI;
 
- HTTPHANDLE Handle = api->InitHTTPConnectionHandle("www.google.com",80,0);
+ HTTPHANDLE Handle = api->InitHTTPConnectionHandle("www.google.com",80);
  if (Handle!=INVALID_HHTPHANDLE_VALUE)
  {
    //Do stuff
@@ -56,7 +56,7 @@ Note that the main HTTPHANDLE allocator is the function  	 `api->InitHTTPConnect
 InitiHTTPConnectionHandle() requires two or three parameters (the last one is optional):
  * *Host*: Null Terminated string containing the ip or dns name of the remote host.
  * *Port*: TCP port where the remote webserver is listening (for example 80)
- * *SSL*: If the remote host is running an HTTPS server you must set the value to '1'
+ * *SSL*: (OPTIONAL) If the remote host is running an HTTPS server you must set the value to '1'.
 
 If all goes well, the returned value will be equal or greater than 0, otherwise *INVALID_HHTPHANDLE_VALUE* is returned (for example if the remote dns couldnt be resolved or SSL is not available).
 
