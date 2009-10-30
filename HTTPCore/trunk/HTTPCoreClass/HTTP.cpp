@@ -661,7 +661,20 @@ PHTTP_DATA HTTPAPI::BuildHTTPRequest(
 /**************************************************************************************************/
 /**************************************************************************************************/
 /**************************************************************************************************/
-
+PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
+{
+	return ( SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword,NO_AUTH) );
+	/* We must remove Authmethod parameter using instead internal data stored into HTTPHANDLE like:
+	- Lastrequested url.
+	- Authentication header.
+	- Authentication type.
+}
+/**************************************************************************************************/
+PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
+{
+	return ( SendHttpRequest(HTTPHandle,VHost,HTTPMethod,url,PostData,PostDataSize,lpUsername,lpPassword,NO_AUTH) );
+}
+/**************************************************************************************************/
 PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword,int AuthMethod)
 {
 
@@ -848,6 +861,9 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPC
 
 }
 /**************************************************************************************************/
+
+
+
 PREQUEST HTTPAPI::SendHttpRequest(
 								  HTTPHANDLE HTTPHandle,
 								  HTTPCSTR VHost,

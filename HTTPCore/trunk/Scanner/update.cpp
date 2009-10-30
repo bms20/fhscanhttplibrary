@@ -123,7 +123,7 @@ int UpdateFHScan(HTTPAPI *api)
 		return(1);
 	}
 
-	DATA=api->SendHttpRequest(HTTPHandle,NULL,"GET",local.version_url,NULL,0,NULL,NULL,NO_AUTH);
+	DATA=api->SendHttpRequest(HTTPHandle,NULL,"GET",local.version_url,NULL,0,NULL,NULL);
 	if ((!DATA) || (!DATA->response) )
 	{
 		printf("[-] Request error\n");
@@ -151,7 +151,7 @@ int UpdateFHScan(HTTPAPI *api)
 		}
 		NEWHTTPHandle=api->InitHTTPConnectionHandle(remote.host,remote.port,remote.ssl);
 #ifdef __WIN32__RELEASE__
-		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,"GET",remote.package_url,NULL,0,NULL,NULL,NO_AUTH);
+		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,"GET",remote.package_url,NULL,0,NULL,NULL);
 #else
 		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,"GET",remote.linux_url,NULL,0,NULL,NULL,NO_AUTH);		
 #endif
@@ -191,7 +191,7 @@ int UpdateFHScan(HTTPAPI *api)
 		printf("[+] Current FHScan Build: %i.%i.%i Signature: %i\n",remote.Mayor,remote.Minor,remote.Build,remote.signature);
 		printf("[+] Downloading http%s://%s%s:%i \n",remote.ssl ? "s": "", remote.host,remote.signature_url,remote.port);
 		NEWHTTPHandle=api->InitHTTPConnectionHandle(remote.host,remote.port,remote.ssl);
-		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,"GET",remote.signature_url,NULL,0,NULL,NULL,NO_AUTH);
+		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,"GET",remote.signature_url,NULL,0,NULL,NULL);
 		if ( (DOWNLOAD) && (DOWNLOAD->response) && (DOWNLOAD->response->DataSize) && (DOWNLOAD->status==200) )
 		{
 			sprintf(tmp,"FHScan_signature_%i.%i.%i_%i.zip",remote.Mayor,remote.Minor,remote.Build,remote.signature);

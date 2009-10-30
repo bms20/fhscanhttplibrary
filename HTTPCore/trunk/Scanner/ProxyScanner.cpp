@@ -60,7 +60,7 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 				{
 					//FreeRequest(response);
 					delete response;
-					response = api->SendHttpRequest(HTTPHandle,HTTPPROXYTESTHOST,"GET",HTTPPROXYTESTURL,NULL,0,NULL,NULL,0);
+					response = api->SendHttpRequest(HTTPHandle,HTTPPROXYTESTHOST,"GET",HTTPPROXYTESTURL,NULL,0,NULL,NULL);
 					if (response)
 					{
 						if ( (response->response->Data) && (strstr(response->response->Data,HTTPPROXYTESTMATCH) != NULL) )

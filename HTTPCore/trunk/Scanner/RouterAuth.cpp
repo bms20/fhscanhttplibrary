@@ -65,10 +65,12 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,stru
 		{
 			if (!CookieNeeded)
 			{
-				new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,AuthData->postdata,(unsigned int)strlen(AuthData->postdata),userpass[k].UserName,userpass[k].Password,challenge);
+				//new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,AuthData->postdata,(unsigned int)strlen(AuthData->postdata),userpass[k].UserName,userpass[k].Password,challenge);
+				new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,AuthData->postdata,(unsigned int)strlen(AuthData->postdata),userpass[k].UserName,userpass[k].Password);
 			} else {
 				api->SetHTTPConfig(HTTPHandle,ConfigCookie,AuthData->postdata);
-				new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,NULL,0,userpass[k].UserName,userpass[k].Password,challenge);
+				//new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,NULL,0,userpass[k].UserName,userpass[k].Password,challenge);
+				new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,NULL,0,userpass[k].UserName,userpass[k].Password);
 				api->SetHTTPConfig(HTTPHandle,ConfigCookie,NULL);
 			}
 
@@ -163,11 +165,11 @@ PREQUEST CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,int nR
 				//  response=SendHttpRequest( data,AuthData[i].method,AuthData[i].authurl,AuthData[i].postdata,(char*)VERSION,NULL,NULL,NULL,NO_AUTH);
 					if (CookieNeeded) {
 						api->SetHTTPConfig(HTTPHandle,ConfigCookie,lpcookie);//AuthData[i].postdata);
-						response=api->SendHttpRequest( HTTPHandle,NULL,AuthData[i].method,AuthData[i].authurl,NULL,0,NULL,NULL,NO_AUTH);
+						response=api->SendHttpRequest( HTTPHandle,NULL,AuthData[i].method,AuthData[i].authurl,NULL,0,NULL,NULL);
 						api->SetHTTPConfig(HTTPHandle,ConfigCookie,NULL);
 						free(lpcookie);
 					} else {
-						response=api->SendHttpRequest( HTTPHandle,NULL,AuthData[i].method,AuthData[i].authurl,AuthData[i].postdata,(unsigned int)strlen(AuthData[i].postdata),NULL,NULL,NO_AUTH);
+						response=api->SendHttpRequest( HTTPHandle,NULL,AuthData[i].method,AuthData[i].authurl,AuthData[i].postdata,(unsigned int)strlen(AuthData[i].postdata),NULL,NULL);
 					}
 				}
 				//SetHTTPConfig(HTTPHandle,OPT_HTTP_COOKIE,NULL);

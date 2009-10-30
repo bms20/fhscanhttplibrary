@@ -238,7 +238,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST reque
 		if ( (WEBFORMS[webform].InitialCookieURL[0]!='\0')  )
 		{
 			/* Request an additiona URL to get a cookie */
-			PREQUEST InitialCookie=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[webform].InitialCookieURL,NULL,0,NULL,NULL,0);
+			PREQUEST InitialCookie=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[webform].InitialCookieURL,NULL,0,NULL,NULL);
 			if (InitialCookie)
 			{
             	delete InitialCookie;
@@ -261,7 +261,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST reque
 		RequestRetry=2;
 		do {
 			if (AdditionalHeader[0]!='\0') api->SetHTTPConfig(HTTPHandle,ConfigCookie,AdditionalHeader);
-			new_data=api->SendHttpRequest(HTTPHandle,NULL,WEBFORMS[webform].authmethod,WEBFORMS[webform].authurl,post,(unsigned int) strlen(post),NULL,NULL,NO_AUTH);
+			new_data=api->SendHttpRequest(HTTPHandle,NULL,WEBFORMS[webform].authmethod,WEBFORMS[webform].authurl,post,(unsigned int) strlen(post),NULL,NULL);
 			if (AdditionalHeader[0]!='\0') api->SetHTTPConfig(HTTPHandle,ConfigCookie,NULL);
 
 			if ( (!new_data) || (!new_data->IsValidHTTPResponse()) )
@@ -363,7 +363,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST reque
 			new_data = NULL;
 			if (WEBFORMS[webform].LoadAdditionalUrl[0]!='\0')
 			{
-				new_data=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[webform].LoadAdditionalUrl,NULL,0,NULL,NULL,0);
+				new_data=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[webform].LoadAdditionalUrl,NULL,0,NULL,NULL);
 				if (new_data)
 				{
 					delete new_data;
@@ -432,7 +432,7 @@ int CheckWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data, int pos)
 						sprintf(image,"GET %s HTTP/1.0\r\nHost: %s\r\n\r\n",WEBFORMS[i].ValidateImage,data->ipaddress);
 						PREQUESTnew_data=(PREQUEST)conecta(data->ip,data->port, data->ssl,image);
 						*/
-						PREQUEST new_data=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[i].ValidateImage,NULL,0,NULL,NULL,NO_AUTH);
+						PREQUEST new_data=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[i].ValidateImage,NULL,0,NULL,NULL);
 						if (new_data)
 						{
 							///if ( (new_data->status==200) && (strstr(new_data->resultado,"Content-Type: image/")!=NULL) ) {

@@ -73,7 +73,7 @@ static BOOL CheckForWrongHTTPStatusCode(HTTPAPI *api,HTTPHANDLE HTTPHandle, unsi
 
 	PREQUEST new_response;
 	snprintf(tmp, sizeof(tmp) - 1, "/FastHTTPAuthScanner%itest/", status);
-	new_response = api->SendHttpRequest(HTTPHandle, NULL,"GET", tmp, NULL,0,NULL,NULL,NO_AUTH);
+	new_response = api->SendHttpRequest(HTTPHandle, NULL,"GET", tmp, NULL,0,NULL,NULL);
 	if (new_response)
 	{
 		if (!new_response->IsValidHTTPResponse())
@@ -119,7 +119,7 @@ int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST data,int n
 				response = DuplicateData(data);
 			} else
 			{
-				response = api->SendHttpRequest(HTTPHandle, NULL,"GET",vlist[i].url, NULL,0,lpUserName, lpPassword,NO_AUTH);
+				response = api->SendHttpRequest(HTTPHandle, NULL,"GET",vlist[i].url, NULL,0,lpUserName, lpPassword);
 			}
 			if ((response) && (!response->IsValidHTTPResponse()) )
 			{
@@ -192,7 +192,8 @@ int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST data,int n
 
 					for (k = 0; k < nUsers; k++)
 					{
-						bruteforce = api->SendHttpRequest(HTTPHandle, NULL,"GET",vlist[i].url, NULL,0,userpass[k].UserName,userpass[k].Password, response->challenge); /* Buy a monitor with better resolution :p */
+						//bruteforce = api->SendHttpRequest(HTTPHandle, NULL,"GET",vlist[i].url, NULL,0,userpass[k].UserName,userpass[k].Password, response->challenge); /* Buy a monitor with better resolution :p */
+						bruteforce = api->SendHttpRequest(HTTPHandle, NULL,"GET",vlist[i].url, NULL,0,userpass[k].UserName,userpass[k].Password); /* Buy a monitor with better resolution :p */
 						if ((bruteforce) && (!bruteforce->IsValidHTTPResponse()))
 						{
 							delete bruteforce; bruteforce = NULL;
