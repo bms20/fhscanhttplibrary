@@ -153,7 +153,7 @@ int UpdateFHScan(HTTPAPI *api)
 #ifdef __WIN32__RELEASE__
 		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,"GET",remote.package_url,NULL,0,NULL,NULL);
 #else
-		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,"GET",remote.linux_url,NULL,0,NULL,NULL,NO_AUTH);		
+		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,"GET",remote.linux_url,NULL,0,NULL,NULL);
 #endif
 		if ( (DOWNLOAD) && (DOWNLOAD->response) && (DOWNLOAD->response->DataSize) )
 		{

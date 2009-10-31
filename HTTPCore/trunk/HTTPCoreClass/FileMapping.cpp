@@ -129,7 +129,7 @@ int HTTPIOMapping::InitializeFileMapping(unsigned int DataSize,char *lpData)
 			}
 #else
 			strcpy(BufferedFileName,tempnam(NULL,"FHScan") );
-			hTmpFilename  = open(BufferedFileName,O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+			hTmpFilename  = open(BufferedFileName,O_RDWR | O_CREAT , S_IRUSR | S_IWUSR | S_IRGRP);
 			if (hTmpFilename<0)
 			{
             	MemoryLength = 0;

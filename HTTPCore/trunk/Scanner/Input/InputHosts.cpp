@@ -200,6 +200,8 @@ int ParseHosts( char *lphosts)
 					break;
 				default:
 					exit(1);
+					break;
+                }
 					for (i = 0; i < 4; i++)
 					{
 						if (IP2[i] < 0 || IP2[i] > 255) 
@@ -222,7 +224,7 @@ int ParseHosts( char *lphosts)
 						ipaddr++;
 					} while (ipaddr <= endipaddr);
 
-				}
+
 			} else 
 			{
 				for(int k=0;k<nports;k++)

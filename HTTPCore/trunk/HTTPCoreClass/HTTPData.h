@@ -1,20 +1,7 @@
 #ifndef __HTTPDATA_H__
 #define __HTTPDATA_H__
 #include "FileMapping.h"
-
-
-
-
-/*
-typedef struct crawledURL{
-
-	int HTTPMethodGET; //Example: 1 for GET or 0 POST
-	char tagname[20];
-	char paramname[20];
-	char description[100]; //something like title.
-	char *url;
-} CRAWLED;
-*/
+#include "HTTPHANDLE.h"
 
 /*!\struct HTTP_DATA
   \brief An HTTP_DATA struct stores the information generated with an HTTP request or an HTTP response.\n
@@ -28,7 +15,6 @@ private:
 	HTTPIOMapping *HTTPIOMappingData;
 	int nComments;
 	char **Comments;
-
 	int nUrlCrawled;
 	char **UrlCrawled;
 	char **linktagtype;
