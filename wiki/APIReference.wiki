@@ -111,5 +111,64 @@ Host: www.google.com
 User-Agent: Mozilla/5.0 (compatible; MSIE 7.0; FHScan Core 1.3)
 }}}
 
+== Interact with HTTP response data ==
+
+From the above, you can see that each {{{SendHttpRequest(/*params*/)}}} function returns an struct named PREQUEST. PREQUEST is where all the information related to the HTTP request is stored. Lets take a look at what its stored inside:
+
+{{{
+typedef struct  prequest {
+   HTTPCHAR hostname[256];/*!< hostname of the remote server. This is related to the vhost parameter. If no vhost is specified, hostname contains the ip address. */
+   int ip;              /*!< remote HTTP ip address. */
+   int port;            /*!< remote HTTP port. This value is obtained from the InitHTTPConnectionHandle() */
+   int NeedSSL;         /*!< Boolean value. If this parameter is 1 then the connection is handled by openssl otherwise is just a tcp connection */
+   HTTPSTR url;         /*!< path to the file or directory requested */
+   HTTPSTR Parameters;  /*!< Request Parameters */
+   httpdata*  request;  /*!< Information related to the HTTP Request. This struct contains both client headers and postdata */
+   httpdata*  response; /*!< Information related to the HTTP response. This struct contains both server headers and data */
+   HTTPSTR server;      /*!< pointer to a string that contains the server banner from the remote http server */
+   HTTPCHAR Method[20]; /*!< HTTP Verb used */
+   unsigned int status; /*!< status code returned by the HTTP server. Example: "200", for an STATUS OK response. */
+   HTTPSTR ContentType; /*!< Response Content-Type */
+public:
+	prequest();
+	~prequest();
+	int IsValidHTTPResponse(void);
+	int HasResponseHeader(void);
+	int HasResponseData(void);
+} REQUEST, *PREQUEST;
+}}}
+
+To continue explaining this against our previous example, lets see you to read some interesting stuff:
+
+{{{
+#include "HTTP.h"
+
+void main(int argc, char *argv[])
+{
+ HTTPAPI *api = new HTTPAPI;
+
+ HTTPHANDLE Handle = api->InitHTTPConnectionHandle("www.google.com",80,0);
+ if (Handle!=INVALID_HHTPHANDLE_VALUE)
+ {
+  PREQUEST HTTP = api->SendHttpRequest(Handle,"GET","/index.html");
+  if (HTTP)
+  {
+    printf("The remote host is: %s:%i\n",HTTP->hostname,HTTP->port);
+    printf("The URL retrieved is: %s\n",HTTP->url);
+    printf("The server returned an HTTP error code: %i\n",HTTP->status);
+    delete (HTTP);
+  }
+  
+  api->EndHTTPConnectionHandle(Handle);
+ }
+
+ delete api;
+}
+}}}
+
+The most important part of the PREQUEST struct is the request and response part. Those variables are structs that contains all the important information:
+
+
+
 
 *TODO..*: This guide isnt finished yet :)
