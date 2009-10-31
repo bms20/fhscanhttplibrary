@@ -56,3 +56,26 @@ int CBLog(int cbType,HTTPAPI *api, HTTPHANDLE HTTPHandle, PHTTP_DATA  request, P
 }}}
 
 Of course you can also modify the data (request and response) or block the request or response by using a return value other than CBRET_STATUS_NEXT_CB_CONTINUE.
+
+= SSL Certificates =
+HTTP Proxy:
+------------
+
+AS the the HTTP Proxy also intercepts HTTPS requests, there are three additional files needed to work:
+ * server certificate
+ * root CA certificate 
+ * dh file.
+If you want to build your own certificate, just download <a href="http://www.openssl.org/">openssl package</a> and type the following commands:
+
+  openssl genrsa -des3 -passout pass:password -out server_key.pem 2048
+  openssl req -new -key server_key.pem -out server_request.csr -passin pass:password -config openssl.cfg
+  openssl genrsa -des3 -passout pass:password -out ca_key.pem 2048
+  openssl req -new -key ca_key.pem -x509 -days 3 -out ca_cert.cer -passin pass:password -config openssl.cfg
+  openssl x509 -req -days 3 -in server_request.csr -CA ca_cert.cer -CAkey ca_key.pem -CAcreateserial -out server.cer -passin pass:password
+  @echo Creat .pem file that example wants
+  type server_key.pem server.cer >server.pem
+  @rem type ca_key.pem ca_cert.cer >root.pem
+  copy ca_cert.cer root.pem
+  openssl dhparam -check -text -2 1024 -out dh1024.pem
+  @rem view
+  openssl x509 -in root.pem -noout -text
