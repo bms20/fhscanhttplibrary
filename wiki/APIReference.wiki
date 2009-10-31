@@ -109,6 +109,8 @@ The HTTP Api will send something like:
 GET /index.html HTTP/1.1
 Host: www.google.com
 User-Agent: Mozilla/5.0 (compatible; MSIE 7.0; FHScan Core 1.3)
+Connection: Keep-Alive
+Accept-Encoding: gzip, deflate
 }}}
 
 == Interact with HTTP response data ==
