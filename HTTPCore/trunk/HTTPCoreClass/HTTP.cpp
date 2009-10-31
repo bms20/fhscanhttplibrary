@@ -50,8 +50,7 @@ prequest::prequest()
 	response = NULL;
 	server = NULL;
 	*Method=0;
-	status=0;
-	challenge = 0;
+	status=NO_AUTH;	
 	ContentType = NULL;
 }
 /*******************************************************************************************/
@@ -659,7 +658,7 @@ PHTTP_DATA HTTPAPI::BuildHTTPRequest(
 
 
 /**************************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword,int AuthMethod)
+PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
 {
 
 	PHTTP_DATA 		response=NULL;
@@ -668,12 +667,14 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPC
 	char HTTPMethod[20];
 	char url[4096];
 	char *p,*q;
+	int AuthMethod = 0;
 
 
 	class HHANDLE *RealHTTPHandle=(class HHANDLE *)HTTPHandleTable[HTTPHandle];
-	if ( (AuthMethod) && (lpUsername) && (lpPassword) )/* Deal with authentication */
-	{   
-		switch (AuthMethod)
+	if ( (RealHTTPHandle->challenge) && (lpUsername) && (lpPassword) )/* Deal with authentication */
+	{
+		AuthMethod = 1;
+		switch (RealHTTPHandle->challenge)
 		{
 		case BASIC_AUTH:
 			BuildBasicAuthHeader("Authorization",lpUsername,lpPassword,tmp,MAX_HEADER_SIZE);
@@ -776,6 +777,7 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPC
 		RealHTTPHandle->SetLastRequestedUri(NULL);
 		return(NULL);
 	}
+	
 
 	if ( (RealHTTPHandle->ProxyEnabled()) && (RealHTTPHandle->IsSSLNeeded()) &&
 		( (!RealHTTPHandle->GetConnection()) ||
@@ -786,7 +788,7 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPC
 		if (( response->HeaderSize>=12) && (memcmp(response->Header+9,"200",3)==0))
 		{
 			/* Send the real http request thought stablished proxy connection */
-			return SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword,AuthMethod);
+			return SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword);
 		} else 
 		{
 			/* Return a proxy error message */
@@ -795,16 +797,18 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPC
 				((class ConnectionHandling*)RealHTTPHandle->GetConnection())->FreeConnection();
 				RealHTTPHandle->SetConnection(NULL);
 			}		
+			RealHTTPHandle->challenge=NO_AUTH;
 			return((PREQUEST)RealHTTPHandle->ParseReturnedBuffer(request, response));
 		} 
 	}
 
 	RealHTTPHandle->SetLastRequestedUri(url);
+	RealHTTPHandle->challenge=response->IschallengeSupported("WWW-Authenticate:");
 	PREQUEST DATA=(PREQUEST)RealHTTPHandle->ParseReturnedBuffer(request, response);
 
-	if ( (DATA) && (DATA->challenge) && (DATA->status==401) && (!AuthMethod) && (lpUsername) && (lpPassword)  )
+	if ( (DATA) && (RealHTTPHandle->challenge) && (DATA->status==401) && (!AuthMethod) && (lpUsername) && (lpPassword)  )
 	{   /* Send Authentication request and return the "authenticated" response */
-		PREQUEST AUTHDATA=SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword,DATA->challenge);
+		PREQUEST AUTHDATA=SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword);
 		if (AUTHDATA)
 		{
 			DATA->request = NULL; /* We are reutilizing the same request, so avoid deleting memory twice */
@@ -845,11 +849,6 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPC
 
 }
 /*******************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR lpPath)
-{
-	return SendHttpRequest(HTTPHandle,NULL,"GET",lpPath,NULL,0,NULL,NULL);
-}
-/*******************************************************************************************/
 PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath)
 {
 	return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,NULL,0,NULL,NULL);
@@ -870,7 +869,7 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR 
 	PHTTP_DATA request=BuildHTTPRequest(HTTPHandle,VHost,HTTPMethod,lpPath,PostData,PostDataSize);
 	if (request)
 	{
-		PREQUEST DATA = SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword,NULL);
+		PREQUEST DATA = SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword);
 		if (DATA)
 		{
 			return(DATA);
@@ -882,14 +881,8 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR 
 /*******************************************************************************************/
 PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request)
 {
-	return SendHttpRequest(HTTPHandle,request,NULL,NULL,0);
+	return SendHttpRequest(HTTPHandle,request,NULL,NULL);
 }
-/*******************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
-{
-	return SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword,0);
-}
-
 /*******************************************************************************************/
 
 char* HTTPAPI::GetPathFromLocationHeader(PHTTP_DATA response, int ssl, const char* domain)
@@ -984,7 +977,7 @@ PREQUEST	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
 
 	if (HTTPHandle !=INVALID_HHTPHANDLE_VALUE)
 	{
-		PREQUEST data= SendHttpRequest(HTTPHandle,path);
+		PREQUEST data= SendHttpRequest(HTTPHandle,"GET",path);
 		EndHTTPConnectionHandle(HTTPHandle);
 		free(path);
 		return(data);
@@ -1007,6 +1000,10 @@ PREQUEST HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, uns
 		delete request;
 		return(NULL);
 	}
+	/*
+	//As we are dealing with raw responses, ignore the challenge part :?
+	RealHTTPHandle->challenge=response->IschallengeSupported("WWW-Authenticate:");
+	*/
 	return ( (PREQUEST) HTTPHandleTable[HTTPHandle]->ParseReturnedBuffer( request,response) );
 
 }

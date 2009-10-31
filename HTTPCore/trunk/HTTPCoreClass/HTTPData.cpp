@@ -1,4 +1,6 @@
 #include "HTTPData.h"
+#include "HTTPHandle.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -364,9 +366,9 @@ char *httpdata::GetServerVersion()
 	return( server ? server :strdup("HTTP/1.0") );
 }
 /*******************************************************************************************************/
-unsigned int httpdata::IschallengeSupported(const char *AuthNeeded)
+enum AuthenticationType httpdata::IschallengeSupported(const char *AuthNeeded)
 {
-	unsigned int ret=0;
+	int ret=NO_AUTH;
 	int i=0;
 	char *auth;
 
@@ -391,13 +393,16 @@ unsigned int httpdata::IschallengeSupported(const char *AuthNeeded)
 						free(auth);
 		}
 	} while (auth) ;
-
-	if (ret & BASIC_AUTH) 	return(BASIC_AUTH);
-	if (ret & DIGEST_AUTH) 	return(DIGEST_AUTH);
-	if (ret & NTLM_AUTH) 		return(NTLM_AUTH);
-	if (ret & NEGOTIATE_AUTH) return(NEGOTIATE_AUTH);
-
-	return(ret);
+	
+	if (ret != NO_AUTH)
+	{
+		if (ret & BASIC_AUTH) 	return(BASIC_AUTH);
+		if (ret & DIGEST_AUTH) 	return(DIGEST_AUTH);
+		if (ret & NTLM_AUTH) 		return(NTLM_AUTH);
+		if (ret & NEGOTIATE_AUTH) return(NEGOTIATE_AUTH);
+	}
+	return(NO_AUTH);
+	
 
 
 }

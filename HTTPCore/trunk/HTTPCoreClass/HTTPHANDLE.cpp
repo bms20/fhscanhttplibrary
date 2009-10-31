@@ -58,9 +58,10 @@ HHANDLE::HHANDLE(void)
 	#else
 	ThreadID = pthread_self();
 	#endif
+	challenge = NO_AUTH;
 	CookieSupported  = 1; /* Enabled by default */
 	AutoRedirect	 = 1;
-	MaximumRedirects = MAXIMUM_HTTP_REDIRECT_DEEP;
+	MaximumRedirects = MAXIMUM_HTTP_REDIRECT_DEPTH;
 
 }
 /*******************************************************************************************************/
@@ -104,9 +105,10 @@ int HHANDLE::InitHandle(HTTPSTR hostname,int HTTPPort,int ssl)
 	lpProxyUserName  = NULL;
 	lpProxyPassword = NULL;
 	memset(lpTmpData,0,sizeof(lpTmpData));
+	challenge = NO_AUTH;
 	CookieSupported  = 1;
 	AutoRedirect	 = 1;
-	MaximumRedirects = MAXIMUM_HTTP_REDIRECT_DEEP;
+	MaximumRedirects = MAXIMUM_HTTP_REDIRECT_DEPTH;
 	return(1);
 }
 /*******************************************************************************************************/
@@ -161,9 +163,10 @@ HHANDLE::~HHANDLE()
 	lpProxyPassword = NULL;
 
 	memset(lpTmpData,0,sizeof(lpTmpData));
+	challenge = NO_AUTH;
 	CookieSupported  = 1;
 	AutoRedirect	 = 1;
-	MaximumRedirects = MAXIMUM_HTTP_REDIRECT_DEEP;
+	MaximumRedirects = MAXIMUM_HTTP_REDIRECT_DEPTH;
 }
 
 /*******************************************************************************************************/
@@ -448,7 +451,7 @@ void *HHANDLE::ParseReturnedBuffer(struct httpdata *request, struct httpdata *re
 		data->status=atoi(version);
 	}
 	data->ContentType = request->GetHeaderValue("Content-Type:",0);
-	data->challenge=response->IschallengeSupported("WWW-Authenticate:");
+	//data->challenge=response->IschallengeSupported("WWW-Authenticate:");
 
 	char *line = request->GetHeaderValueByID(0);
 	if (line)

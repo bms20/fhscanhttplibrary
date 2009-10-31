@@ -2,12 +2,7 @@
 #define __HTTPDATA_H__
 #include "FileMapping.h"
 
-#define NO_AUTH			0
-#define BASIC_AUTH		1
-#define DIGEST_AUTH		2
-#define NTLM_AUTH		4
-#define NEGOTIATE_AUTH	8
-#define UNKNOWN_AUTH	16
+
 
 
 /*
@@ -74,7 +69,7 @@ public:
 	int 			 GetStatus();
 	char			*GetRequestedURL();
 	char			*GetHTTPMethod();
-	unsigned int	IschallengeSupported(const char *AuthNeeded);
+	enum AuthenticationType IschallengeSupported(const char *AuthNeeded);
 
 	/*FileMapping */
 	HTTPIOMapping *GetHTTPIOMappingData() {

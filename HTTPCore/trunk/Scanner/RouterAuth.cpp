@@ -29,13 +29,13 @@ PREQUEST DuplicateData(PREQUEST data)
 	new_data->url= strdup(data->url);
 	new_data->server=strdup(data->server);
 	new_data->status=data->status;
-	new_data->challenge=data->challenge;
+//	new_data->challenge=data->challenge;
 	return(new_data);
 }
 
 /*******************************************************************************/
 #define PASSWORD_NOT_FOUND -1
-static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,struct _fakeauth *AuthData,int nUsers, USERLIST *userpass,int challenge) {
+static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,struct _fakeauth *AuthData,int nUsers, USERLIST *userpass) {
 
 	PREQUEST new_response;
 	int CookieNeeded=0;
@@ -188,10 +188,10 @@ PREQUEST CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,int nR
 			 //for(int j=0;j<response->nheaders;j++) printf("header: %s\n",response->header[j]);
 #endif
 
-			 if ( (response->status == HTTP_STATUS_DENIED) && (response->challenge!=NO_AUTH))
+			 if (response->status == HTTP_STATUS_DENIED) 
 			 {
 				 //ret=BruteforceAuth( HTTPHandle,data,&AuthData[i], nUsers, userpass,response->challenge);
-				 ret=BruteforceAuth( api,HTTPHandle,response,&AuthData[i], nUsers, userpass,response->challenge);
+				 ret=BruteforceAuth( api,HTTPHandle,response,&AuthData[i], nUsers, userpass);
 				 if (ret!=PASSWORD_NOT_FOUND)
 				 {
 					 //UpdateHTMLReport(response,MESSAGE_ROUTER_PASSFOUND,userpass[ret].UserName,userpass[ret].Password,AuthData[i].authurl,NULL);

@@ -82,8 +82,6 @@ typedef struct  prequest {
    /*!< HTTP Verb used */
    unsigned int status;
    /*!< status code returned by the HTTP server. Example: "200", for an STATUS OK response. */
-   unsigned int challenge; 
-   /*!< This value is not Zero if the remote host require authentication by returning the http header "WWW-Authenticate:" Possible values are: NO_AUTH,  BASIC_AUTH , DIGEST_AUTH, NTLM_AUTH, UNKNOWN_AUTH.*/
    HTTPSTR ContentType;
    /*!< Response Content-Type */
 public:
@@ -147,7 +145,6 @@ class HTTPAPI
 	char  *BuildCookiesFromStoredData( const char *TargetDNS, const char *path, int secure);
 	char  *GetPathFromURL(const char *url);
 	char  *GetPathFromLocationHeader(PHTTP_DATA response, int ssl, const char* domain);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword,int AuthMethod);
 	
 public:
 	HTTPAPI();
@@ -161,14 +158,13 @@ public:
 	int        SetHTTPConfig(HTTPHANDLE HTTPHandle, enum HttpOptions opt, int parameter);
 	HTTPSTR    GetHTTPConfig(HTTPHANDLE HTTPHandle, enum HttpOptions opt);
 		
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR lpPath);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
-	PREQUEST   SendHttpRequest(HTTPCSTR Fullurl);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);	
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
+	PREQUEST   SendHttpRequest(HTTPCSTR Fullurl);
 	
 	PREQUEST   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, unsigned int HeaderSize, HTTPCSTR PostData, unsigned int PostDataSize);	
 	PHTTP_DATA BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,unsigned int PostDataSize);

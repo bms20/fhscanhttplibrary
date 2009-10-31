@@ -5,7 +5,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAXIMUM_HTTP_REDIRECT_DEEP 2
+#define MAXIMUM_HTTP_REDIRECT_DEPTH 2
+
+enum AuthenticationType {
+	NO_AUTH        = 0,
+	BASIC_AUTH     = 1,
+	DIGEST_AUTH    = 2,
+	NTLM_AUTH      = 4,
+	NEGOTIATE_AUTH = 8,
+	UNKNOWN_AUTH   = 16
+};
+
 class HHANDLE {
 	long 		target;
 	HTTPCHAR	targetDNS[256];
@@ -27,6 +37,7 @@ class HHANDLE {
 	void		*conexion;			/* STABLISHED_CONNECTION *conexion; //Pointer to last used connection */
 	void		*ClientConnection;  /* STABLISHED_CONNECTION *ClientConnection; //for asyncronous i/o  */
 	int		    AsyncHTTPRequest;
+	
 	HTTPSTR		LastRequestedUri;
 	HTTPSTR		LastAuthenticationString;
 
@@ -40,6 +51,7 @@ class HHANDLE {
 	int			AutoRedirect;
 	int 		MaximumRedirects;
 public:
+	enum AuthenticationType challenge;
 
 //Definir como metodos restringidos a CONEXION!
 	long GetTarget() { return target; }
@@ -105,7 +117,7 @@ public:
 
 	int GetMaximumRedirects(void) { return (MaximumRedirects); }
 	void DecrementMaximumRedirectsCount(void) { MaximumRedirects--; }
-	void ResetMaximumRedirects(void) { MaximumRedirects = MAXIMUM_HTTP_REDIRECT_DEEP; }
+	void ResetMaximumRedirects(void) { MaximumRedirects = MAXIMUM_HTTP_REDIRECT_DEPTH; }
 
 
 

@@ -137,7 +137,7 @@ void *ScanHosts(void *ptr) {
 		HTTPHandle=api->InitHTTPConnectionHandle(hostname,port, ssl);
 		if (HTTPHandle!=INVALID_HHTPHANDLE_VALUE)
 		{
-			data = api->SendHttpRequest(HTTPHandle,"/");
+			data = api->SendHttpRequest(HTTPHandle,"GET","/");
 			if (
 				(data) &&
 				(
@@ -154,7 +154,7 @@ void *ScanHosts(void *ptr) {
 				if (ShowAllhosts)
 				{
 					delete data;
-					data = api->SendHttpRequest(HTTPHandle,"//");
+					data = api->SendHttpRequest(HTTPHandle,"GET","//");
 					if (data)
 					{
 						if (data->IsValidHTTPResponse())
@@ -329,9 +329,9 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 
 	if (method)
 	{
-		data=  api->SendHttpRequest(HTTPHandle,vhost,method,path,PostData,PostDataSize);
+		data=  api->SendHttpRequest(HTTPHandle,method,path,PostData);
 	} else {
-		data=  api->SendHttpRequest(HTTPHandle,vhost,"GET",path,PostData,PostDataSize);
+		data=  api->SendHttpRequest(HTTPHandle,"GET",path,PostData);
 	}
 
 
@@ -386,7 +386,7 @@ int CBLog(int cbType,HTTPAPI *api, HTTPHANDLE HTTPHandle, PHTTP_DATA  request, P
 	return(CBRET_STATUS_NEXT_CB_CONTINUE);
 
 }
-
+/*******************************************************************************/
 /*******************************************************************************/
 
 void HTTPProxy(HTTPAPI *api)
