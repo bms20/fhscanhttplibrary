@@ -37,49 +37,7 @@ struct params {
 */
 /*******************************************************************************************************/
 /*******************************************************************************************************/
-/*******************************************************************************************************/
-prequest::prequest()
-{
-	*hostname=0;
-	ip=0;
-	port = 0;
-	NeedSSL = 0;
-	url = NULL;
-	Parameters = NULL;
-	request = NULL;
-	response = NULL;
-	server = NULL;
-	*Method=0;
-	status=NO_AUTH;	
-	ContentType = NULL;
-}
-/*******************************************************************************************/
-prequest::~prequest()
-{	
-	delete request;
-	delete response;
-	if (server)			free(server);
-	if (ContentType)	free(ContentType);
-	if (url)			free(url);
-	if (Parameters)		free(Parameters);
-}
 
-int prequest::IsValidHTTPResponse(void) 
-{ 
-	return ((response) && (response->Header) && (response->HeaderSize) && (status>100) && (status<520) ) ; 
-}
-
-int prequest::HasResponseHeader(void) 
-{ 
-	return ( (response) && (response->HeaderSize) && (response->Header) ); 
-}
-
-int prequest::HasResponseData(void) 
-{   
-	return ( (response) && (response->DataSize) && (response->Data)   ); 
-}
-
-/*******************************************************************************************************/
 /*******************************************************************************************************/
 /*******************************************************************************************************/
 int ThreadFunc(void *foo)
