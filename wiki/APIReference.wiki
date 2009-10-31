@@ -65,19 +65,13 @@ If all goes well, the returned value will be equal or greater than 0, otherwise 
 Once we have our handle we can deal with requests. The function for sending HTTP requests is *SendHttpRequest()*. easy ? :)
 There are different function prototypes however we are going to explain just the first one here:
 {{{
-//Simple:
-PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR Postdata,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
-PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR Postdata);
-PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath);
-PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR lpPath);
-PREQUEST   SendHttpRequest(HTTPCSTR Fullurl);
-
-//Advanced
-PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
-PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request);
-
-//Complete
-PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR Postdata,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);	
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
+	PREQUEST   SendHttpRequest(HTTPCSTR Fullurl);
 	
 }}}
 
@@ -86,9 +80,9 @@ Parameters:
  * *HTTPHandle:* HTTP Handle returned by a previous call to `InitiHTTPConnectionHandle()`.
  * *HTTPMethod:* HTTP verb. This value could be "GET","HEAD", "POST", or whatever HTTP method you want
  * *path:* HTTP path of the remote resource like "/" or "/index.html".
- * *Postdata:* Optional data to be sent on a GET,POST, PUT,.. request.
- * *lpUsername:* Optional username to be sent if the remote host requires authentication.
- * *lpPassword:* Optional username to be sent if the remote host requires authentication.
+ * *Postdata:*   (Optional) data to be sent on a GET,POST, PUT,.. request.
+ * *lpUsername:* (Optional) username to be sent if the remote host requires authentication.
+ * *lpPassword:* (Optional) username to be sent if the remote host requires authentication.
 
 So, its time for an example:
 
