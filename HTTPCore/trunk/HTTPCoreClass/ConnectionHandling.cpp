@@ -464,7 +464,7 @@ int ConnectionHandling::RemovePipeLineRequest(void)
 			PIPELINE_Request_ID[i]=PIPELINE_Request_ID[i+1];		
 		}
 		PENDING_PIPELINE_REQUESTS--;
-		PIPELINE_Request=(PHTTP_DATA*)realloc(PIPELINE_Request,sizeof(PHTTP_DATA) * (PENDING_PIPELINE_REQUESTS));
+		PIPELINE_Request=(httpdata**)realloc(PIPELINE_Request,sizeof(httpdata*) * (PENDING_PIPELINE_REQUESTS));
 		PIPELINE_Request_ID= (unsigned long *) realloc(PIPELINE_Request_ID,sizeof(unsigned long) * PENDING_PIPELINE_REQUESTS);		
 		if (!PENDING_PIPELINE_REQUESTS)
 		{
@@ -477,12 +477,12 @@ int ConnectionHandling::RemovePipeLineRequest(void)
 
 }
 
-unsigned long ConnectionHandling::AddPipeLineRequest(HTTP_DATA *request)//, unsigned long RequestID)
+unsigned long ConnectionHandling::AddPipeLineRequest(httpdata *request)//, unsigned long RequestID)
 {
 #ifdef _DBG_
 	printf("*** AddPipeLineRequest: Añadiendo %i en conexion %i (%i +1)\n",CurrentRequestID,id,PENDING_PIPELINE_REQUESTS);
 #endif
-	PIPELINE_Request=(PHTTP_DATA *)realloc(PIPELINE_Request,sizeof(PHTTP_DATA) * (PENDING_PIPELINE_REQUESTS+1));
+	PIPELINE_Request=(httpdata* *)realloc(PIPELINE_Request,sizeof(httpdata*) * (PENDING_PIPELINE_REQUESTS+1));
 	PIPELINE_Request[PENDING_PIPELINE_REQUESTS]=request;
 
 	PIPELINE_Request_ID= (unsigned long *) realloc(PIPELINE_Request_ID,sizeof(unsigned long) * (PENDING_PIPELINE_REQUESTS+1));	
@@ -497,7 +497,7 @@ unsigned long ConnectionHandling::AddPipeLineRequest(HTTP_DATA *request)//, unsi
 
 
 
-int ConnectionHandling::SendHTTPRequest(PHTTP_DATA request)
+int ConnectionHandling::SendHTTPRequest(httpdata* request)
 {
 
 
@@ -572,7 +572,7 @@ int ConnectionHandling::SendHTTPRequest(PHTTP_DATA request)
 }
 
 /**********************************************************/
-PHTTP_DATA ConnectionHandling::SendAndReadHTTPData(class HHANDLE *HTTPHandle,httpdata *request)
+httpdata* ConnectionHandling::SendAndReadHTTPData(class HHANDLE *HTTPHandle,httpdata *request)
 {
 	int ret = GetConnection(HTTPHandle);
 	if (ret)
@@ -589,7 +589,7 @@ PHTTP_DATA ConnectionHandling::SendAndReadHTTPData(class HHANDLE *HTTPHandle,htt
 /**********************************************************/
 
 
-PHTTP_DATA ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, PHTTP_DATA request,class Threading *ExternalMutex)// void *lock)
+httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request,class Threading *ExternalMutex)// void *lock)
 {
 
 	/* IO VARIABLES TO HANDLE HTTP RESPONSE */
@@ -604,7 +604,7 @@ PHTTP_DATA ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pr
 	int BytesToBeReaded = -1;      /* Number of bytes remaining to be readed on the HTTP Stream (-1 means that the number of bytes is still unknown, 0 that we have reached the end of the html data ) */
 	int i;                         /* Just a counter */
 	int pending      =  0;         /* Signals if there is Buffered data to read under and SSL connection*/
-	PHTTP_DATA response = NULL;    /* Returned HTTP Information */
+	httpdata* response = NULL;    /* Returned HTTP Information */
 
 
 	/* SOME CRITICAL INFORMATION THAT WE WILL GATHER FROM THE HTTP STREAM*/
@@ -1348,7 +1348,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 	char *HeadersEnd=NULL;
 
 	int offset=0;
-	PHTTP_DATA response=NULL;
+	httpdata* response=NULL;
 	int		BytesPorLeer=-1;
 	unsigned int pending = 0;
 

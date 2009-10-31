@@ -249,7 +249,7 @@ void map_html_tags (const char *, int,
 		    void (*) (struct taginfo *, void *, char*, char*,struct httpdata*),
 			void *, int,
 		    const struct hash_table *, const struct hash_table *,
-			char *, char *,struct httpdata*);
+			char *, char *,httpdata*);
 
 void doSpider(char *host, char* url,char *x, int length,int ssl);
 

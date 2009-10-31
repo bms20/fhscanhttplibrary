@@ -9,7 +9,7 @@
   If the data is related to an HTTP response, this struct will store the HTTP server response headers and HTTP data.
 */
 
-typedef struct httpdata {
+struct httpdata {
 
 private:
 	HTTPIOMapping *HTTPIOMappingData;
@@ -18,7 +18,6 @@ private:
 	int nUrlCrawled;
 	char **UrlCrawled;
 	char **linktagtype;
-
 	
 public:
 	HTTPSTR Header;
@@ -75,10 +74,7 @@ public:
 
 	char *Datastrstr  (const char *searchdata);
 	char *Headerstrstr(const char *searchdata);
-
-
-
-} HTTP_DATA, *PHTTP_DATA;
+};
 
 typedef int HTTPHANDLE;
 

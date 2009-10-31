@@ -369,7 +369,7 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 }
 
 /*******************************************************************************/
-int CBLog(int cbType,HTTPAPI *api, HTTPHANDLE HTTPHandle, PHTTP_DATA  request, PHTTP_DATA response)
+int CBLog(int cbType,HTTPAPI *api, HTTPHANDLE HTTPHandle, httpdata*  request, httpdata* response)
 {
 	if ( (request) && (response))
 	{

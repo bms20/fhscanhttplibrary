@@ -72,9 +72,9 @@ typedef struct  prequest {
    /*!< path to the file or directory requested */
    HTTPSTR Parameters;
    /*!< Request Parameters */
-   PHTTP_DATA request;
+   httpdata* request;
    /*!< Information related to the HTTP Request. This struct contains both client headers and postdata */
-   PHTTP_DATA response;
+   httpdata* response;
    /*!< Information related to the HTTP response. This struct contains both server headers and data */
    HTTPSTR server;
    /*!< pointer to a string that contains the server banner from the remote http server */
@@ -90,7 +90,7 @@ public:
 	int IsValidHTTPResponse(void);
 	int HasResponseHeader(void);
 	int HasResponseData(void);
-} REQUEST, *PREQUEST;
+} *PREQUEST;
 
 
 /***********************************************************************************************/
@@ -131,20 +131,20 @@ class HTTPAPI
 	
 	class HHANDLE *GetHHANDLE(HTTPHANDLE HTTPHandle);	
 	void  CleanConnectionTable(LPVOID *unused);
-	class ConnectionHandling *GetSocketConnection(class HHANDLE *HTTPHandle, PHTTP_DATA request, unsigned long *id);
+	class ConnectionHandling *GetSocketConnection(class HHANDLE *HTTPHandle, httpdata* request, unsigned long *id);
 	int   GetFirstIdleConnectionAgainstTarget(class HHANDLE *HTTPHandle);
 	int   GetFirstUnUsedConnection() ;
 	void  BuildBasicAuthHeader(HTTPCSTR Header,HTTPCSTR lpUsername, HTTPCSTR lpPassword,HTTPSTR destination, int dstsize);
-	PHTTP_DATA DispatchHTTPRequest(HTTPHANDLE HTTPHandle, PHTTP_DATA request);
+	httpdata* DispatchHTTPRequest(HTTPHANDLE HTTPHandle, httpdata* request);
 	int   ParseRequest(HTTPSTR line, HTTPSTR method,  HTTPSTR host, HTTPSTR path, int *port);
 	int   SkipHeader(HTTPSTR header);
 	void  *ListenConnection(void *foo);
 	int   DispatchHTTPProxyRequest(void *ListeningConnection);
 	void  SendHTTPProxyErrorMessage( ConnectionHandling* connection,int connectionclose, int status,HTTPCSTR protocol, HTTPCSTR title, HTTPCSTR extra_header, HTTPCSTR text );
-	void  ExtractCookiesFromResponseData( PHTTP_DATA response, const char *path, const char *TargetDNS);
+	void  ExtractCookiesFromResponseData( httpdata* response, const char *path, const char *TargetDNS);
 	char  *BuildCookiesFromStoredData( const char *TargetDNS, const char *path, int secure);
 	char  *GetPathFromURL(const char *url);
-	char  *GetPathFromLocationHeader(PHTTP_DATA response, int ssl, const char* domain);
+	char  *GetPathFromLocationHeader(httpdata* response, int ssl, const char* domain);
 	
 public:
 	HTTPAPI();
@@ -162,12 +162,12 @@ public:
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);	
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request);
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	PREQUEST   SendHttpRequest(HTTPCSTR Fullurl);
 	
 	PREQUEST   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, unsigned int HeaderSize, HTTPCSTR PostData, unsigned int PostDataSize);	
-	PHTTP_DATA BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,unsigned int PostDataSize);
+	httpdata* BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,unsigned int PostDataSize);
 
 	int        InitHTTPProxy(HTTPCSTR hostname, unsigned short port);
 	int        InitHTTPProxy(HTTPCSTR hostname, HTTPCSTR port);
@@ -177,7 +177,7 @@ public:
 
 	int        RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,HTTPCSTR Description);
 	int        CancelHttpRequest(HTTPHANDLE HTTPHandle, int what);
-	void       doSpider(HTTPSTR host,HTTPSTR FullPath, PHTTP_DATA  response);
+	void       doSpider(HTTPSTR host,HTTPSTR FullPath, httpdata*  response);
 };	
 
 

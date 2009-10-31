@@ -140,7 +140,7 @@ class ConnectionHandling {
 	unsigned int	 io;
 	int				 PENDING_PIPELINE_REQUESTS;
 
-	struct httpdata	**PIPELINE_Request;//PHTTP_DATA*		 PIPELINE_Request;
+	struct httpdata	**PIPELINE_Request;//httpdata**		 PIPELINE_Request;
 	unsigned long*	 PIPELINE_Request_ID; //Identificador de la conexion
 	unsigned long	 CurrentRequestID;
 	int 			 id;
@@ -176,9 +176,9 @@ public:
 	~ConnectionHandling();
 	void			FreeConnection(void);
 	int				RemovePipeLineRequest(void);
-	unsigned long	AddPipeLineRequest(struct httpdata *request);//, unsigned long RequestID);
+	unsigned long	AddPipeLineRequest(httpdata *request);//, unsigned long RequestID);
 	int				GetConnection(class HHANDLE *HTTPHandle);	
-	int				SendHTTPRequest(struct httpdata* request);
+	int				SendHTTPRequest(httpdata* request);
 	
 	httpdata		*SendAndReadHTTPData(class HHANDLE *HTTPHandle,httpdata *request);
 	void Disconnect(void);
@@ -186,7 +186,7 @@ public:
 	/*************/
 	//Funciones para proxy
 	struct httpdata *ReadHTTPProxyRequestData();	
-	struct httpdata *ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, struct httpdata* request,class Threading *ExternalMutex);
+	struct httpdata *ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request,class Threading *ExternalMutex);
 	void Acceptdatasock( SOCKET ListenSocket )
 	{
 		int clientLen= sizeof(struct sockaddr_in);

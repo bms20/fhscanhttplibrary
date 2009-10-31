@@ -99,10 +99,10 @@ int  HTTPCALLBACK::RemoveHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLB
 	\param request struct containing all information related to the HTTP Request.
 	\param response struct containing information about http reponse. This parameter could be NULL if the callback type is CBTYPE_CLIENT_RESPONSE or CBTYPE_PROXY_RESPONSE because request was not send yet.
 	\return the return value CBRET_STATUS_NEXT_CB_CONTINUE indicates that the request (modified or not) its ok. If a registered handler blocks the request then CBRET_STATUS_CANCEL_REQUEST is returned. This value indicates that the request or response is not authorized to be delivery to the destionation.\n
-    \note a Blocked PHTTP_DATA request or response could be used for example when a plugin is implementing a popup filtering.
+    \note a Blocked httpdata* request or response could be used for example when a plugin is implementing a popup filtering.
 */
 /**********************************************************************************************************************/
-int HTTPCALLBACK::DoCallBack(int cbType,HTTPHANDLE HTTPHandle,PHTTP_DATA request,PHTTP_DATA response)
+int HTTPCALLBACK::DoCallBack(int cbType,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response)
 { 
     unsigned int i;
 	int ret;

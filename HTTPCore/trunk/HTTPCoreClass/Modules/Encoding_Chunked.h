@@ -7,7 +7,7 @@
 #define ERROR_MORE_DATA_NEEDED 					-1
 #define ERROR_PARSING_DATA     					0xFFFFFF
 
-int CBDecodeChunk(int cbType,class HTTPAPI	*api,HTTPHANDLE HTTPHandle,PHTTP_DATA request,PHTTP_DATA response);
+int CBDecodeChunk(int cbType,class HTTPAPI	*api,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response);
 //int ParseDataChunks(char *lpBuffer, unsigned int encodedlen);
 
 #endif

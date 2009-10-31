@@ -18,10 +18,10 @@ typedef int (__cdecl* HTTP_IO_REQUEST_CALLBACK) (
     int         cbType,
 	void *api,
     HTTPHANDLE  HTTPHandle,
-	PHTTP_DATA  request,
-    PHTTP_DATA  response);
+	httpdata   *request,
+    httpdata*  response);
 #else
-typedef int (*HTTP_IO_REQUEST_CALLBACK) (int cbType, void *api,HTTPHANDLE HTTPHandle,PHTTP_DATA request,PHTTP_DATA response);// __attribute__((stdcall));
+typedef int (*HTTP_IO_REQUEST_CALLBACK) (int cbType, void *api,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response);// __attribute__((stdcall));
 #endif
 
 //Callbacks types (You can register custom callbacks if needed)
@@ -60,7 +60,7 @@ public:
 	void SetHTTPApiInstance(void *api) { ParentHTTPApi = api; }
 	int RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,const char *Description);
 	int  RemoveHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb);
-	int DoCallBack(int cbType,HTTPHANDLE HTTPHandle,PHTTP_DATA request,PHTTP_DATA response);
+	int DoCallBack(int cbType,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response);
 };
 
 

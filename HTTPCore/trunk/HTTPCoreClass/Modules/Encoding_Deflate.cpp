@@ -196,7 +196,7 @@ HTTPIOMapping *gunzip(char *in, int inSize, int what)
 	\note This function does not block requests, only tries to decode gzip or deflated HTTP response.
 */
 /******************************************************************************/
-int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,PHTTP_DATA request,PHTTP_DATA response)
+int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response)
 {
 
 

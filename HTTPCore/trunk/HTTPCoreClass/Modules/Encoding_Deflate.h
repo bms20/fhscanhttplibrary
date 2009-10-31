@@ -28,7 +28,7 @@
 #define GZIP_DATA 	 1
 #define DEFLATE_DATA 2
 
-int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,PHTTP_DATA request,PHTTP_DATA response);
+int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response);
 
 #endif
 #endif

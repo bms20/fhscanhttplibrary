@@ -354,7 +354,7 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 			//javascript:window.open('http://www.terra.es/deportes/futbol/directos/evento_champions_v2.cfm?id_evento=161736','blank','width=750,height=665,resizable=no,statusbar=no,scrollbars=no,top=0,left=0');window.location.href='http://www.terra.es/deportes/futbol/'
 
 			char *p = stristr(taginfo->attrs[i].value,"http");
-			int ofst;
+//			int ofst;
 			if (p) {
 
 
@@ -1313,7 +1313,7 @@ int port;
 
 
 
-void HTTPAPI::doSpider( char *host,char *FullPath, PHTTP_DATA  response)
+void HTTPAPI::doSpider( char *host,char *FullPath, httpdata*  response)
 {
 	if (!response->DataSize) {
         return;

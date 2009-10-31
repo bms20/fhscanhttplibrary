@@ -319,7 +319,7 @@ void  HTTPAPI::CleanConnectionTable(LPVOID *unused)
 }
 
 /*******************************************************************************************************/
-class ConnectionHandling *HTTPAPI::GetSocketConnection(class HHANDLE *HTTPHandle, PHTTP_DATA request, unsigned long *id)
+class ConnectionHandling *HTTPAPI::GetSocketConnection(class HHANDLE *HTTPHandle, httpdata* request, unsigned long *id)
 {
 	lock.LockMutex();
 
@@ -449,9 +449,9 @@ int HTTPAPI::GetFirstUnUsedConnection()
 	return(-1);
 }
 /*******************************************************************************************************/
-PHTTP_DATA HTTPAPI::DispatchHTTPRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request)
+httpdata* HTTPAPI::DispatchHTTPRequest(HTTPHANDLE HTTPHandle,httpdata* request)
 {
-	PHTTP_DATA response = NULL;
+	httpdata* response = NULL;
 	class ConnectionHandling *conexion;
 	unsigned long ret = CBRET_STATUS_NEXT_CB_CONTINUE;
 	unsigned long RequestID;
@@ -525,7 +525,7 @@ PHTTP_DATA HTTPAPI::DispatchHTTPRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request
 }
 
 /*******************************************************************************************************/
-PHTTP_DATA HTTPAPI::BuildHTTPRequest(
+httpdata* HTTPAPI::BuildHTTPRequest(
 									 HTTPHANDLE HTTPHandle,
 									 HTTPCSTR VHost,
 									 HTTPCSTR HTTPMethod,
@@ -553,7 +553,7 @@ PHTTP_DATA HTTPAPI::BuildHTTPRequest(
 		* We need to send a "CONNECT" verb to the HTTP Proxy Server
 		*/
 		snprintf(tmp,sizeof(tmp)-1,"CONNECT %s:%i HTTP/1.1\r\n\r\n",RealHTTPHandle->GettargetDNS(),RealHTTPHandle->GetPort());
-		PHTTP_DATA request = new httpdata(tmp,(int)strlen(tmp));
+		httpdata* request = new httpdata(tmp,(int)strlen(tmp));
 
 		if ( (RealHTTPHandle->GetlpProxyUserName()) && (RealHTTPHandle->GetlpProxyPassword())  )
 		{
@@ -658,10 +658,10 @@ PHTTP_DATA HTTPAPI::BuildHTTPRequest(
 
 
 /**************************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
+PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
 {
 
-	PHTTP_DATA 		response=NULL;
+	httpdata* 		response=NULL;
 	HTTPCHAR		tmp[MAX_HEADER_SIZE];
 	tmp[MAX_HEADER_SIZE-1]=0;	
 	char HTTPMethod[20];
@@ -866,7 +866,7 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTP
 /*******************************************************************************************/
 PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
 {
-	PHTTP_DATA request=BuildHTTPRequest(HTTPHandle,VHost,HTTPMethod,lpPath,PostData,PostDataSize);
+	httpdata* request=BuildHTTPRequest(HTTPHandle,VHost,HTTPMethod,lpPath,PostData,PostDataSize);
 	if (request)
 	{
 		PREQUEST DATA = SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword);
@@ -879,13 +879,13 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR 
 	return(NULL);
 }
 /*******************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,PHTTP_DATA request)
+PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request)
 {
 	return SendHttpRequest(HTTPHandle,request,NULL,NULL);
 }
 /*******************************************************************************************/
 
-char* HTTPAPI::GetPathFromLocationHeader(PHTTP_DATA response, int ssl, const char* domain)
+char* HTTPAPI::GetPathFromLocationHeader(httpdata* response, int ssl, const char* domain)
 {
 	if (!domain) {
 		return(NULL);
@@ -992,9 +992,9 @@ PREQUEST	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
 /*******************************************************************************************/
 PREQUEST HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, unsigned int HeaderSize, HTTPCSTR postdata, unsigned int PostDataSize)
 {
-	PHTTP_DATA request= new httpdata ((HTTPSTR)headers,HeaderSize,(HTTPSTR)postdata, PostDataSize);
+	httpdata* request= new httpdata ((HTTPSTR)headers,HeaderSize,(HTTPSTR)postdata, PostDataSize);
 
-	PHTTP_DATA		response = DispatchHTTPRequest(HTTPHandle,request);
+	httpdata*		response = DispatchHTTPRequest(HTTPHandle,request);
 	if (!response)
 	{
 		delete request;
@@ -1066,7 +1066,7 @@ void HTTPAPI::SendHTTPProxyErrorMessage( ConnectionHandling* connection,int conn
 		"</HTML>\n",
 		status, title, status, title,text);
 
-	PHTTP_DATA request = new httpdata;
+	httpdata* request = new httpdata;
 #ifdef _OPENSSL_SUPPORT_
 	request->BuildHTTPProxyResponseHeader( (connection->IsSSLInitialized()!=NULL),connectionclose, status,protocol, title, extra_header, "text/html", (int)strlen(tmp), -1 );
 #else
@@ -1236,7 +1236,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 {
 
 	ConnectionHandling *ClientConnection = (ConnectionHandling *)ListeningConnection;
-	PHTTP_DATA			ProxyRequest  = NULL;
+	httpdata*			ProxyRequest  = NULL;
 	HTTPHANDLE			HTTPHandle = INVALID_HHTPHANDLE_VALUE;
 	unsigned int		connect = 0;
 	unsigned long		ret = 0;
@@ -1396,7 +1396,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 					if (strcmp(method,"CONNECT")==0) 
 					{  /*Initialize the SSL Tunnel and replay the client with a "Connection stablished 200 OK" message*/
 #ifdef _OPENSSL_SUPPORT_
-						PHTTP_DATA  HTTPTunnel= new httpdata;
+						httpdata*  HTTPTunnel= new httpdata;
 						HTTPTunnel->BuildHTTPProxyResponseHeader(ClientConnection->IsSSLInitialized()!=NULL,0,200,protocol,"Connection established","Proxy-connection: Keep-alive",NULL,-1,-1);
 						ClientConnection->SendHTTPRequest( HTTPTunnel);
 						delete HTTPTunnel;
@@ -1783,7 +1783,7 @@ char *HTTPAPI::BuildCookiesFromStoredData( const char *TargetDNS, const char *pa
 
 }
 /*******************************************************************************************/
-void HTTPAPI::ExtractCookiesFromResponseData(PHTTP_DATA response, const char *lpPath, const char *TargetDNS)
+void HTTPAPI::ExtractCookiesFromResponseData(httpdata* response, const char *lpPath, const char *TargetDNS)
 {
 	if (response)
 	{

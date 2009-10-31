@@ -117,7 +117,7 @@ class HTTPIOMapping *DecodeChunk(char *lpBuffer, unsigned int encodedlen)
     \note This function does not block requests, only tries to decode HTTP response.
 */
 /******************************************************************************/
-int CBDecodeChunk(int cbType,class HTTPAPI	*api,HTTPHANDLE HTTPHandle,PHTTP_DATA  request,PHTTP_DATA response)
+int CBDecodeChunk(int cbType,class HTTPAPI	*api,HTTPHANDLE HTTPHandle,httpdata*  request,httpdata* response)
 {
 
 	if ((cbType == CBTYPE_CLIENT_RESPONSE) || (cbType == CBTYPE_PROXY_RESPONSE) )
