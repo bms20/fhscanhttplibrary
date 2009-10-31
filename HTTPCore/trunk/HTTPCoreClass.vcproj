@@ -237,6 +237,14 @@
 					RelativePath=".\HTTPCoreClass\Modules\Encoding_Deflate.h"
 					>
 				</File>
+				<File
+					RelativePath=".\HTTPCoreClass\Modules\zconf.h"
+					>
+				</File>
+				<File
+					RelativePath=".\HTTPCoreClass\Modules\zlib.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Authentication"
