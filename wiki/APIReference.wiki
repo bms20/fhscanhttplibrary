@@ -174,7 +174,7 @@ The most important part of the PREQUEST struct is the request and response httpd
 So, in our example, 
 {{{ 
 
-printf("Headers: %s\n",http->request->header); 
+printf("%s\n",http->request->header); 
 
 GET /index.html HTTP/1.1
 Host: www.google.com
@@ -182,7 +182,7 @@ User-Agent: Mozilla/5.0 (compatible; MSIE 7.0; FHScan Core 1.3)
 Connection: Keep-Alive
 Accept-Encoding: gzip, deflate
 
-printf("Headers: %s\n",http->response->header); 
+printf("%s\n",http->response->header); 
 
 HTTP/1.1 200 OK
 Date: Sun, 01 Nov 2009 21:29:37 GMT
@@ -198,5 +198,25 @@ X-XSS-Protection: 0
 Transfer-Encoding: chunked
 }}}
 
+Some method availables:
+{{{
+	/* Initialization */
+	httpdata();
+	httpdata(const char *header);
+	httpdata(const char *header, int headersize);
+	httpdata(const char *header, const char *lpPostData);
+	httpdata(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);
+	void InitHTTPData(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);
+	void InitHTTPData(const char *header);
+	void InitHTTPData(const char *header, int headersize);
+	void InitHTTPData(const char *header, const char *lpPostData);
+	~httpdata();
+
+	/* Header manipulation */
+	char *GetHeaderValue(const char *value,int n);
+	char *GetHeaderValueByID(unsigned int id);
+	char *AddHeader(const char *Header);
+	char *RemoveHeader(const char *Header);	
+}}}
 
 *TODO..*: This guide isnt finished yet :)
