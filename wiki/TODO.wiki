@@ -3,7 +3,7 @@
 
 = Introduction =
 
-List of features that should be added in the future. If you want to enhance fhscan by adding more features please contact me at atarasco-gmail.com 
+List of features that should be added in the future. If you want to enhance fhscan by adding more features or by providing me access to different develop platforms, please contact me at atarasco-gmail.com 
 
 = Details =
 
@@ -13,14 +13,17 @@ HTTP Core features:
   * Support ipcheck for local proxy.
   * Enhance de bandwidth limit option.
   * Review current C++ classes. There are a lot of things to improve.
-  * Allow a real "CONNECT" method for the HTTP Proxy module (not just for man in the middle interception )
+  * Allow a real "CONNECT" method for the HTTP Proxy module (not just for man in the middle interception ).
+ * Improve the HTTP Proxy module speed.
 
 HTTP Scanner features:
   * Add an scripting language (like SWIG + LUA) for executing more powerful scripts.
   * Add more device signatures. Thats our goal :)
   * Finish the file/directory bruteforce module.
   * Win32 gui (under development)
-  * Linux gui (i´ll need help on this). And frontend parsing stdout csv messages from fhscan should be enough
+  * Linux gui (i´ll need help on this). A TCL/TK frontend parsing csv messages from fhscan stdout should be enough
 
 Both:
   * Compatibility checks on different OS ( Currently tested under WinXP SP3, Windows 2k3, debian lenny and backtrack 4 with Visual studio 2005, Codegear Rad studio 2008 and g++ 4.3.2)
+ * Add MacOSX Support.
+ * Add windows mobile support (and create an small frontend).
