@@ -226,7 +226,7 @@ public:
 
 	void SetCTX(void *proxyctx);
 	#else
-	void *IsSSLInitialized() { return(0); }
+	void *IsSSLInitialized() { return(NULL); }
 
 	#endif
 

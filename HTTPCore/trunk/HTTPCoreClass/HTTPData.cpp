@@ -1,12 +1,7 @@
 #include "HTTPData.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-
-#define SERVER_NAME "FSCAN HTTP Proxy"
-#define RFC1123FMT  "%a, %d %b %Y %H:%M:%S GMT"
 
 
 /*******************************************************************************************************/
@@ -25,7 +20,7 @@ prequest::prequest()
 	status=NO_AUTH;	
 	ContentType = NULL;
 }
-/*******************************************************************************************/
+/*******************************************************************************************************/
 prequest::~prequest()
 {	
 	delete request;
@@ -35,17 +30,17 @@ prequest::~prequest()
 	if (url)			free(url);
 	if (Parameters)		free(Parameters);
 }
-
+/*******************************************************************************************************/
 int prequest::IsValidHTTPResponse(void) 
 { 
 	return ((response) && (response->Header) && (response->HeaderSize) && (status>100) && (status<520) ) ; 
 }
-
+/*******************************************************************************************************/
 int prequest::HasResponseHeader(void) 
 { 
 	return ( (response) && (response->HeaderSize) && (response->Header) ); 
 }
-
+/*******************************************************************************************************/
 int prequest::HasResponseData(void) 
 {   
 	return ( (response) && (response->DataSize) && (response->Data)   ); 
@@ -123,8 +118,8 @@ char *httpdata::GetRequestedURL()
 		char *q=p;
 		while (*q)
 		{
-			//if ( (*q==' ') || (*q=='?') || (*q=='&') || (*q=='\r') || (*q=='\n') )
-			if ( (*q==' ') || (*q=='\r') || (*q=='\n') )
+			if ( (*q==' ') || (*q=='?') || (*q=='&') || (*q=='\r') || (*q=='\n') )
+			//if ( (*q==' ') || (*q=='\r') || (*q=='\n') )
 			break;
 			len++; q++;
 		}
@@ -175,28 +170,51 @@ char *httpdata::GetHeaderValueByID(unsigned int id)
 /*******************************************************************************************************/
 char * httpdata::AddHeader(const char *newheader)
 {
-	if ((!newheader) || (!HeaderSize) ) //safety check.
+	if (!newheader)  //safety check.
 	{
 		return(NULL);
 	}
-	unsigned int NewSize= (unsigned int) strlen(newheader);
-	int CLRFNeeded = 0;
-
-	if (newheader[NewSize-1] != '\n') CLRFNeeded = 2;
-
-	Header=(char*)realloc(Header, HeaderSize + NewSize + CLRFNeeded +1);
-	if (!Header) //safety check.
+	if (!HeaderSize)
 	{
-		return(NULL);
-	}
-	memcpy(Header + HeaderSize -2, newheader,NewSize);
-	if (CLRFNeeded) //Append CLRF to the header
+		int CLRFNeeded = 0;
+		int l = (unsigned int)strlen(newheader);
+		if (memcmp(newheader + l -2,"\r\n",2)!=0) CLRFNeeded+=2;
+		if (memcmp(newheader + l -4,"\r\n",2)!=0) CLRFNeeded+=2;		
+		Header = (char*)realloc(Header,l+CLRFNeeded+1);		
+		memcpy(Header,newheader,l);	
+		HeaderSize =l + CLRFNeeded;
+		if (CLRFNeeded)
+		{
+			memcpy(Header+l,"\r\n",2);
+			CLRFNeeded-=2;
+		}
+		if (CLRFNeeded)
+		{
+			memcpy(Header+l+2,"\r\n",2);
+			CLRFNeeded-=2;
+		}
+	} 
+	else
 	{
-		memcpy(Header + HeaderSize -2 + NewSize,"\r\n",2);
+		unsigned int NewSize= (unsigned int) strlen(newheader);
+		int CLRFNeeded = 0;
+
+		if (newheader[NewSize-1] != '\n') CLRFNeeded = 2;
+
+		Header=(char*)realloc(Header, HeaderSize + NewSize + CLRFNeeded +1);
+		if (!Header) //safety check.
+		{
+			return(NULL);
+		}
+		memcpy(Header + HeaderSize -2, newheader,NewSize);
+		if (CLRFNeeded) //Append CLRF to the header
+		{
+			memcpy(Header + HeaderSize -2 + NewSize,"\r\n",2);
+		}
+		memcpy(Header + HeaderSize -2 + CLRFNeeded + NewSize,"\r\n",2);
+		HeaderSize+=NewSize + CLRFNeeded;
 	}
-	memcpy(Header + HeaderSize -2 + CLRFNeeded + NewSize,"\r\n",2);
-	HeaderSize+=NewSize + CLRFNeeded;
-	Header[HeaderSize]='\0';	
+	Header[HeaderSize]='\0';
 	return(Header);
 
 
@@ -409,11 +427,12 @@ char *httpdata::GetServerVersion()
 	return( server ? server :strdup("HTTP/1.0") );
 }
 /*******************************************************************************************************/
-enum AuthenticationType httpdata::IschallengeSupported(const char *AuthNeeded)
+enum AuthenticationType httpdata::GetSupportedAuthentication()
 {
 	int ret=NO_AUTH;
 	int i=0;
 	char *auth;
+	const char AuthNeeded[] = "WWW-Authenticate:";
 
 	do 
 	{
@@ -490,34 +509,7 @@ void httpdata::UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping)
 	}
 /*******************************************************************************************************/
 
-char* httpdata::BuildHTTPProxyResponseHeader( int isSSLStablished,int closeconnection, int status, const char *protocol,const char* title, const char* extra_header, const char* mime_type, int length, time_t mod )
-{
-	time_t now;
-	char timebuf[100];
-	char headers[10000],tmp[10000];
 
-	now = time( (time_t*) 0 );
-	strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &now ) );
-	sprintf( headers,"%s %d %s\r\nServer: %s\r\nDate: %s\r\n", protocol, status, title,SERVER_NAME,timebuf );
-
-	if ( ( extra_header != (char*) 0 )  && (*extra_header) ) { 	sprintf(tmp, "%s\r\n", extra_header );	strcat(headers,tmp); }
-	if ( mime_type != (char*) 0 ) 	{ sprintf( tmp,"Content-Type: %s\r\n", mime_type ); strcat(headers,tmp); }
-	if ( length >= 0 ) 				{ sprintf(tmp, "Content-Length: %d\r\n", length );	strcat(headers,tmp); }
-	if ( mod != (time_t) -1 )		{ strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &mod ) );	sprintf( tmp,"Last-Modified: %s\r\n", timebuf ); strcat(headers,tmp); }
-	if (closeconnection==1)
-	{
-		if (isSSLStablished)		  
-			sprintf( tmp,"Connection: close\r\n\r\n" );
-		else
-			sprintf( tmp,"Proxy-connection: close\r\n\r\n" ); 						  
-		
-		strcat(headers,tmp);		
-	} else  { 
-		strcat(headers,"\r\n"); 
-	}
-	InitHTTPData(headers,(unsigned int)strlen(headers),NULL,0);
-	return(Header);
-}
 /*******************************************************************************************************/
 
 int httpdata::GetStatus()

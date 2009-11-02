@@ -47,7 +47,6 @@ public:
 */
 
 struct httpdata {
-
 private:
 	HTTPIOMapping *HTTPIOMappingData;
 	int nComments;
@@ -67,37 +66,32 @@ public:
 	unsigned int DataSize;
     /*!< Size of the HTTP Data. */
 
-	/* Initicialización */
+	/* Initialization */
 	httpdata();
 	httpdata(const char *header);
 	httpdata(const char *header, int headersize);
 	httpdata(const char *header, const char *lpPostData);
-	httpdata(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);
-	void InitHTTPData(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);
+	httpdata(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);	
 	void InitHTTPData(const char *header);
 	void InitHTTPData(const char *header, int headersize);
 	void InitHTTPData(const char *header, const char *lpPostData);
+	void InitHTTPData(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);
 	~httpdata();
 
-	/* Manipulación de cabeceras */
+	/* Header manipulation */
 	char *GetHeaderValue(const char *value,int n);
 	char *GetHeaderValueByID(unsigned int id);
 	char *AddHeader(const char *Header);
 	char *RemoveHeader(const char *Header);	
-	char* BuildHTTPProxyResponseHeader( int isSSLStablished,int closeconnection, int status, const char *protocol,const char* title, const char* extra_header, const char* mime_type, int length, time_t mod );
+	
 
-	/* Obtención de Información de las respuestas */
+	/* Information gathering */
 	char			*GetServerVersion();
 	int 			 GetStatus();
 	char			*GetRequestedURL();
 	char			*GetHTTPMethod();
-	enum AuthenticationType IschallengeSupported(const char *AuthNeeded);
+	enum AuthenticationType GetSupportedAuthentication(void);
 
-	/*FileMapping */
-	HTTPIOMapping *GetHTTPIOMappingData() {
-		if (!HTTPIOMappingData) HTTPIOMappingData = new HTTPIOMapping;
-		return HTTPIOMappingData;
-	}
 	void UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping);
 
 	/* Spider */
@@ -109,6 +103,7 @@ public:
 	char *GetUrlCrawled(int i);
 	char *GettagCrawled(int i);
 
+	/* Misc Functions */
 	char *Datastrstr  (const char *searchdata);
 	char *Headerstrstr(const char *searchdata);
 };

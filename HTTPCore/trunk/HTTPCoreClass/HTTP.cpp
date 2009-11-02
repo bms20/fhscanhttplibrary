@@ -24,6 +24,8 @@ using namespace std;
 #define MAX_INACTIVE_CONNECTION 		10000000 *PURGETIME
 #define FHSCANUSERAGENT 				"Mozilla/5.0 (compatible; MSIE 7.0; FHScan Core 1.3)"
 #define MAX_HEADER_SIZE					8192
+#define SERVER_NAME						"FSCAN HTTP Proxy"
+#define RFC1123FMT						"%a, %d %b %Y %H:%M:%S GMT"
 
 struct params {
 	void *classptr;
@@ -761,7 +763,7 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 	}
 
 	RealHTTPHandle->SetLastRequestedUri(url);
-	RealHTTPHandle->challenge=response->IschallengeSupported("WWW-Authenticate:");
+	RealHTTPHandle->challenge=response->GetSupportedAuthentication();
 	PREQUEST DATA=(PREQUEST)RealHTTPHandle->ParseReturnedBuffer(request, response);
 
 	if ( (DATA) && (RealHTTPHandle->challenge) && (DATA->status==401) && (!AuthMethod) && (lpUsername) && (lpPassword)  )
@@ -960,7 +962,7 @@ PREQUEST HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, uns
 	}
 	/*
 	//As we are dealing with raw responses, ignore the challenge part :?
-	RealHTTPHandle->challenge=response->IschallengeSupported("WWW-Authenticate:");
+	RealHTTPHandle->challenge=response->GetSupportedAuthentication();
 	*/
 	return ( (PREQUEST) HTTPHandleTable[HTTPHandle]->ParseReturnedBuffer( request,response) );
 
@@ -1024,12 +1026,7 @@ void HTTPAPI::SendHTTPProxyErrorMessage( ConnectionHandling* connection,int conn
 		"</HTML>\n",
 		status, title, status, title,text);
 
-	httpdata* request = new httpdata;
-#ifdef _OPENSSL_SUPPORT_
-	request->BuildHTTPProxyResponseHeader( (connection->IsSSLInitialized()!=NULL),connectionclose, status,protocol, title, extra_header, "text/html", (int)strlen(tmp), -1 );
-#else
-	request->BuildHTTPProxyResponseHeader( 0,connectionclose, status,protocol, title, extra_header, "text/html", (int)strlen(tmp), -1 );
-#endif
+	httpdata* request = this->BuildHTTPProxyResponseHeader( (connection->IsSSLInitialized()!=NULL),connectionclose, status,protocol, title, extra_header, "text/html", (int)strlen(tmp), -1 );
 
 	free(request->Data);
 	request->Data = strdup(tmp);
@@ -1354,8 +1351,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 					if (strcmp(method,"CONNECT")==0) 
 					{  /*Initialize the SSL Tunnel and replay the client with a "Connection stablished 200 OK" message*/
 #ifdef _OPENSSL_SUPPORT_
-						httpdata*  HTTPTunnel= new httpdata;
-						HTTPTunnel->BuildHTTPProxyResponseHeader(ClientConnection->IsSSLInitialized()!=NULL,0,200,protocol,"Connection established","Proxy-connection: Keep-alive",NULL,-1,-1);
+						httpdata*  HTTPTunnel= this->BuildHTTPProxyResponseHeader(ClientConnection->IsSSLInitialized()!=NULL,0,200,protocol,"Connection established","Proxy-connection: Keep-alive",NULL,-1,-1);
 						ClientConnection->SendHTTPRequest( HTTPTunnel);
 						delete HTTPTunnel;
 
@@ -1761,4 +1757,30 @@ void HTTPAPI::ExtractCookiesFromResponseData(httpdata* response, const char *lpP
 	}
 }
 /*******************************************************************************************/
+httpdata* HTTPAPI::BuildHTTPProxyResponseHeader( int isSSLStablished,int closeconnection, int status, const char *protocol,const char* title, const char* extra_header, const char* mime_type, int length, time_t mod )
+{
+	time_t now;
+	char timebuf[100];
+	char headers[10000],tmp[10000];
 
+	now = time( (time_t*) 0 );
+	strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &now ) );
+	sprintf( headers,"%s %d %s\r\nServer: %s\r\nDate: %s\r\n", protocol, status, title,SERVER_NAME,timebuf );
+
+	if ( ( extra_header != (char*) 0 )  && (*extra_header) ) { 	sprintf(tmp, "%s\r\n", extra_header );	strcat(headers,tmp); }
+	if ( mime_type != (char*) 0 ) 	{ sprintf( tmp,"Content-Type: %s\r\n", mime_type ); strcat(headers,tmp); }
+	if ( length >= 0 ) 				{ sprintf(tmp, "Content-Length: %d\r\n", length );	strcat(headers,tmp); }
+	if ( mod != (time_t) -1 )		{ strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &mod ) );	sprintf( tmp,"Last-Modified: %s\r\n", timebuf ); strcat(headers,tmp); }
+	if (closeconnection==1)
+	{
+		if (isSSLStablished)		  
+			sprintf( tmp,"Connection: close\r\n\r\n" );
+		else
+			sprintf( tmp,"Proxy-connection: close\r\n\r\n" ); 						  
+		
+		strcat(headers,tmp);		
+	} else  { 
+		strcat(headers,"\r\n"); 
+	}
+	return new httpdata (headers);
+}

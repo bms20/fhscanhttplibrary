@@ -102,6 +102,7 @@ class HTTPAPI
 	int   GetFirstUnUsedConnection() ;
 	void  BuildBasicAuthHeader(HTTPCSTR Header,HTTPCSTR lpUsername, HTTPCSTR lpPassword,HTTPSTR destination, int dstsize);
 	httpdata* DispatchHTTPRequest(HTTPHANDLE HTTPHandle, httpdata* request);
+	httpdata* BuildHTTPProxyResponseHeader( int isSSLStablished,int closeconnection, int status, const char *protocol,const char* title, const char* extra_header, const char* mime_type, int length, time_t mod );
 	int   ParseRequest(HTTPSTR line, HTTPSTR method,  HTTPSTR host, HTTPSTR path, int *port);
 	int   SkipHeader(HTTPSTR header);
 	void  *ListenConnection(void *foo);
