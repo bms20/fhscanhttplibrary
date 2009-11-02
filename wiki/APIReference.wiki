@@ -137,7 +137,7 @@ public:
 } REQUEST, *PREQUEST;
 }}}
 
-To continue explaining this against our previous example, lets see you to read some interesting stuff:
+To continue explaining this against our previous example, lets see how to access to the stored data:
 
 {{{
 #include "HTTP.h"
@@ -200,23 +200,83 @@ Transfer-Encoding: chunked
 
 Some method availables:
 {{{
-	/* Initialization */
-	httpdata();
-	httpdata(const char *header);
-	httpdata(const char *header, int headersize);
-	httpdata(const char *header, const char *lpPostData);
-	httpdata(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);
-	void InitHTTPData(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);
-	void InitHTTPData(const char *header);
-	void InitHTTPData(const char *header, int headersize);
-	void InitHTTPData(const char *header, const char *lpPostData);
-	~httpdata();
+ /* Initialization */
+ httpdata();
+ httpdata(const char *header);
+ httpdata(const char *header, int headersize);
+ httpdata(const char *header, const char *lpPostData);
+ httpdata(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);
+ void InitHTTPData(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);
+ void InitHTTPData(const char *header);
+ void InitHTTPData(const char *header, int headersize);
+ void InitHTTPData(const char *header, const char *lpPostData);
 
-	/* Header manipulation */
-	char *GetHeaderValue(const char *value,int n);
-	char *GetHeaderValueByID(unsigned int id);
-	char *AddHeader(const char *Header);
-	char *RemoveHeader(const char *Header);	
+
+ /* Header manipulation */
+ char *GetHeaderValue(const char *value,int n);
+ char *GetHeaderValueByID(unsigned int id);
+ char *AddHeader(const char *Header);
+ char *RemoveHeader(const char *Header);	
 }}}
+
+Lets see some examples:
+<b>Example 1:</b> Enumerate all headers.
+
+{{{
+ char *header;
+ int i=0;
+ do 
+ {
+  header = HTTP->response->GetHeaderValueByID(i);
+  if (header)
+  {
+   printf("Header %i: %s\n",i,header);
+   free(header);
+  }
+
+ } (header);
+}}}
+
+<b>Example 2:</b> Get information about an specific header value.
+
+{{{
+ char *header = HTTP->response->GetHeaderValue("Content-type",0);
+ if (header)
+ {
+  printf("Content type: %s\n",header);
+  free(header);
+ }
+}}}
+<b>Example 3:</b> saving file to disk.
+
+{{{
+#include "HTTP.h"
+
+void main(int argc, char *argv[])
+{
+ HTTPAPI *api = new HTTPAPI;
+
+ HTTPHANDLE Handle = api->InitHTTPConnectionHandle("fhscanhttplibrary.googlecode.com",80,0);
+ if (Handle!=INVALID_HHTPHANDLE_VALUE)
+ {
+  PREQUEST HTTP = api->SendHttpRequest(Handle,"GET","/files/fhscan-Scanner-1.3.0-i386-Backtrack.tgz");
+  if (HTTP)
+  {
+    if ( (HTTP->status == 200) && (HTTP->response) )
+    {
+      FILE *file = fopen("release.zip","w");
+      fwrite(HTTP->response->Data,HTTP->response->DataSize,1,file);
+      fclose(file);
+    }
+    delete (HTTP);
+  }
+  
+  api->EndHTTPConnectionHandle(Handle);
+ }
+
+ delete api;
+}
+}}}
+
 
 *TODO..*: This guide isnt finished yet :)
