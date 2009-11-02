@@ -3,7 +3,7 @@
 
 = Api Documentation: =
 
-FHSCAN HTTP API is C++ library that can be easily embedded into different projects just by adding an include file. IF you need more information about what is currently supported take a look to <a href="http://code.google.com/p/fhscanhttplibrary/wiki/fhscan">FHScan Wikin</a>
+FHSCAN HTTP API is C++ library that can be easily embedded into different projects just by adding an include file. IF you need more information about what is currently supported take a look to <a href="http://code.google.com/p/fhscanhttplibrary/wiki/fhscan">FHScan Wiki</a>
 
 The main HTTP Class is named HTTPAPI. Each instance, once initialized, have their own connection and handle pools so most times you will only need an HTTP instance.
 
