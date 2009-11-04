@@ -177,10 +177,10 @@ public:
 	void			FreeConnection(void);
 	int				RemovePipeLineRequest(void);
 	unsigned long	AddPipeLineRequest(httpdata *request);//, unsigned long RequestID);
-	int				GetConnection(class HHANDLE *HTTPHandle);	
+	int				GetConnection(class HTTPAPIHANDLE *HTTPHandle);	
 	int				SendHTTPRequest(httpdata* request);
 	
-	httpdata		*SendAndReadHTTPData(class HHANDLE *HTTPHandle,httpdata *request);
+	httpdata		*SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,httpdata *request);
 	void Disconnect(void);
 
 	/*************/

@@ -163,7 +163,7 @@ HTTPSTR	HTTPAPI::GetHTTPConfig(HTTPHANDLE HTTPHandle,enum HttpOptions opt)
 /*******************************************************************************************************/
 HTTPHANDLE HTTPAPI::InitHTTPConnectionHandle(HTTPSTR lpHostName,int port,int ssl)
 {
-	class HHANDLE *HTTPHandle= new HHANDLE;
+	class HTTPAPIHANDLE *HTTPHandle= new HTTPAPIHANDLE;
 	if (HTTPHandle->InitHandle(lpHostName,port,ssl))
 	{
 		HandleLock.LockMutex();
@@ -220,7 +220,7 @@ int HTTPAPI::EndHTTPConnectionHandle(HTTPHANDLE UserHandle)
 	return(0);
 }
 /*******************************************************************************************************/
-class HHANDLE *HTTPAPI::GetHHANDLE(HTTPHANDLE HTTPHandle)
+class HTTPAPIHANDLE *HTTPAPI::GetHTTPAPIHANDLE(HTTPHANDLE HTTPHandle)
 {
 	if ((HTTPHandle>=0) && (HTTPHandle<MAXIMUM_OPENED_HANDLES) )
 	{
@@ -279,7 +279,7 @@ void  HTTPAPI::CleanConnectionTable(LPVOID *unused)
 }
 
 /*******************************************************************************************************/
-class ConnectionHandling *HTTPAPI::GetSocketConnection(class HHANDLE *HTTPHandle, httpdata* request, unsigned long *id)
+class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTPHandle, httpdata* request, unsigned long *id)
 {
 	lock.LockMutex();
 
@@ -373,7 +373,7 @@ class ConnectionHandling *HTTPAPI::GetSocketConnection(class HHANDLE *HTTPHandle
 \note If no connection matches, -1 is returned.
 */
 /*******************************************************************************************/
-int HTTPAPI::GetFirstIdleConnectionAgainstTarget(class HHANDLE *HTTPHandle)
+int HTTPAPI::GetFirstIdleConnectionAgainstTarget(class HTTPAPIHANDLE *HTTPHandle)
 {
 	for(unsigned int i=0;i<MAX_OPEN_CONNECTIONS;i++)
 	{
@@ -498,7 +498,7 @@ httpdata* HTTPAPI::BuildHTTPRequest(
 		return ( NULL);
 	}
 
-	class HHANDLE *RealHTTPHandle=(class HHANDLE *)HTTPHandleTable[HTTPHandle];
+	class HTTPAPIHANDLE *RealHTTPHandle=(class HTTPAPIHANDLE *)HTTPHandleTable[HTTPHandle];
 	HTTPCHAR		tmp[MAX_HEADER_SIZE];
 	tmp[MAX_HEADER_SIZE-1]=0;
 
@@ -630,7 +630,7 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 	int AuthMethod = 0;
 
 
-	class HHANDLE *RealHTTPHandle=(class HHANDLE *)HTTPHandleTable[HTTPHandle];
+	class HTTPAPIHANDLE *RealHTTPHandle=(class HTTPAPIHANDLE *)HTTPHandleTable[HTTPHandle];
 	if ( (RealHTTPHandle->challenge) && (lpUsername) && (lpPassword) )/* Deal with authentication */
 	{
 		AuthMethod = 1;
@@ -980,7 +980,7 @@ int HTTPAPI::CancelHttpRequest(HTTPHANDLE HTTPHandle, int what)
 {
 	int ret=0;
 	lock.LockMutex();
-	class HHANDLE * phandle = GetHHANDLE(HTTPHandle);
+	class HTTPAPIHANDLE * phandle = GetHTTPAPIHANDLE(HTTPHandle);
 	class ConnectionHandling *conexion = (class ConnectionHandling *)phandle->GetConnection();
 	if (conexion)
 	{
@@ -1146,7 +1146,11 @@ int	HTTPAPI::InitHTTPProxy(HTTPCSTR hostname, unsigned short port)
 		ConnectMethodAllowed  = 1;
 		UseOriginalUserAgent  = 0;
 #ifdef _OPENSSL_SUPPORT_
-		InitProxyCTX();
+		int ret = InitProxyCTX();
+		if (!ret)
+		{
+			return(0);
+		}
 #endif
 		ProxyEngine.InitThread((void*)ListenConnectionThreadFunc,(void*)this);
 		/* This is disabled by default in our Proxy server */
@@ -1345,7 +1349,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 					SetHTTPConfig(HTTPHandle,ConfigProtocolversion,line+strlen(line)-1);
 					if (AsyncHTTPRequest) 
 					{
-						GetHHANDLE(HTTPHandle)->SetClientConnection(ClientConnection);
+						GetHTTPAPIHANDLE(HTTPHandle)->SetClientConnection(ClientConnection);
 					}
 
 					if (strcmp(method,"CONNECT")==0) 

@@ -26,9 +26,7 @@
 #endif
 
 #define snprintf _snprintf
-
 #define socklen_t int
-
 
 # if defined(_MSC_VER)
  # ifndef _CRT_SECURE_NO_DEPRECATE
@@ -38,6 +36,7 @@
  #define stricmp  _stricmp
 # else
 //  #define  _stricmp strcasecmp
+#include <winsock2.h> /* Codegear problem with WSADATA definition */
 #endif
 
 #else

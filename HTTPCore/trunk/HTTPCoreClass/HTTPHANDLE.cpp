@@ -28,7 +28,7 @@
 #endif
 
 /*******************************************************************************************************/
-HHANDLE::HHANDLE(void)
+HTTPAPIHANDLE::HTTPAPIHANDLE(void)
 {
 	target = 0;
 	*targetDNS = 0;
@@ -66,7 +66,7 @@ HHANDLE::HHANDLE(void)
 }
 /*******************************************************************************************************/
 
-int HHANDLE::InitHandle(HTTPSTR hostname,int HTTPPort,int ssl)
+int HTTPAPIHANDLE::InitHandle(HTTPSTR hostname,int HTTPPort,int ssl)
 {
 	struct sockaddr_in remote;
 	remote.sin_addr.s_addr = inet_addr(hostname);
@@ -112,7 +112,7 @@ int HHANDLE::InitHandle(HTTPSTR hostname,int HTTPPort,int ssl)
 	return(1);
 }
 /*******************************************************************************************************/
-HHANDLE::~HHANDLE() 
+HTTPAPIHANDLE::~HTTPAPIHANDLE() 
 {
 	target = 0;
 	*targetDNS=0;
@@ -170,7 +170,7 @@ HHANDLE::~HHANDLE()
 }
 
 /*******************************************************************************************************/
-int HHANDLE::SetHTTPConfig(int opt,int parameter)
+int HTTPAPIHANDLE::SetHTTPConfig(int opt,int parameter)
 {
 	char tmp[12];
 	sprintf(tmp,"%i",parameter);
@@ -219,7 +219,7 @@ int HHANDLE::SetHTTPConfig(int opt,int parameter)
 
 
 /*******************************************************************************************************/
-int HHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
+int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 {
 
 	switch (opt)
@@ -374,7 +374,7 @@ int HHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 }
 
 /*******************************************************************************************************/
-HTTPSTR HHANDLE::GetHTTPConfig(int opt)
+HTTPSTR HTTPAPIHANDLE::GetHTTPConfig(int opt)
 {
 
 	switch(opt)
@@ -430,7 +430,7 @@ HTTPSTR HHANDLE::GetHTTPConfig(int opt)
 
 
 
-void *HHANDLE::ParseReturnedBuffer(struct httpdata *request, struct httpdata *response)
+void *HTTPAPIHANDLE::ParseReturnedBuffer(struct httpdata *request, struct httpdata *response)
 {
 	char version[4];
 
@@ -483,7 +483,7 @@ void *HHANDLE::ParseReturnedBuffer(struct httpdata *request, struct httpdata *re
 
 
 /*******************************************************************************************************/
-char *HHANDLE::GetAdditionalHeaderValue(const char *value,int n)
+char *HTTPAPIHANDLE::GetAdditionalHeaderValue(const char *value,int n)
 {
 	char *base,*end;
 	end=base=AdditionalHeader;

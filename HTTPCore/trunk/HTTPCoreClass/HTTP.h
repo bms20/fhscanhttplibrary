@@ -11,6 +11,8 @@
 #include "Threading.h"
 #include "CallBacks.h"
 
+
+
 /* Options for SetHTTPConfig() and GetHTTPConfig() */
 enum HttpOptions 
 {  
@@ -63,8 +65,8 @@ enum HttpProxyoptions
 class HTTPAPI 
 {
 	
-	class HHANDLE GlobalHTTPCoreApiOptions;/*Global HANDLE Configuration Options */	
-	class HHANDLE *HTTPHandleTable[MAXIMUM_OPENED_HANDLES];/*HTTP Handle table*/	
+	class HTTPAPIHANDLE GlobalHTTPCoreApiOptions;/*Global HANDLE Configuration Options */	
+	class HTTPAPIHANDLE *HTTPHandleTable[MAXIMUM_OPENED_HANDLES];/*HTTP Handle table*/	
 	class ConnectionHandling *Connection_Table[MAX_OPEN_CONNECTIONS];/*Connection table (conexiones concurrentes) */	
 	class HTTPCALLBACK HTTPCallBack;	/* CallBacks */
 	class Threading HandleLock;			/* internal Threads */
@@ -75,8 +77,8 @@ class HTTPAPI
 	#endif
 
 	HTTPCHAR BindIpAdress[256];			/* Proxy Bind Address */
-	unsigned short BindPort;			/* Proxy Bind Port */
-	SOCKET ListenSocket;				/* Listen proxy socket */
+	SOCKET BindPort;					/* Proxy Bind Port */
+	int ListenSocket;				/* Listen proxy socket */
 	int ForceDefaultHTTPPorts;			/* Proxy configuration option */
 	int AnonymousProxy;					/* Proxy configuration option */
 	int AsyncHTTPRequest;				/* Proxy configuration option */
@@ -95,10 +97,10 @@ class HTTPAPI
 	friend int ListenConnectionThreadFunc(void *foo);
 	friend int DispatchHTTPProxyRequestThreadFunc(void *foo);
 	
-	class HHANDLE *GetHHANDLE(HTTPHANDLE HTTPHandle);	
+	class HTTPAPIHANDLE *GetHTTPAPIHANDLE(HTTPHANDLE HTTPHandle);	
 	void  CleanConnectionTable(LPVOID *unused);
-	class ConnectionHandling *GetSocketConnection(class HHANDLE *HTTPHandle, httpdata* request, unsigned long *id);
-	int   GetFirstIdleConnectionAgainstTarget(class HHANDLE *HTTPHandle);
+	class ConnectionHandling *GetSocketConnection(class HTTPAPIHANDLE *HTTPHandle, httpdata* request, unsigned long *id);
+	int   GetFirstIdleConnectionAgainstTarget(class HTTPAPIHANDLE *HTTPHandle);
 	int   GetFirstUnUsedConnection() ;
 	void  BuildBasicAuthHeader(HTTPCSTR Header,HTTPCSTR lpUsername, HTTPCSTR lpPassword,HTTPSTR destination, int dstsize);
 	httpdata* DispatchHTTPRequest(HTTPHANDLE HTTPHandle, httpdata* request);

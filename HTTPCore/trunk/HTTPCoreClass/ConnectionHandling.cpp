@@ -339,7 +339,7 @@ ConnectionHandling::~ConnectionHandling()
 	}
 }
 
-int ConnectionHandling::GetConnection(class HHANDLE *HTTPHandle) 
+int ConnectionHandling::GetConnection(class HTTPAPIHANDLE *HTTPHandle) 
 {
 	if (datasock==0)
 	{
@@ -572,7 +572,7 @@ int ConnectionHandling::SendHTTPRequest(httpdata* request)
 }
 
 /**********************************************************/
-httpdata* ConnectionHandling::SendAndReadHTTPData(class HHANDLE *HTTPHandle,httpdata *request)
+httpdata* ConnectionHandling::SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,httpdata *request)
 {
 	int ret = GetConnection(HTTPHandle);
 	if (ret)

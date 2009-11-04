@@ -143,9 +143,9 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 					ftime(&localTime);
 					//               printf("fecha: %ld\n",localTime.time);               
 					//               printf("fecha: %ld\n",localTime.millitm);
-					snprintf(tmp,sizeof(tmp)-1,"%ld",localTime.time);
+					snprintf(tmp,sizeof(tmp)-1,"%i",localTime.time);
 					strncat(output,tmp+4,MAX_POST_LENGTH-strlen(output));
-					snprintf(tmp,sizeof(tmp)-1,"%ld",localTime.millitm);
+					snprintf(tmp,sizeof(tmp)-1,"%i",localTime.millitm);
 					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 
 

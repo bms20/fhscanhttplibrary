@@ -16,7 +16,7 @@ enum AuthenticationType {
 	UNKNOWN_AUTH   = 16
 };
 
-class HHANDLE {
+class HTTPAPIHANDLE {
 	long 		target;
 	HTTPCHAR	targetDNS[256];
 	int  		port;
@@ -105,8 +105,8 @@ public:
 	void *GetClientConnection() { return ClientConnection; }
 	void SetClientConnection(void *Client_Connection) { ClientConnection = Client_Connection; }
 
-	HHANDLE(void);	
-	~HHANDLE();
+	HTTPAPIHANDLE(void);	
+	~HTTPAPIHANDLE();
 	int InitHandle(HTTPSTR,int,int);	
 	int SetHTTPConfig(int,HTTPCSTR);
 	int SetHTTPConfig(int,int);
