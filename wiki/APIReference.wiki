@@ -232,8 +232,8 @@ Lets see some examples:
   {
    printf("Header %i: %s\n",i,header);
    free(header);
+   i++;
   }
-
  } (header);
 }}}
 
@@ -243,7 +243,7 @@ Lets see some examples:
  char *header = HTTP->response->GetHeaderValue("Content-type",0);
  if (header)
  {
-  printf("Content type: %s\n",header);
+  printf("Value: %s\n",header);
   free(header);
  }
 }}}
