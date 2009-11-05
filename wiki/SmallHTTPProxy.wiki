@@ -14,7 +14,7 @@ Fhscan HTTP Api is really easy to use. You just need two lines of code to create
  api->InitHTTPProxy("127.0.0.1","8080");
 }}}
 
-By using *Callbacks*m some of your application funtions will be notified each time an event is created. Some basic events are created for example when an http request is sent or when http responses arrive. The callback function will receive an struct that contains all the exchanged information betwen your host and the remote HTTP server.
+By using *Callbacks* some of your application funtions will be notified each time an event is created. Some basic events are created for example when an http request is sent or when http responses arrive. The callback function will receive an struct that contains all the exchanged information betwen your host and the remote HTTP server.
 
 If the previous HTTP proxy example its too simple and you need something more advanced, for example logging all the HTTP Traffic, the following Callback example is all what you need.
 
@@ -56,6 +56,13 @@ int CBLog(int cbType,HTTPAPI *api, HTTPHANDLE HTTPHandle, PHTTP_DATA  request, P
 }}}
 
 Of course you can also modify the data (request and response) or block the request or response by using a return value other than CBRET_STATUS_NEXT_CB_CONTINUE.
+
+The console version of Fhscan HTTP proxy can be downloaded at the <a href="http://code.google.com/p/fhscanhttplibrary/downloads/list">Downloads</a> section. Fhscan Scanner includes a flag "--EnableProxy" that will execute a new proxy instance. 
+Its also available a proxy gui application:
+
+<img src="http://fhscanhttplibrary.googlecode.com/svn/wiki/http_proxy.jpg" alt="Simple HTTP Proxy for Windows">
+
+Download and test our <a href="http://fhscanhttplibrary.googlecode.com/files/HTTP_Proxy.zip">simple HTTP proxy for windows </a>
 
 = SSL Certificates =
 HTTP Proxy:
