@@ -13,7 +13,7 @@ Building library:
 {{{
  * g++  -DLINUX  -D_OPENSSL_SUPPORT_ -D_ZLIB_SUPPORT_  -c -fPIC HTTPCoreClass/*.cpp HTTPCoreClass/Authentication/*.cpp HTTPCoreClass/Modules/*.cpp
  * g++ -shared -o HTTPCore13.so -fPIC *.o
- * cp HTTPCore13.so /usr/lib/
+ * cp HTTPCore13.so /usr/lib/libHTTPCore13.so
 }}}
 Building static package:
 {{{
@@ -28,7 +28,7 @@ Building Dynamic package:
 There are three different g++ flags that will add extra support to the application:
  *_OPENSSL_SUPPORT_: If defined, the application will be linked with openssl allowing https requests and HTTPS proxy interception.
  *_ZLIB_SUPPORT_ : If defined, the application will be linked with zlib libraries and therefore deflate and gzip compresion methods will be automatically handled by fhscan.
- *LINUX: Mandatory define to be used when compiling under a platform other than windows.
+ * LINUX: Mandatory define to be used when compiling under a platform other than windows.
 
 
 = Windows =
