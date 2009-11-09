@@ -4,9 +4,9 @@
 #include "FHScan.h"
 #include "estructuras.h"
 
-#include "../HTTPCoreClass/Authentication/md5.h"
-#include "../HTTPCoreClass/Authentication/base64.h"
-
+//#include "../HTTPCoreClass/Authentication/md5.h"
+//#include "../HTTPCoreClass/Authentication/base64.h"
+#include "../HTTPCoreClass/Authentication/encoders.h"
 #include "webforms.h"
 #include "Reporting/LogSettings.h"
 
@@ -24,6 +24,8 @@ extern   USERLIST *userpass;
 struct _webform WEBFORMS[MAX_WEBFORMS];
 int nWebforms=0;//=sizeof(WEBFORMS)/sizeof(struct _webform);
 extern int bruteforce;
+
+class encoders HTTPEncoder;
 
 
 
@@ -113,19 +115,19 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 					strncat(output,password,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 2:
-					Base64Encode((unsigned char *)tmp,(unsigned char *)username,( unsigned int )strlen(username));
+					HTTPEncoder.encodebase64((char *)tmp,(const char *)username,( unsigned int )strlen(username));
 					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 3:
-					Base64Encode((unsigned char *)tmp,(unsigned char *)password,( unsigned int )strlen(password));
+					HTTPEncoder.encodebase64((char *)tmp,(const char *)password,( unsigned int )strlen(password));
 					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 4:
-					Getmd5Hash(username,( unsigned int )strlen(username),(unsigned char *)tmp);
+					HTTPEncoder.GetMD5TextHash(tmp,username,( unsigned int )strlen(username));
 					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 5:
-					Getmd5Hash(password,( unsigned int )strlen(password),(unsigned char *)tmp);
+					HTTPEncoder.GetMD5TextHash(tmp,password,( unsigned int )strlen(password));
 					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 6:
@@ -154,12 +156,12 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 
 					break;
 				case 9:
-					Getmd5Hash(username,( unsigned int )strlen(username),(unsigned char *)tmp);
+					HTTPEncoder.GetMD5TextHash(tmp,username,( unsigned int )strlen(username));
 					tmp[16]='\0';
 					strncat(output,tmp,MAX_POST_LENGTH-( unsigned int )strlen(output));
 					break;
 				case 10:
-					Getmd5Hash(password,( unsigned int )strlen(password),(unsigned char *)tmp);
+					HTTPEncoder.GetMD5TextHash(tmp,password,( unsigned int )strlen(password));
 					tmp[16]='\0';
 					strncat(output,tmp,MAX_POST_LENGTH-( unsigned int )strlen(output));
 					break;
@@ -178,7 +180,7 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 						GenerateAuth(encodedpacket, decodedpacket,username,password,ip,port);
 						//printf("El paquete decoded es: %s\n",decodedpacket);
 
-						Getmd5Hash(decodedpacket,( unsigned int )strlen(decodedpacket),(unsigned char *)tmp);
+						HTTPEncoder.GetMD5TextHash(tmp,decodedpacket,( unsigned int )strlen(decodedpacket));
 						//printf("El hash es: %s\n",tmp);
 						strncat(output,tmp,MAX_POST_LENGTH-( unsigned int )strlen(output));
 						opt += 8 + strlen(encodedpacket) + 4 -13;

@@ -211,6 +211,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HTTPCoreClass\SSLModule.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\HTTPCoreClass\Threading.cpp"
 				>
 			</File>
@@ -250,27 +254,11 @@
 				Name="Authentication"
 				>
 				<File
-					RelativePath=".\HTTPCoreClass\Authentication\base64.cpp"
+					RelativePath=".\HTTPCoreClass\Authentication\encoders.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\HTTPCoreClass\Authentication\base64.h"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCoreClass\Authentication\digest.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCoreClass\Authentication\digest.h"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCoreClass\Authentication\md5.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCoreClass\Authentication\md5.h"
+					RelativePath=".\HTTPCoreClass\Authentication\encoders.h"
 					>
 				</File>
 				<File
@@ -418,6 +406,10 @@
 			</File>
 			<File
 				RelativePath=".\HTTPCoreClass\misc.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HTTPCoreClass\SSLModule.h"
 				>
 			</File>
 			<File

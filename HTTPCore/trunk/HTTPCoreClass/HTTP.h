@@ -10,8 +10,8 @@
 #include "HTTPData.h"
 #include "Threading.h"
 #include "CallBacks.h"
-
-
+#include "SSLModule.h"
+#include "Authentication/encoders.h"
 
 /* Options for SetHTTPConfig() and GetHTTPConfig() */
 enum HttpOptions 
@@ -62,7 +62,7 @@ enum HttpProxyoptions
 
 
 /***********************************************************************************************/
-class HTTPAPI 
+class HTTPAPI : public encoders
 {
 	
 	class HTTPAPIHANDLE GlobalHTTPCoreApiOptions;/*Global HANDLE Configuration Options */	

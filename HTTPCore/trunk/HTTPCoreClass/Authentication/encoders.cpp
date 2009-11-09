@@ -14,16 +14,21 @@ encoders::~encoders()
 
 /*************************************************************************************/
 
-char* encoders::decodebase64(char *input)
+char* encoders::decodebase64(char *lpoutput, const char *input)
 {
-	int inputlen = strlen(input);
+	int inputlen = (int)strlen(input);
 	int outputlen = (inputlen * 3) /4 +1;    /*estimated */
-
-	char *output = (char*) malloc( outputlen );
+	char *output = NULL;
+	if (lpoutput)
+	{
+		output = lpoutput;
+	} else {
+		output = (char*) malloc( outputlen );
+	}
 
 	BIO * b642  = BIO_NEW(BIO_F_BASE64());
 	BIO_SET_FLAGS(b642, BIO_FLAGS_BASE64_NO_NL);
-	BIO * bmem2 = BIO_NEW_MEM_BUF(input,inputlen);
+	BIO * bmem2 = BIO_NEW_MEM_BUF((void*)input,inputlen);
 	bmem2 = BIO_PUSH(b642, bmem2);
 	int olen = BIO_READ(bmem2, output, outputlen);
 	BIO_FREE_ALL(bmem2);
@@ -37,7 +42,7 @@ char* encoders::decodebase64(char *input)
 
 }
 
-char* encoders::encodebase64(char *input, unsigned int inputlen)
+char* encoders::encodebase64(char *lpoutput, const char *input, unsigned int inputlen)
 {
 	if (inputlen)
 	{
@@ -50,7 +55,13 @@ char* encoders::encodebase64(char *input, unsigned int inputlen)
 		BIO_GET_MEM_PTR(b642, &bptr);
 		if ( (bptr) && (bptr->length) )
 		{
-			char *output=(char*)malloc(bptr->length+1);
+			char *output;
+			if (lpoutput)
+			{
+				output = lpoutput;
+			} else {
+				output=(char*)malloc(bptr->length+1);
+			}
 			memcpy(output,bptr->data,bptr->length);
 			output[bptr->length]='\0';
 			/* remove \n */
@@ -61,20 +72,32 @@ char* encoders::encodebase64(char *input, unsigned int inputlen)
 	return(NULL);
 }
 
-unsigned char* encoders::GetMD2BinaryHash(const unsigned char *data, unsigned int len)
+unsigned char* encoders::GetMD2BinaryHash(char *lpoutput, const char *data, unsigned int len)
 {
-	unsigned char *result =  (unsigned char*)malloc(16);
+	unsigned char *output;
+	if (lpoutput)
+	{
+		output = (unsigned char*)lpoutput;
+	} else {
+		output = (unsigned char*) malloc( 16 );
+	}
 	MD2_CTX hash;
 	MD2_INIT(&hash);
 	MD2_UPDATE(&hash,data,len);
-	MD2_FINAL(result,&hash);
-	return(result);
+	MD2_FINAL(output,&hash);
+	return(output);
 }
 
-unsigned char* encoders::GetMD2TextHash(const unsigned char *data, unsigned int len)
+char* encoders::GetMD2TextHash(char *lpoutput, const char *data, unsigned int len)
 {
-	unsigned char md2sum[16];
-	unsigned char *result =  (unsigned char*)malloc(16*2+1);
+	unsigned char md2sum[16];	
+	unsigned char *result;
+	if (lpoutput)
+	{
+		result = (unsigned char*)lpoutput;
+	} else {
+		result =  (unsigned char*)malloc(16*2+1);
+	}
 	MD2_CTX hash;
 	#define a md2sum
 
@@ -86,12 +109,19 @@ unsigned char* encoders::GetMD2TextHash(const unsigned char *data, unsigned int 
 	 a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
 	 a[8], a[9], a[10],a[11],a[12],a[13],a[14],a[15]);
 	//result[32]='\0';
-	return(result);
+	return((char*)result);
 }
 
-unsigned char* encoders::GetMD4BinaryHash(const unsigned char *data, unsigned int len)
+unsigned char* encoders::GetMD4BinaryHash(char *lpoutput, const char *data, unsigned int len)
 {
-	unsigned char *result =  (unsigned char*)malloc(16);
+	unsigned char *result;
+	if (lpoutput)
+	{
+		result = (unsigned char*)lpoutput;
+	} else
+	{
+		result =  (unsigned char*)malloc(16);
+	}
 	MD4_CTX hash;
 	MD4_INIT(&hash);
 	MD4_UPDATE(&hash,data,len);
@@ -99,11 +129,19 @@ unsigned char* encoders::GetMD4BinaryHash(const unsigned char *data, unsigned in
 	return(result);
 }
 
-unsigned char* encoders::GetMD4TextHash(const unsigned char *data, unsigned int len)
+char* encoders::GetMD4TextHash(char *lpoutput, const char *data, unsigned int len)
 {
 	unsigned char md4sum[16];
-	unsigned char *result =  (unsigned char*)malloc(16*2+1);
+	unsigned char *result;
+	if (lpoutput)
+	{
+		result = (unsigned char*)lpoutput;
+	} else
+	{
+		result =  (unsigned char*)malloc(16*2+1);
+	}
 	MD4_CTX hash;
+	#undef a
 	#define a md4sum
 
 	MD4_INIT(&hash);
@@ -114,12 +152,19 @@ unsigned char* encoders::GetMD4TextHash(const unsigned char *data, unsigned int 
 	 a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
 	 a[8], a[9], a[10],a[11],a[12],a[13],a[14],a[15]);
 	//result[32]='\0';
-	return(result);
+	return((char*)result);
 }
 
-unsigned char* encoders::GetMD5BinaryHash(const unsigned char *data, unsigned int len)
+unsigned char* encoders::GetMD5BinaryHash(char *lpoutput, const char *data, unsigned int len)
 {
-	unsigned char *result =  (unsigned char*)malloc(16);
+	unsigned char *result ;
+	if (lpoutput)
+	{
+		result = (unsigned char*)lpoutput;
+	} else 
+	{
+		result =  (unsigned char*)malloc(16);
+	}
 	MD5_CTX hash;
 	MD5_INIT(&hash);
 	MD5_UPDATE(&hash,data,len);
@@ -127,11 +172,20 @@ unsigned char* encoders::GetMD5BinaryHash(const unsigned char *data, unsigned in
 	return(result);
 }
 
-unsigned char* encoders::GetMD5TextHash(const unsigned char *data, unsigned int len)
+char* encoders::GetMD5TextHash(char *lpoutput, const char *data, unsigned int len)
 {
 	unsigned char md5sum[16];
-	unsigned char *result =  (unsigned char*)malloc(16*2+1);
+	unsigned char *result;
+	if (lpoutput)
+	{
+		result = (unsigned char*)lpoutput;
+	} else
+	{
+		result =  (unsigned char*)malloc(16*2+1);
+	}
+	
 	MD5_CTX hash;
+	#undef a
 	#define a md5sum
 
 	MD5_INIT(&hash);
@@ -142,14 +196,20 @@ unsigned char* encoders::GetMD5TextHash(const unsigned char *data, unsigned int 
 	 a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
 	 a[8], a[9], a[10],a[11],a[12],a[13],a[14],a[15]);
 	//result[32]='\0';
-	return(result);
+	return((char*)result);
 }
 
 /******************************************************************************/
 
-unsigned char* encoders::GetSHA1BinaryHash(const unsigned char *data, unsigned int len)
+unsigned char* encoders::GetSHA1BinaryHash(char *lpoutput, const char *data, unsigned int len)
 {
-	unsigned char *result =  (unsigned char*)malloc(20);
+	unsigned char *result;
+	if (lpoutput)
+	{
+		result = (unsigned char*)lpoutput;
+	} else {
+		result =  (unsigned char*)malloc(20);
+	}
 	SHA_CTX hash;
 	SHA1_INIT(&hash);
 	SHA1_UPDATE(&hash,data,len);
@@ -157,11 +217,19 @@ unsigned char* encoders::GetSHA1BinaryHash(const unsigned char *data, unsigned i
 	return(result);
 }
 
-unsigned char* encoders::GetSHA1TextHash(const unsigned char *data, unsigned int len)
+char* encoders::GetSHA1TextHash(char *lpoutput, const char *data, unsigned int len)
 {
 	unsigned char sha1sum[20];
-	unsigned char *result =  (unsigned char*)malloc(20*2+1);
+	unsigned char *result;
+	if (lpoutput)
+	{
+		result = (unsigned char*)lpoutput;
+	} else 
+	{
+		result =  (unsigned char*)malloc(20*2+1);
+	}
 	SHA_CTX hash;
+	#undef a
 	#define a sha1sum
 
 	SHA1_INIT(&hash);
@@ -172,7 +240,7 @@ unsigned char* encoders::GetSHA1TextHash(const unsigned char *data, unsigned int
 	 a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
 	 a[8], a[9], a[10],a[11],a[12],a[13],a[14],a[15],
 	 a[16], a[17], a[18], a[19], a[20] );
-	return(result);
+	return((char*)result);
 }
 
 
@@ -290,7 +358,8 @@ strncat(data,tmp,sizeof(data)-strlen(data)-1);
 if (algorithm) strncat(data,"algorithm=MD5, ",sizeof(data)-strlen(data)-1);
 
 snprintf(tmp,sizeof(tmp),"%s:%s:%s",lpUsername,realm,lpPassword);
-Getmd5Hash(tmp,(int) strlen(tmp),(unsigned char*)&HAI[0]);
+//Getmd5Hash(tmp,(int) strlen(tmp),(unsigned char*)&HAI[0]);
+GetMD5TextHash((char*)&HAI[0],tmp,(int) strlen(tmp));
 //printf("HA1: %s - %s\n",tmp,HAI);
 
 	if (qop)
@@ -306,7 +375,8 @@ Getmd5Hash(tmp,(int) strlen(tmp),(unsigned char*)&HAI[0]);
 		snprintf(tmp,sizeof(tmp),"%s:%s:%s",method,uri,entityBody);
 	} else
 		snprintf(tmp,sizeof(tmp),"%s:%s",method,uri);
-		Getmd5Hash(tmp,(int) strlen(tmp),(unsigned char*)&HAII);
+		//Getmd5Hash(tmp,(int) strlen(tmp),(unsigned char*)&HAII);
+		GetMD5TextHash((char*)&HAII,tmp,(int) strlen(tmp));
 //	printf("HA2: %s - %s\n",tmp,HAII);
 
 
@@ -323,7 +393,8 @@ Getmd5Hash(tmp,(int) strlen(tmp),(unsigned char*)&HAI[0]);
 	{
 		snprintf(tmp,sizeof(tmp),"%s:%s:%s",HAI,nonce,HAII);
 	}
-	Getmd5Hash(tmp,(int) strlen(tmp),(unsigned char*)&response);
+	//Getmd5Hash(tmp,(int) strlen(tmp),(unsigned char*)&response);
+	GetMD5TextHash(&response[0],tmp,(int) strlen(tmp));
 
 //	printf("Calculado3: %s - %s\n",tmp,response);
 

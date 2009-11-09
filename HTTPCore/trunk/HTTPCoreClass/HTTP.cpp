@@ -5,9 +5,9 @@
 #include "CookieHandling.h"
 #include <stdlib.h>
 
-#include "Authentication/digest.h"
+//#include "Authentication/digest.h"
 #include "Authentication/ntlm.h"
-#include "Authentication/base64.h"
+//#include "Authentication/base64.h"
 
 #include "Modules/Encoding_Chunked.h"
 #include "Modules/Encoding_Deflate.h"
@@ -61,7 +61,11 @@ HTTPAPI::HTTPAPI()
 
 	for(int i=0;i<MAXIMUM_OPENED_HANDLES;i++) HTTPHandleTable[i]=NULL;
 #ifdef _OPENSSL_SUPPORT_
-	InitializeSSLLibrary();
+	int ret = InitializeSSLLibrary();
+	if (ret == 0)
+	{
+		exit(1);
+	}
 #endif
 
 	for (int i = 0;i< MAX_OPEN_CONNECTIONS; i++)
@@ -1003,8 +1007,11 @@ void HTTPAPI::BuildBasicAuthHeader(HTTPCSTR Header,HTTPCSTR lpUsername, HTTPCSTR
 
 	RawUserPass[sizeof(RawUserPass)-1]='\0';
 	snprintf(RawUserPass,sizeof(RawUserPass)-1,"%s:%s",lpUsername,lpPassword);
-	int ret = Base64Encode((unsigned HTTPSTR )EncodedUserPass,(unsigned HTTPSTR)RawUserPass,(int)strlen(RawUserPass));	
-	EncodedUserPass[ret]='\0';
+
+
+	this->encodebase64(EncodedUserPass,RawUserPass,(int)strlen(RawUserPass));	
+	//int ret = Base64Encode((unsigned HTTPSTR )EncodedUserPass,(unsigned HTTPSTR)RawUserPass,(int)strlen(RawUserPass));	
+	//EncodedUserPass[ret]='\0';
 	snprintf(destination,dstsize-1,"%s: Basic %s\r\n",Header,EncodedUserPass);
 
 }
