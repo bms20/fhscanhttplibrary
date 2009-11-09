@@ -38,17 +38,6 @@ SUCH DAMAGE.
 #include <stdlib.h>
 
 
-
-int InitializeSSLLibrary()
-{
-
-	return(1);
-}
-
-
-
-
-
 /*******************************************************************************************************/
 int ConnectionHandling::LimitIOBandwidth(unsigned long ChunkSize, struct timeval LastTime, struct timeval CurrentTime, int MAX_BW_LIMIT)
 {

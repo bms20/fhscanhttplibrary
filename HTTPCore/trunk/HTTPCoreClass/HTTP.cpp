@@ -77,10 +77,8 @@ int ThreadFunc(void *foo)
 	api->CleanConnectionTable(NULL);
 	return(0);
 }
-/*******************************************************************************************************/
 
-int InitializeSSLLibrary();
-/*******************************************************************************************/
+/*******************************************************************************************************/
 HTTPAPI::HTTPAPI()
 {
 #ifdef __WIN32__RELEASE__
@@ -88,11 +86,6 @@ HTTPAPI::HTTPAPI()
 #endif
 
 	for(int i=0;i<MAXIMUM_OPENED_HANDLES;i++) HTTPHandleTable[i]=NULL;
-	int ret = InitializeSSLLibrary();
-	if (ret == 0)
-	{
-		exit(1);
-	}
 
 	for (int i = 0;i< MAX_OPEN_CONNECTIONS; i++)
 	{
