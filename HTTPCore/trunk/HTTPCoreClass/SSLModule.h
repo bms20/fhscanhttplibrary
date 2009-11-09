@@ -16,7 +16,7 @@
  #define BIO_GET_MEM_PTR(b,pp)	BIO_CTRL(b,BIO_C_GET_BUF_MEM_PTR,0,(char *)pp)
  #define BIO_FLUSH(b)		(int)BIO_CTRL(b,BIO_CTRL_FLUSH,0,NULL)
 
- #ifdef __WIN32__RELEASE__
+
 	typedef SSL*        (*SSL_NEW_FUNC)(SSL_CTX*);
 	typedef void        (*SSL_FREE_FUNC)(SSL*);
 	typedef int         (*SSL_SHUTDOWN_FUNC)(SSL*);
@@ -180,11 +180,11 @@ public:
 	SHA1_INIT_FUNC 				SHA1_INIT;
 	SHA1_UPDATE_FUNC 			SHA1_UPDATE;
 	SHA1_FINAL_FUNC 			SHA1_FINAL;
-	SSLModule::SSLModule();
-	SSLModule::~SSLModule();
+	SSLModule();
+	~SSLModule();
 
 };
- #else
+/*
 	#define SSL_NEW SSL_new
 	#define SSL_FREE SSL_free
 	#define SSL_SHUTDOWN SSL_shutdown
@@ -237,12 +237,7 @@ public:
 	#define SHA1_INIT				SHA1_Init
 	#define SHA1_UPDATE				SHA1_Update
 	#define SHA1_FINAL				SHA1_Final
-class SSLModule
-{
-public:
-	SSLModule();
-	~SSLModule();
+	*/
 
-};
-	#endif
 #endif
+

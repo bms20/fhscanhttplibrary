@@ -1,10 +1,11 @@
 #include "SSLModule.h"
 
+int Initialized = 0;
 #ifdef __WIN32__RELEASE__
 #include "windows.h"
 HMODULE				f_hSSLEAY32 = NULL;
 HMODULE				f_hLIBEAY32 = NULL;
-int Initialized = 0;
+
 SSLModule::SSLModule()
 {
 	if ( (!f_hSSLEAY32) || (!f_hSSLEAY32) )
@@ -84,6 +85,58 @@ SSLModule::SSLModule()
 #else
 SSLModule::SSLModule()
 {
+	SSL_NEW= (SSL_NEW_FUNC)SSL_new;
+	SSL_FREE                           = (SSL_FREE_FUNC)SSL_free;
+	SSL_SHUTDOWN                       = (SSL_SHUTDOWN_FUNC)SSL_shutdown;
+	SSL_READ                           = (SSL_READ_FUNC)SSL_read;
+	SSL_WRITE                          = (SSL_WRITE_FUNC)SSL_write;
+	SSL_CTX_FREE                       = (SSL_CTX_FREE_FUNC)SSL_CTX_free;
+	SSL_CTX_NEW                        = (SSL_CTX_NEW_FUNC)SSL_CTX_new;
+	SSL_CONNECT                        = (SSL_CONNECT_FUNC)SSL_connect;
+	SSL_GET_ERROR                      = (SSL_GET_ERROR_FUNC)SSL_get_error;
+	SSL_SET_FD                         = (SSL_SET_FD_FUNC)SSL_set_fd;
+	SSL_PENDING                        = (SSL_PENDING_FUNC)SSL_pending;
+	TLSV1_CLIENT_METHOD                = (TLSV1_CLIENT_METHOD_FUNC)TLSv1_client_method;
+	SSL_LOAD_ERROR_STRINGS             = (SSL_LOAD_ERROR_STRINGS_FUNC)SSL_load_error_strings;
+	SSL_LIBRARY_INIT                   = (SSL_LIBRARY_INIT_FUNC)SSL_library_init;
+
+	SSLV23_METHOD                      = (SSLV23_METHOD_FUNC)SSLv23_method;
+	SSL_CTX_SET_DEFAULT_PASSWD_CB	   = (SSL_CTX_SET_DEFAULT_PASSWD_CB_FUNC) SSL_CTX_set_default_passwd_cb;
+	SSL_ACCEPT						   = (SSL_ACCEPT_FUNC)SSL_accept;
+	SSL_CTX_LOAD_VERIFY_LOCATIONS      = (SSL_CTX_LOAD_VERIFY_LOCATIONS_FUNC)SSL_CTX_load_verify_locations;
+	BIO_NEW_FILE					   = (BIO_NEW_FILE_FUNC)BIO_new_file;
+	SSL_CTX_USE_CERTIFICATE_CHAIN_FILE = (SSL_CTX_USE_CERTIFICATE_CHAIN_FILE_FUNC)SSL_CTX_use_certificate_chain_file;
+	BIO_NEW_SOCKET					   = (BIO_NEW_SOCKET_FUNC)BIO_new_socket;
+	BIO_FREE							= (BIO_FREE_FUNC)BIO_free;
+	BIO_NEW_FP						  = (BIO_NEW_FP_FUNC)BIO_new_fp;
+	SSL_SET_BIO      = (SSL_SET_BIO_FUNC)SSL_set_bio;
+	SSL_CTX_USE_PRIVATEKEY_FILE      = (SSL_CTX_USE_PRIVATEKEY_FILE_FUNC)SSL_CTX_use_PrivateKey_file;
+	SSL_CTX_CTRL      = (SSL_CTX_CTRL_FUNC)SSL_CTX_ctrl;
+	SSL_CTX_SET_VERIFY_DEPTH      = (SSL_CTX_SET_VERIFY_DEPTH_FUNC)SSL_CTX_set_verify_depth;
+	PEM_READ_BIO_DHPARAMS      = (PEM_READ_BIO_DHPARAMS_FUNC)PEM_read_bio_DHparams;
+
+	BIO_F_BASE64				  = (BIO_F_BASE64_FUNC)BIO_f_base64;
+	BIO_SET_FLAGS				  = (BIO_SET_FLAGS_FUNC)BIO_set_flags;
+	BIO_NEW						  = (BIO_NEW_FUNC)BIO_new;
+	BIO_PUSH					  = (BIO_PUSH_FUNC)BIO_push;
+	BIO_READ					  = (BIO_READ_FUNC)BIO_read;
+	BIO_WRITE					  = (BIO_WRITE_FUNC)BIO_write;
+	BIO_FREE_ALL				  = (BIO_FREE_ALL_FUNC)BIO_free_all;
+	BIO_NEW_MEM_BUF				  = (BIO_NEW_MEM_BUF_FUNC)BIO_new_mem_buf;
+	BIO_S_MEM                     = (BIO_S_MEM_FUNC)BIO_s_mem;
+	BIO_CTRL                      = (BIO_CTRL_FUNC)BIO_ctrl;
+	MD2_INIT                      = (MD2_INIT_FUNC)MD2_Init;
+	MD2_UPDATE                    = (MD2_UPDATE_FUNC)MD2_Update;
+	MD2_FINAL                     = (MD2_FINAL_FUNC)MD2_Final;
+	MD4_INIT                      = (MD4_INIT_FUNC)MD4_Init;
+	MD4_UPDATE                    = (MD4_UPDATE_FUNC)MD4_Update;
+	MD4_FINAL                     = (MD4_FINAL_FUNC)MD4_Final;
+	MD5_INIT                      = (MD5_INIT_FUNC)MD5_Init;
+	MD5_UPDATE                    = (MD5_UPDATE_FUNC)MD5_Update;
+	MD5_FINAL                     = (MD5_FINAL_FUNC)MD5_Final;
+	SHA1_INIT                     = (SHA1_INIT_FUNC)SHA1_Init;
+	SHA1_UPDATE                   = (SHA1_UPDATE_FUNC)SHA1_Update;
+	SHA1_FINAL                    = (SHA1_FINAL_FUNC)SHA1_Final;
 	if (!Initialized)
 	{
 		Initialized = 1;

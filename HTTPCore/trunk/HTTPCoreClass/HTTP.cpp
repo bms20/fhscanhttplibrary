@@ -1053,9 +1053,8 @@ int DispatchHTTPProxyRequestThreadFunc(void *foo)
 void *HTTPAPI::ListenConnection(void *foo)
 {
 	struct sockaddr_in sin;   
-	DWORD dwThread=0;
-
 #ifdef __WIN32__RELEASE__
+	DWORD dwThread=0;
 #else
 	pthread_t e_th;
 #endif

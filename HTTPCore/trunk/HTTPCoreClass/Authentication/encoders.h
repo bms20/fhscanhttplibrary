@@ -1,6 +1,5 @@
 #ifndef __HTTP_ENCODERS__
 #define __HTTP_ENCODERS__
-#include "../build.h"
 #include "../SSLModule.h"
 
 class encoders : public SSLModule

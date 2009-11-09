@@ -35,8 +35,6 @@
 
 
 
-
-
 #define HTTP_READ_TIMEOUT		10
 #define HTTP_CONN_TIMEOUT		10
 #define BUFFSIZE								4096 //default read buffer
