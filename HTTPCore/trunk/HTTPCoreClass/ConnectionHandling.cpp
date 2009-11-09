@@ -5,74 +5,16 @@
 #include <stdlib.h>
 
 
-#ifdef _OPENSSL_SUPPORT_
+
 int InitializeSSLLibrary()
 {
 
 	return(1);
 }
 
-static int password_cb(char *buf,int num, int rwflag,void *userdata)
-{
-	if(num<(int)strlen(PASSWORD)+1)
-		return(0);
-	strcpy(buf,PASSWORD);
-	return((int)strlen(PASSWORD));
-}
-
-int HTTPAPI::InitProxyCTX(void)
-{
-		SSL_METHOD *meth;
-		/* Load SSL options */
-		meth=SSLV23_METHOD();
-		ctx=SSL_CTX_NEW(meth);
-		if(!(SSL_CTX_USE_CERTIFICATE_CHAIN_FILE((SSL_CTX*)ctx, KEYFILE)))
-		{
-			printf("# SSL PROXY FATAL ERROR: Unable to read Certificate File\n");
-			return(0);
-		}
-		SSL_CTX_SET_DEFAULT_PASSWD_CB((SSL_CTX*)ctx, password_cb);
-		if(!(SSL_CTX_USE_PRIVATEKEY_FILE((SSL_CTX*)ctx,KEYFILE,SSL_FILETYPE_PEM)))
-		{
-			printf("# SSL PROXY FATAL ERROR: Unable to read key File\n");
-			return(0);
-		}
-
-		/* Load the CAs we trust*/
-		if(!(SSL_CTX_LOAD_VERIFY_LOCATIONS((SSL_CTX*)ctx, CA_LIST,0)))
-		{
-			printf("# SSL PROXY FATAL ERROR: Unable to read CA LIST\n");
-			return(0);
-		}
-#if (OPENSSL_VERSION_NUMBER < 0x00905100L)
-		SSL_CTX_SET_VERIFY_DEPTH((SSL_CTX*)ctx,1);
-#endif
 
 
-		DH *ret=0;
-		BIO *bio;
 
-		if ((bio=BIO_NEW_FILE(DHFILE,"r")) == NULL)
-		{
-			printf("# SSL PROXY FATAL ERROR: Unable to open DH file\n");
-
-			return(0);
-		}
-
-
-		ret=(DH*)PEM_READ_BIO_DHPARAMS(bio,NULL,NULL,NULL);
-		BIO_FREE(bio);
-
-		if(SSL_CTX_SET_TMP_DH((SSL_CTX*)ctx,ret)<0)
-		{
-			printf("# SSL PROXY FATAL ERROR: Unable to set DH parameters\n");
-
-			return(0);
-		}
-
-	return(1);
-}
-#endif
 
 /*******************************************************************************************************/
 int ConnectionHandling::LimitIOBandwidth(unsigned long ChunkSize, struct timeval LastTime, struct timeval CurrentTime, int MAX_BW_LIMIT)
@@ -164,13 +106,12 @@ ConnectionHandling::ConnectionHandling()
 	*targetDNS = 0;
 	port = 0;
 	datasock = 0;
-#ifdef _OPENSSL_SUPPORT_
 	ctx = NULL;
 	ssl = NULL;
 	bio_err = NULL;
 	NeedSSL = 0;
-#endif
-	#ifdef __WIN32__RELEASE__
+
+#ifdef __WIN32__RELEASE__
 	tlastused.dwHighDateTime = 0;
 	tlastused.dwLowDateTime = 0;
 #else
@@ -230,9 +171,7 @@ int ConnectionHandling::GetConnection(class HTTPAPIHANDLE *HTTPHandle)
 		io = 1;
 		target=HTTPHandle->GetTarget();
 		port=HTTPHandle->GetPort();
-#ifdef _OPENSSL_SUPPORT_
 		NeedSSL = HTTPHandle->IsSSLNeeded();
-#endif
 
 		if (HTTPHandle->ProxyEnabled())
 		{
@@ -269,7 +208,6 @@ int ConnectionHandling::GetConnection(class HTTPAPIHANDLE *HTTPHandle)
 void ConnectionHandling::Disconnect(void)
 {
 
-#ifdef _OPENSSL_SUPPORT_
 	if (NeedSSL)
 	{
 		if (ssl)
@@ -281,7 +219,6 @@ void ConnectionHandling::Disconnect(void)
 		ctx=NULL;
 		ssl = NULL;
 	}
-#endif
 	shutdown(datasock,2);
 	closesocket(datasock);
 	datasock = 0;
@@ -331,9 +268,7 @@ void ConnectionHandling::FreeConnection(void)
 	{
 		target=TARGET_FREE;
 		port=TARGET_FREE;
-#ifdef _OPENSSL_SUPPORT_
 		NeedSSL=TARGET_FREE;
-#endif
 	}
 	io=0;
 }
@@ -388,9 +323,7 @@ int ConnectionHandling::SendHTTPRequest(httpdata* request)
 #ifdef _DBG_
 	printf("\nSendHTTPRequest status:\n");
 	printf("ConnectionAgainstProxy: %i\n",ConnectionAgainstProxy);
-#ifdef _OPENSSL_SUPPORT_
 	printf("NeedSSL: %i\n",NeedSSL);
-#endif
 	printf("port: %i\n",port);
 	printf("conexion->NumberOfRequests: %i\n",NumberOfRequests);
 	printf("ENVIANDO: %s\n",request->Header);
@@ -398,8 +331,6 @@ int ConnectionHandling::SendHTTPRequest(httpdata* request)
 	if (!request)  return(0);
 
 
-
-#ifdef _OPENSSL_SUPPORT_
 	if ( (NeedSSL) && (!ssl) && 
 		( ((NumberOfRequests==0) && (!ConnectionAgainstProxy ) ) || //First SSL Request
 		(  (NumberOfRequests==1) && ( ConnectionAgainstProxy ) ) ) )   //Seccond HTTP Request against the HTTP Proxy Host
@@ -426,7 +357,7 @@ int ConnectionHandling::SendHTTPRequest(httpdata* request)
 		}
 	} else
 	{
-#endif
+
 		int err = send(datasock, request->Header, request->HeaderSize, 0);
 		if (err > 0)
 		{
@@ -443,9 +374,8 @@ int ConnectionHandling::SendHTTPRequest(httpdata* request)
 			return (0);
 		}
 
-#ifdef _OPENSSL_SUPPORT_
 	}
-#endif
+
 
 #ifdef __WIN32__RELEASE__
 	GetSystemTimeAsFileTime (&tlastused);
@@ -576,7 +506,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 			/* Verify that there is pending readable data (over ssl) */
 			if ((FD_ISSET(datasock, &fdread)) || pending)
 			{
-#ifdef _OPENSSL_SUPPORT_
+
 				if (ssl)
 				{
 					read_size=SSL_READ(ssl, buf, BytesToBeReaded> sizeof(buf)-1 ? sizeof(buf)-1 :BytesToBeReaded);
@@ -590,9 +520,6 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 				{
 					read_size = recv(datasock, buf, BytesToBeReaded > sizeof(buf) - 1 ? sizeof(buf) - 1 : BytesToBeReaded, 0);
 				}
-#else
-				read_size = recv(datasock, buf, BytesToBeReaded > sizeof(buf) - 1 ? sizeof(buf) - 1 : BytesToBeReaded, 0);
-#endif
 				if (read_size>0) buf[read_size]='\0'; else *buf='\0';
 #ifdef _DBG_
 				if (read_size>0)
@@ -675,7 +602,6 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 #define SOCKET_ERROR (-1)
 #endif
                 	UpdateLastConnectionActivityTime();
-#ifdef _OPENSSL_SUPPORT_
 					if (ProxyClientConnection->ssl)
 					{
 						if (SSL_WRITE(ProxyClientConnection->ssl,buf,read_size) <=0)
@@ -687,16 +613,14 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 						}
 					} else
 					{
-#endif
 						if (send(ProxyClientConnection->datasock,buf,read_size, 0) == SOCKET_ERROR ) 
 						{
 							/* Cancel the asyncronous request as the Proxy client have been disconnected somehow*/
 							BytesToBeReaded=0;
 							ConnectionClose=1;
 						}
-#ifdef _OPENSSL_SUPPORT_
 					}
-#endif
+
 				}
 				if  (HTTPIOMappingData)
 				{
@@ -1145,7 +1069,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	return (response);
 }
 /*******************************************************************************************/
-#ifdef _OPENSSL_SUPPORT_
+
 int ConnectionHandling::InitSSLConnection()
 {
 	if (NeedSSL)
@@ -1207,7 +1131,7 @@ int ConnectionHandling::InitSSLConnection()
 	}
 	return (1);
 }
-#endif
+
 /*******************************************************************************************/
 
 /*******************************************************************************************/
@@ -1249,12 +1173,12 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 			HTTPProxyClientRequestSize=0;
 		} else
 		{
-#ifdef _OPENSSL_SUPPORT_
+
 			if (!ssl)
 			{
-#endif
+
 				read_size=recv (datasock, buf, BytesPorLeer > sizeof(buf)-1 ? sizeof(buf)-1 :BytesPorLeer  ,0);
-#ifdef _OPENSSL_SUPPORT_
+
 			} else
 			{
 				/* Initializing SSL support */
@@ -1274,18 +1198,15 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 				read_size=SSL_READ(ssl, buf, BytesPorLeer > sizeof(buf)-1 ? sizeof(buf)-1 :BytesPorLeer);	
 				pending= SSL_PENDING(ssl);
 			}
-#endif
 			if (read_size<=0)
 			{
 				if (lpBuffer) free(lpBuffer);
 				if (response) delete response;//FreeHTTPData(response);
 
 #ifdef _DBG_
-#ifdef _OPENSSL_SUPPORT_		
+		
 				printf("DESCONEXION del Cliente... (leidos 0 bytes - SSL: %i)\n",ssl!=NULL);
-#else
-				printf("DESCONEXION del Cliente... (leidos 0 bytes - SSL: %i)\n",0);
-#endif
+
 #endif
 				//FreeConnection(conexion);
 				ConnectionClose=1;
@@ -1419,7 +1340,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 	return(response);
 }
 /*******************************************************************************************/
-#ifdef _OPENSSL_SUPPORT_	
+	
 void ConnectionHandling::SetCTX(void *proxyctx)
 	{
 		BIO					*sbio;
@@ -1428,5 +1349,5 @@ void ConnectionHandling::SetCTX(void *proxyctx)
 		ssl=SSL_NEW(ctx);
 		SSL_SET_BIO(ssl,sbio,sbio);
 	}
-#endif
+
 /*******************************************************************************************/

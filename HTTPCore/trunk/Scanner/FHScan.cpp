@@ -278,13 +278,6 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 	int SSLREQUEST = ( (Fullurl[4]=='s') || ( Fullurl[4]=='S') );
 	int port;
 	char *path = NULL;
-	#ifndef _OPENSSL_SUPPORT_
-		if (SSLREQUEST) {
-			printf("[-] Error. SSL support is not enabled\n");
-			return;
-		}
-	#endif
-
 	char *host =  Fullurl + 7 +  SSLREQUEST;
 	char *p = strchr(host,':');
 	char *x =strchr(host,'/');
@@ -400,7 +393,7 @@ void HTTPProxy(HTTPAPI *api)
 }
 
 /*******************************************************************************/
-
+#include "../HTTPCoreClass/Authentication/encoders.h"
 #ifdef __WIN32__RELEASE__
 int __cdecl main(int argc, char *argv[]){
 	HANDLE *thread;
@@ -409,7 +402,7 @@ int main(int argc, char *argv[]){
 	pthread_t e_th;
 #endif
 
-  	int ret;
+	int ret;
 	HTTPAPI *api = new (HTTPAPI);
 
 	ret = LoadConfigurationFiles( api,argc,argv);

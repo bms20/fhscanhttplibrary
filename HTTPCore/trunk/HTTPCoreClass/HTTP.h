@@ -72,6 +72,8 @@ class HTTPAPI : public encoders
 	class Threading HandleLock;			/* internal Threads */
 	class Threading lock;				/* internal Threads */
 	class Threading ProxyEngine;		/* internal Threads */
+	//class encoders HTTPEncoder;
+	//class SSLModule HTTPS;
 	#ifdef __WIN32__RELEASE__
 	WSADATA ws;							/* Win32 Sockets */
 	#endif
@@ -85,11 +87,9 @@ class HTTPAPI : public encoders
 	int DisableBrowserCache ;			/* Proxy configuration option */
 	int ConnectMethodAllowed;			/* Proxy configuration option */
 	int UseOriginalUserAgent;			/* Proxy configuration option */
-	#ifdef _OPENSSL_SUPPORT_
 	void *ctx;							/* Proxy SSL vars */
 	void *bio_err;						/* Proxy SSL vars */
 	int InitProxyCTX(void);
-	#endif
 	char	*FHScanUserAgent;			/* HTTPAPI User Agent */
 	class CookieStatus *COOKIE;         /* Automatic Cookie Handling struct */
 	

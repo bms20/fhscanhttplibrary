@@ -25,9 +25,7 @@ class HTTPAPIHANDLE {
 #else
 	pthread_t   ThreadID;
 #endif
-	#ifdef _OPENSSL_SUPPORT_
 	int 		NeedSSL;
-	#endif
 	int 		version;
 	HTTPSTR		AdditionalHeader;
 	HTTPSTR		Cookie;
@@ -58,11 +56,7 @@ public:
 	int GetPort() { return(port); }
 	int IsSSLNeeded() 
 	{ 		
-		#ifdef _OPENSSL_SUPPORT_
 			return NeedSSL; 
-		#else
-			return 0;
-		#endif
 	}
 	int ProxyEnabled() { return (lpProxyHost != NULL);}
 	int GetDownloadBwLimit() { if (DownloadBwLimit) return atoi(DownloadBwLimit); else return(0); }

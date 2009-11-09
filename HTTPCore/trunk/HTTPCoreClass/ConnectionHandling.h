@@ -28,22 +28,12 @@
 #define FILETIME time_t
 #endif
 
-#ifdef _OPENSSL_SUPPORT_
-/*
- #include <openssl/crypto.h>
- #include <openssl/x509.h>
- #include <openssl/pem.h>
- #include <openssl/ssl.h>
- #include <openssl/err.h>
- #define SSL_CTX_SET_TMP_DH(ctx,dh) \
-		 SSL_CTX_CTRL(ctx,SSL_CTRL_SET_TMP_DH,0,(char *)dh)
-*/
- 	#define KEYFILE		"server.pem"
-	#define CA_LIST		"root.pem"
-	#define PASSWORD	"password"
-	#define DHFILE		"dh1024.pem"
+#define KEYFILE		"server.pem"
+#define CA_LIST		"root.pem"
+#define PASSWORD	"password"
+#define DHFILE		"dh1024.pem"
 
-#endif /* USE_SSL */
+
 
 
 
@@ -66,12 +56,12 @@ class ConnectionHandling : public SSLModule
 	long 			 target;
 	char 			 targetDNS[256];
 	int 			 port;
-	#ifdef _OPENSSL_SUPPORT_
+	
 	int 			 NeedSSL; //IsSSLNeeded
 	SSL_CTX *		 ctx;
 	SSL *			 ssl;
 	BIO				*bio_err;
-	#endif
+
 	unsigned int	 datasock;
 	struct sockaddr_in webserver;
 	//FILETIME 		 tlastused;
@@ -107,9 +97,8 @@ class ConnectionHandling : public SSLModule
 	int LimitIOBandwidth(unsigned long ChunkSize, struct timeval LastTime, struct timeval CurrentTime, int MAX_BW_LIMIT);
 	int StablishConnection(void);
 
-	#ifdef _OPENSSL_SUPPORT_
+	
 		int InitSSLConnection();
-	#endif
 public:
 	FILETIME 		 tlastused;
 	ConnectionHandling();
@@ -157,7 +146,7 @@ public:
 	#endif
     }
 
-	#ifdef _OPENSSL_SUPPORT_
+	
 	void *IsSSLInitialized() { return (void*)ssl; }	
 	void SetBioErr(void *bio)
 	{
@@ -165,10 +154,7 @@ public:
 	}
 
 	void SetCTX(void *proxyctx);
-	#else
-	void *IsSSLInitialized() { return(NULL); }
 
-	#endif
 
 
 };

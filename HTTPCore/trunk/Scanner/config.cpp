@@ -441,9 +441,7 @@ void usage(void) {
 	printf("  --hosts   <ip1[-range][,hostname]>  (ex: --hosts 192.168.1.1-255,10.0.0.0-255.255,www.tarasco.org)\n");
 	printf("  --threads <threads>                 (Number of threads.  default 10)\n");
 	printf("  --ports <port>[,<port>,<port>,..]   (example --p 80,81,82,8080) default --ports 80\n");
-#ifdef _OPENSSL_SUPPORT_
 	printf("  --sslports <port>[,<port>,<port>,..](example -P 443,1443)\n");
-#endif
 	printf("  --logdir <directory>                (Optional report log directory)\n");
 	printf("\n Advanced options:\n");
 	printf("  --timeout <timeout>                 (Connection Timeout. default 10)\n");
@@ -474,11 +472,7 @@ void usage(void) {
 	printf("\n");
 
 	printf(" Example:\n");
-#ifdef _OPENSSL_SUPPORT_
 	printf(" fhscan --ports 80 --sslports 443,1433 --hosts 192.168.0.1-192.168.1.254,10.0.0.0-255  --threads 200\n\n");
-#else
-	printf(" fhscan --ports 80,81 --hosts 192.168.0.1-192.168.1.254  --threads 200\n\n");
-#endif
 	return;
 
 }
@@ -578,7 +572,7 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 											}
 											i++;
 										} else
-#ifdef _OPENSSL_SUPPORT_
+
 											if ( (strcmp( argv[i],"--sslports")==0) || (strcmp( argv[i],"--sslport")==0) ){
 												p=strtok(argv[i+1],",");
 												while (p!=NULL) {
@@ -589,7 +583,7 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 												}
 												i++;
 											} else
-#endif
+
 
 												if (strcmp( argv[i],"--threads")==0) {
 													nthreads=atoi(argv[i+1]);

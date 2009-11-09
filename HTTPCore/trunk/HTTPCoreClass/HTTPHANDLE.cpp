@@ -34,9 +34,7 @@ HTTPAPIHANDLE::HTTPAPIHANDLE(void)
 	*targetDNS = 0;
 	port = 0;
 	ThreadID = 0;
-	#ifdef _OPENSSL_SUPPORT_
 	NeedSSL = 0;
-	#endif
 	version=0;
 	AdditionalHeader = NULL;
 	Cookie = NULL;
@@ -83,11 +81,8 @@ int HTTPAPIHANDLE::InitHandle(HTTPSTR hostname,int HTTPPort,int ssl)
 	strncpy(targetDNS, hostname ,sizeof(targetDNS)-1);
 	targetDNS[sizeof(targetDNS)-1]='\0';
 	port			= HTTPPort;
-	#ifdef _OPENSSL_SUPPORT_
+
 	NeedSSL			= ssl;
-	#else
-	if (ssl) return(0);
-	#endif
 	version			= 1;
 	ThreadID		= 0;
 	AdditionalHeader = NULL;
@@ -117,9 +112,7 @@ HTTPAPIHANDLE::~HTTPAPIHANDLE()
 	target = 0;
 	*targetDNS=0;
 	port = 0;
-	#ifdef _OPENSSL_SUPPORT_
 	NeedSSL = 0;
-	#endif
 	version=0;
 	if (AdditionalHeader) free(AdditionalHeader);
 	AdditionalHeader = NULL;
@@ -404,17 +397,11 @@ HTTPSTR HTTPAPIHANDLE::GetHTTPConfig(int opt)
 		sprintf(lpTmpData,"%i",version);
 		return (lpTmpData);
 	case ConfigSSLSupported:
-		#ifdef _OPENSSL_SUPPORT_
 		strcpy(lpTmpData,"1");
-		#else
-		strcpy(lpTmpData,"0");
-		#endif
 		return (lpTmpData);
-	#ifdef _OPENSSL_SUPPORT_
 	case ConfigSSLConnection:
 		sprintf(lpTmpData,"%i",NeedSSL);
 		return (lpTmpData);
-	#endif
 	case ConfigMaxDownloadSize:
 		return (DownloadLimit);
 	case ConfigCookieHandling:
@@ -438,9 +425,7 @@ void *HTTPAPIHANDLE::ParseReturnedBuffer(struct httpdata *request, struct httpda
 	strncpy(data->hostname,targetDNS,sizeof(data->hostname)-1);
 	data->ip=target;
 	data->port=port;
-	#ifdef _OPENSSL_SUPPORT_
 	data->NeedSSL = NeedSSL;
-	#endif
 	data->request=request;
 	data->response=response;
 	data->server=response->GetServerVersion();

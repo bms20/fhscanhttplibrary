@@ -49,9 +49,8 @@ int ThreadFunc(void *foo)
 	return(0);
 }
 /*******************************************************************************************************/
-#ifdef _OPENSSL_SUPPORT_
+
 int InitializeSSLLibrary();
-#endif
 /*******************************************************************************************/
 HTTPAPI::HTTPAPI()
 {
@@ -60,13 +59,11 @@ HTTPAPI::HTTPAPI()
 #endif
 
 	for(int i=0;i<MAXIMUM_OPENED_HANDLES;i++) HTTPHandleTable[i]=NULL;
-#ifdef _OPENSSL_SUPPORT_
 	int ret = InitializeSSLLibrary();
 	if (ret == 0)
 	{
 		exit(1);
 	}
-#endif
 
 	for (int i = 0;i< MAX_OPEN_CONNECTIONS; i++)
 	{
@@ -1009,7 +1006,7 @@ void HTTPAPI::BuildBasicAuthHeader(HTTPCSTR Header,HTTPCSTR lpUsername, HTTPCSTR
 	snprintf(RawUserPass,sizeof(RawUserPass)-1,"%s:%s",lpUsername,lpPassword);
 
 
-	this->encodebase64(EncodedUserPass,RawUserPass,(int)strlen(RawUserPass));	
+	encodebase64(EncodedUserPass,RawUserPass,(int)strlen(RawUserPass));
 	//int ret = Base64Encode((unsigned HTTPSTR )EncodedUserPass,(unsigned HTTPSTR)RawUserPass,(int)strlen(RawUserPass));	
 	//EncodedUserPass[ret]='\0';
 	snprintf(destination,dstsize-1,"%s: Basic %s\r\n",Header,EncodedUserPass);
@@ -1152,13 +1149,12 @@ int	HTTPAPI::InitHTTPProxy(HTTPCSTR hostname, unsigned short port)
 		DisableBrowserCache   = 1;
 		ConnectMethodAllowed  = 1;
 		UseOriginalUserAgent  = 0;
-#ifdef _OPENSSL_SUPPORT_
+
 		int ret = InitProxyCTX();
 		if (!ret)
 		{
 			return(0);
 		}
-#endif
 		ProxyEngine.InitThread((void*)ListenConnectionThreadFunc,(void*)this);
 		/* This is disabled by default in our Proxy server */
 		this->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigCookieHandling,0);
@@ -1208,9 +1204,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 	unsigned long		ret = 0;
 	int					ConnectionClose = 0;
 
-#ifdef _OPENSSL_SUPPORT_
 	ClientConnection->SetBioErr(bio_err);
-#endif
 	/* Read an HTTP request from the connected client */
 	while ( (!ConnectionClose) && (ProxyRequest=ClientConnection->ReadHTTPProxyRequestData()) )
 	{
@@ -1361,15 +1355,12 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 
 					if (strcmp(method,"CONNECT")==0) 
 					{  /*Initialize the SSL Tunnel and replay the client with a "Connection stablished 200 OK" message*/
-#ifdef _OPENSSL_SUPPORT_
+
 						httpdata*  HTTPTunnel= this->BuildHTTPProxyResponseHeader(ClientConnection->IsSSLInitialized()!=NULL,0,200,protocol,"Connection established","Proxy-connection: Keep-alive",NULL,-1,-1);
 						ClientConnection->SendHTTPRequest( HTTPTunnel);
 						delete HTTPTunnel;
 
 						ClientConnection->SetCTX(ctx);
-#else
-						SendHTTPProxyErrorMessage( ClientConnection,0, 403,protocol, "Blocked Request", (HTTPSTR) 0, "SSL NOT SUPPORTED." );
-#endif
 					} else 
 					{   /* Parse the HTTP request Headers before sending */
 						unsigned long ret;
@@ -1794,4 +1785,66 @@ httpdata* HTTPAPI::BuildHTTPProxyResponseHeader( int isSSLStablished,int closeco
 		strcat(headers,"\r\n"); 
 	}
 	return new httpdata (headers);
+}
+/****************************************************************************************/
+static int password_cb(char *buf,int num, int rwflag,void *userdata)
+{
+	if(num<(int)strlen(PASSWORD)+1)
+		return(0);
+	strcpy(buf,PASSWORD);
+	return((int)strlen(PASSWORD));
+}
+
+
+int HTTPAPI::InitProxyCTX(void)
+{
+		SSL_METHOD *meth;
+		/* Load SSL options */
+		meth=SSLV23_METHOD();
+		ctx=SSL_CTX_NEW(meth);
+		if(!(SSL_CTX_USE_CERTIFICATE_CHAIN_FILE((SSL_CTX*)ctx, KEYFILE)))
+		{
+			printf("# SSL PROXY FATAL ERROR: Unable to read Certificate File\n");
+			return(0);
+		}
+		SSL_CTX_SET_DEFAULT_PASSWD_CB((SSL_CTX*)ctx, password_cb);
+		if(!(SSL_CTX_USE_PRIVATEKEY_FILE((SSL_CTX*)ctx,KEYFILE,SSL_FILETYPE_PEM)))
+		{
+			printf("# SSL PROXY FATAL ERROR: Unable to read key File\n");
+			return(0);
+		}
+
+		/* Load the CAs we trust*/
+		if(!(SSL_CTX_LOAD_VERIFY_LOCATIONS((SSL_CTX*)ctx, CA_LIST,0)))
+		{
+			printf("# SSL PROXY FATAL ERROR: Unable to read CA LIST\n");
+			return(0);
+		}
+#if (OPENSSL_VERSION_NUMBER < 0x00905100L)
+		SSL_CTX_SET_VERIFY_DEPTH((SSL_CTX*)ctx,1);
+#endif
+
+
+		DH *ret=0;
+		BIO *bio;
+
+		if ((bio=BIO_NEW_FILE(DHFILE,"r")) == NULL)
+		{
+			printf("# SSL PROXY FATAL ERROR: Unable to open DH file\n");
+
+			return(0);
+		}
+
+
+		ret=(DH*)PEM_READ_BIO_DHPARAMS(bio,NULL,NULL,NULL);
+		BIO_FREE(bio);
+
+		if(SSL_CTX_SET_TMP_DH((SSL_CTX*)ctx,ret)<0)
+		{
+			printf("# SSL PROXY FATAL ERROR: Unable to set DH parameters\n");
+
+			return(0);
+		}
+
+	return(1);
 }

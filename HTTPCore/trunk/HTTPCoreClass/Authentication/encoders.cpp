@@ -1,10 +1,9 @@
 #include "encoders.h"
-#include "../build.h"
+
 
 
 encoders::encoders()
 {
-
 }
 
 encoders::~encoders()
@@ -50,7 +49,7 @@ char* encoders::encodebase64(char *lpoutput, const char *input, unsigned int inp
 		BIO * bmem2 = BIO_NEW(BIO_S_MEM());
 		b642 = BIO_PUSH(b642, bmem2);
 		BIO_WRITE(b642, input, inputlen);
-		BIO_FLUSH(b642);
+		BIO_CTRL(b642,BIO_CTRL_FLUSH,0,NULL);
 		BUF_MEM *bptr = NULL;
 		BIO_GET_MEM_PTR(b642, &bptr);
 		if ( (bptr) && (bptr->length) )
@@ -161,7 +160,7 @@ unsigned char* encoders::GetMD5BinaryHash(char *lpoutput, const char *data, unsi
 	if (lpoutput)
 	{
 		result = (unsigned char*)lpoutput;
-	} else 
+	} else
 	{
 		result =  (unsigned char*)malloc(16);
 	}
@@ -183,7 +182,7 @@ char* encoders::GetMD5TextHash(char *lpoutput, const char *data, unsigned int le
 	{
 		result =  (unsigned char*)malloc(16*2+1);
 	}
-	
+
 	MD5_CTX hash;
 	#undef a
 	#define a md5sum
@@ -224,7 +223,7 @@ char* encoders::GetSHA1TextHash(char *lpoutput, const char *data, unsigned int l
 	if (lpoutput)
 	{
 		result = (unsigned char*)lpoutput;
-	} else 
+	} else
 	{
 		result =  (unsigned char*)malloc(20*2+1);
 	}
