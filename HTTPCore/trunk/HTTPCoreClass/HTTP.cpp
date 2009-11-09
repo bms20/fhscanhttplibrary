@@ -1,14 +1,43 @@
+/*
+Copyright (C) 2007 - 2009  fhscan project.
+Andres Tarasco - http://www.tarasco.org/security
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+   must display the following acknowledgement:
+    This product includes software developed by Andres Tarasco fhscan 
+    project and its contributors.
+4. Neither the name of the project nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+*/
 #include <stdio.h>
+#include <stdlib.h>
 #include "Build.h"
 #include "HTTP.h"
 #include "ConnectionHandling.h"
 #include "CookieHandling.h"
-#include <stdlib.h>
-
-//#include "Authentication/digest.h"
-#include "Authentication/ntlm.h"
-//#include "Authentication/base64.h"
-
 #include "Modules/Encoding_Chunked.h"
 #include "Modules/Encoding_Deflate.h"
 #ifdef __WIN32__RELEASE__
@@ -691,16 +720,10 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 
 		case NTLM_AUTH:
 		case NEGOTIATE_AUTH:
-			unsigned char buf2[4096];
 			unsigned char buf1[4096];
 			memset(buf1,'\0',sizeof(buf1));
-			memset(buf2,'\0',sizeof(buf2));
-
-			BuildAuthRequest((tSmbNtlmAuthRequest*)buf2,0,NULL,NULL);
-			to64frombits(buf1, buf2, (int)SmbLength((tSmbNtlmAuthResponse*)buf2));
-			snprintf(tmp,MAX_HEADER_SIZE-1,"Authorization: NTLM %s\r\n",buf1);
+			snprintf(tmp,MAX_HEADER_SIZE-1,"Authorization: NTLM %s\r\n",GetNTLMBase64Packet1((char*)buf1));
 			request->AddHeader(tmp);
-
 			response=DispatchHTTPRequest(HTTPHandle,request);
 			request->RemoveHeader("Authorization:");
 			RealHTTPHandle->SetLastRequestedUri(url);
@@ -712,10 +735,7 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 			{   /*Parse NTLM Message Type 2 */
 				HTTPSTR NTLMresponse = response->GetHeaderValue("WWW-Authenticate: NTLM ",0);
 				if (!NTLMresponse)  break;  /* WWW-Authenticate: NTLM Header not Found */
-				from64tobits((HTTPSTR )&buf1[0], NTLMresponse); /* Build NTLM Message Type 3 */
-				buildAuthResponse((tSmbNtlmAuthChallenge*)buf1,(tSmbNtlmAuthResponse*)buf2,0,lpUsername,lpPassword,NULL,NULL);
-				to64frombits(buf1, buf2, (int)SmbLength((tSmbNtlmAuthResponse*)buf2));
-				snprintf(tmp,MAX_HEADER_SIZE-1,"Authorization: NTLM %s\r\n",buf1);
+				snprintf(tmp,MAX_HEADER_SIZE-1,"Authorization: NTLM %s\r\n",GetNTLMBase64Packet3((char*)buf1,NTLMresponse,lpUsername,lpPassword));
 				request->AddHeader(tmp);
 				free(NTLMresponse);
 				delete(response); response = NULL;

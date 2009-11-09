@@ -1,4 +1,39 @@
+/*
+Copyright (C) 2007 - 2009  fhscan project.
+Andres Tarasco - http://www.tarasco.org/security
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+   must display the following acknowledgement:
+    This product includes software developed by Andres Tarasco fhscan 
+    project and its contributors.
+4. Neither the name of the project nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+*/
 #include "encoders.h"
+#include "ntlm.h"
 #include "../Build.h"
 
 
@@ -12,6 +47,32 @@ encoders::~encoders()
 
 
 /*************************************************************************************/
+char *encoders::GetNTLMBase64Packet1(char* destination)
+{
+	unsigned char NTLMHeader[4096];
+	memset(NTLMHeader,'\0',sizeof(NTLMHeader));
+
+	BuildAuthRequest((tSmbNtlmAuthRequest*)NTLMHeader,0,NULL,NULL);
+	return ( encodebase64(destination,(char*)NTLMHeader,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMHeader)));
+}
+/*************************************************************************************/
+char *encoders::GetNTLMBase64Packet3(char*destination, const char* NTLMresponse, const char *lpUsername, const char* lpPassword)
+{
+	char *NTLMPacket2[4096];
+	unsigned char *NTLMPacket3[4096];
+	memset(NTLMPacket2,0,sizeof(NTLMPacket2));
+	memset(NTLMPacket3,0,sizeof(NTLMPacket3));
+
+	decodebase64((char*)NTLMPacket2,NTLMresponse);
+	//from64tobits((HTTPSTR )&buf1[0], NTLMresponse); /* Build NTLM Message Type 3 */
+	
+	buildAuthResponse((tSmbNtlmAuthChallenge*)NTLMPacket2,(tSmbNtlmAuthResponse*)NTLMPacket3,0,lpUsername,lpPassword,NULL,NULL);
+	encodebase64((char*)destination,(const char*)NTLMPacket3,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMPacket3));
+	return (destination);
+
+}
+/*************************************************************************************/
+
 
 char* encoders::decodebase64(char *lpoutput, const char *input)
 {

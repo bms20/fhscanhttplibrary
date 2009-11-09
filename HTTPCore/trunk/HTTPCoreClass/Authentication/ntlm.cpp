@@ -1345,7 +1345,7 @@ void dumpAuthResponse(FILE *fp, tSmbNtlmAuthResponse *response)
 
 
 
-
+#if 0
 /*
  * base64.c -- base-64 conversion routines.
  *
@@ -1447,3 +1447,4 @@ int from64tobits(char *out, const char *in)
 }
 
 /* base64.c ends here */
+#endif
