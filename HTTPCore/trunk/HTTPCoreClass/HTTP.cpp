@@ -1763,7 +1763,7 @@ void HTTPAPI::ExtractCookiesFromResponseData(httpdata* response, const char *lpP
 			lpCookie = response->GetHeaderValue("Set-Cookie:",n);
 			if (lpCookie)
 			{
-				printf("Extraido: %s\n",lpCookie);
+				//printf("Extraido: %s\n",lpCookie);
 				COOKIE->ParseCookieData(lpCookie,lpPath,TargetDNS);
 				n++;
 			} 
