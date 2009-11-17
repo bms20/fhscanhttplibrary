@@ -33,7 +33,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 */
 /** \file CookieHandling.h
-* Fast HTTP Auth Scanner - HTTP Engine v1.3.
+* Fast HTTP Auth Scanner - HTTP Engine v1.4.
 * This include file contains functions needed to Handle Cookies From the HTTP API.
 * \author Andres Tarasco Acuna - http://www.tarasco.org
 */

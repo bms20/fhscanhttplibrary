@@ -51,7 +51,7 @@ using namespace std;
 
 #define PURGETIME						20  //20 secconds
 #define MAX_INACTIVE_CONNECTION 		10000000 *PURGETIME
-#define FHSCANUSERAGENT 				"Mozilla/5.0 (compatible; MSIE 7.0; FHScan Core 1.3)"
+#define FHSCANUSERAGENT 				"Mozilla/5.0 (compatible; MSIE 7.0; FHScan Core 1.4)"
 #define MAX_HEADER_SIZE					8192
 #define SERVER_NAME						"FSCAN HTTP Proxy"
 #define RFC1123FMT						"%a, %d %b %Y %H:%M:%S GMT"

@@ -412,14 +412,14 @@ int main(int argc, char *argv[]){
 			delete api;
 			return(0);
 		case 2:
-			printf("HTTP Proxy Engine v1.3\n");
+			printf("HTTP Proxy Engine v1.4\n");
 			printf("(c) Andres Tarasco - http://www.tarasco.org/security\n\n");
 			printf("[+] Initializing HTTP/[s] Proxy Engine... \n");
 			HTTPProxy(api);
 			delete api;
 			return(1);
 		case 3:
-			printf(" FHSCAN v1.3 - Manual HTTP Request\n");
+			printf(" FHSCAN v1.4 - Manual HTTP Request\n");
 			printf(" (c) Andres Tarasco - http://www.tarasco.org/security\n\n");
 			ManualHTTPRequestMode(api); 
 			free(Fullurl);
@@ -427,7 +427,7 @@ int main(int argc, char *argv[]){
 			return(1);
 		default:
 			if (!csv) {
-				printf(" FHSCAN - HTTP vulnerability Scanner v1.3\n");
+				printf(" FHSCAN - HTTP vulnerability Scanner v1.4\n");
 				printf("(c) Andres Tarasco - http://www.tarasco.org/security\n\n");
 			}			
 			api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigMaxDownloadSize,"1024000"); /*Set the maximum download limit to 1Mb */

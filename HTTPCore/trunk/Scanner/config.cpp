@@ -431,7 +431,7 @@ int LoadRouterAuth(const char *path) {
 
 
 void usage(void) {
-	printf(" Fast HTTP vulnerability Scanner (FHScan) v1.3\n");
+	printf(" Fast HTTP vulnerability Scanner (FHScan) v1.4\n");
 	printf(" (c) Andres Tarasco - http://www.tarasco.org\n\n");
 #ifdef __WIN32__RELEASE__
 	printf("\n Usage: fhscan.exe  <parameters>\n\n");

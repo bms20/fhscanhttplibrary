@@ -34,7 +34,7 @@ SUCH DAMAGE.
 
 */
 /** \file FileMapping.h
- * Fast HTTP Auth Scanner - HTTP Engine v1.3.
+ * Fast HTTP Auth Scanner - HTTP Engine v1.4.
  * This include file contains all needed information to manage File mappings.
  * \author Andres Tarasco Acuna - http://www.tarasco.org
  */

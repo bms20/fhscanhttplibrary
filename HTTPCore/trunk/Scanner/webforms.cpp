@@ -15,7 +15,7 @@
 //TODO: snprintf(data->server,sizeof(data->server)-1,"(%s)",WEBFORMS[i].model);
 // incluir el soporte de modelo cuando la aplicacion no encuentra vulnerabilidades...
 //TODO: Verificar porque algunas autetnticaciones web forms dejan logs como:
-//81.34.217.9 	0 	0 		root 	/password 	(null)
+//81.44.217.9 	0 	0 		root 	/password 	(null)
 
 extern int nUsers;
 extern	USERLOGIN	    *logins;

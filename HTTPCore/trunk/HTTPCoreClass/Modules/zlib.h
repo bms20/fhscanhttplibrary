@@ -679,7 +679,7 @@ ZEXTERN int ZEXPORT deflateSetHeader OF((z_streamp strm,
    a zero byte, and that if extra is not Z_NULL, that extra_len bytes are
    available there.  If hcrc is true, a gzip header crc is included.  Note that
    the current versions of the command-line version of gzip (up through version
-   1.3.x) do not support header crc's, and will report that it is a "multi-part
+   1.4.x) do not support header crc's, and will report that it is a "multi-part
    gzip file" and give up.
 
       If deflateSetHeader is not used, the default gzip header has text false,
