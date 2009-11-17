@@ -54,6 +54,9 @@ SUCH DAMAGE.
 		 SSL_CTX_CTRL(ctx,SSL_CTRL_SET_TMP_DH,0,(char *)dh)
  #define BIO_GET_MEM_PTR(b,pp)	BIO_CTRL(b,BIO_C_GET_BUF_MEM_PTR,0,(char *)pp)
  #define BIO_FLUSH(b)		(int)BIO_CTRL(b,BIO_CTRL_FLUSH,0,NULL)
+ #ifdef BIO_set_flags /* compatibility check with older openssl library */	
+	#define BIO_SET_FLAGS_FUNC BIO_set_flags
+#endif
 
 
 	typedef SSL*        (*SSL_NEW_FUNC)(SSL_CTX*);
@@ -146,8 +149,6 @@ public:
 	BIO_F_BASE64_FUNC           BIO_F_BASE64;
 #ifndef BIO_set_flags /* compatibility check with older openssl library */
 	BIO_SET_FLAGS_FUNC          BIO_SET_FLAGS;
-#else
-	#define BIO_SET_FLAGS_FUNC BIO_set_flags
 #endif
 	BIO_NEW_FUNC                BIO_NEW;
 	BIO_PUSH_FUNC               BIO_PUSH;
