@@ -45,7 +45,7 @@ SUCH DAMAGE.
 #include "Threading.h"
 #include "CallBacks.h"
 #include "SSLModule.h"
-#include "Authentication/encoders.h"
+#include "encoders.h"
 
 /* Options for SetHTTPConfig() and GetHTTPConfig() */
 enum HttpOptions 

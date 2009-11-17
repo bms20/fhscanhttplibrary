@@ -187,6 +187,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HTTPCore\encoders.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\HTTPCore\Encoding_Chunked.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\HTTPCore\Encoding_Deflate.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\HTTPCore\FileMapping.cpp"
 				>
 			</File>
@@ -211,6 +223,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HTTPCore\ntlm.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\HTTPCore\SSLModule.cpp"
 				>
 			</File>
@@ -222,46 +238,6 @@
 				RelativePath=".\HTTPCore\Tree.cpp"
 				>
 			</File>
-			<Filter
-				Name="Modules"
-				>
-				<File
-					RelativePath=".\HTTPCore\Modules\Encoding_Chunked.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCore\Modules\Encoding_Chunked.h"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCore\Modules\Encoding_Deflate.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCore\Modules\Encoding_Deflate.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Authentication"
-				>
-				<File
-					RelativePath=".\HTTPCore\Authentication\encoders.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCore\Authentication\encoders.h"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCore\Authentication\ntlm.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCore\Authentication\ntlm.h"
-					>
-				</File>
-			</Filter>
 			<Filter
 				Name="Scanner"
 				>
@@ -377,6 +353,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HTTPCore\encoders.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HTTPCore\Encoding_Chunked.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HTTPCore\Encoding_Deflate.h"
+				>
+			</File>
+			<File
 				RelativePath=".\HTTPCore\FileMapping.h"
 				>
 			</File>
@@ -401,6 +389,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HTTPCore\ntlm.h"
+				>
+			</File>
+			<File
 				RelativePath=".\HTTPCore\SSLModule.h"
 				>
 			</File>
@@ -410,6 +402,14 @@
 			</File>
 			<File
 				RelativePath=".\HTTPCore\Tree.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HTTPCore\zconf.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HTTPCore\zlib.h"
 				>
 			</File>
 		</Filter>

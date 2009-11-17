@@ -38,8 +38,8 @@ SUCH DAMAGE.
 #include "HTTP.h"
 #include "ConnectionHandling.h"
 #include "CookieHandling.h"
-#include "Modules/Encoding_Chunked.h"
-#include "Modules/Encoding_Deflate.h"
+#include "Encoding_Chunked.h"
+#include "Encoding_Deflate.h"
 #ifdef __WIN32__RELEASE__
 #pragma comment(lib,"ws2_32.lib")
 #endif
