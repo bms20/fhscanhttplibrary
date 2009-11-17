@@ -9,7 +9,7 @@
 * References: http://en.wikipedia.org/wiki/Digest_access_authentication
 */
 
-#include "md5.h"
+//#include "md5.h"
 #include "../Build.h"
 #include "digest.h"
 #include <stdio.h>
