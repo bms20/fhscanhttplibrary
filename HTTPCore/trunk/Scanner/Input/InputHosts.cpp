@@ -12,22 +12,34 @@ extern int          nports;
 extern struct       _ports ports[MAX_PORTS];
 
 /******************************************************************************/
-int AddNewTarget(unsigned long ip, char *hostname, int port, int ssl)
+int AddNewTarget(unsigned long ip,unsigned long endip, char *hostname, int port, int ssl)
 {
 	struct sockaddr_in iip;
 	iip.sin_addr.s_addr = htonl((long)ip);
 	//printf("Añadido: %s\n",inet_ntoa(iip.sin_addr));
 
-	targets = (PTARGETS) realloc(targets,sizeof(TARGETS)*(ntargets+1));
-	if (ip == 0) {
+
+	if (ip == 0)
+	{
+    	targets = (PTARGETS) realloc(targets,sizeof(TARGETS)*(ntargets+1));
 		targets[ntargets].hostname = strdup(hostname);
-	} else {
-		targets[ntargets].hostname = NULL;
-		targets[ntargets].currentip = ip;
+		targets[ntargets].port=port;
+		targets[ntargets].ssl=ssl;
+		ntargets++;
+		return(ntargets);
+	} else
+	{
+		targets = (PTARGETS) realloc(targets,sizeof(TARGETS)*(ntargets+(endip-ip)));
+		while (ip!=endip)
+		{
+        	targets[ntargets].hostname = NULL;
+			targets[ntargets].currentip = ip;
+			targets[ntargets].port=port;
+			targets[ntargets].ssl=ssl;
+			ntargets++;
+			ip++;
+		}
 	}
-	targets[ntargets].port=port;
-	targets[ntargets].ssl=ssl;
-	ntargets++;
 	return(ntargets);
 }
 
@@ -120,13 +132,13 @@ int Parseipfile(FILE *ipfile)
 					*p=0;
 					p++;
 				}
-				AddNewTarget(0,line,atoi(p),0);
+				AddNewTarget(0,0,line,atoi(p),0);
 				total++;
 			} else 
 			{
 				for(int k=0;k<nports;k++)
 				{
-					AddNewTarget(0,line,ports[k].port,ports[k].ssl);
+					AddNewTarget(0,0,line,ports[k].port,ports[k].ssl);
 					total++;
 				}
 			}
@@ -160,7 +172,7 @@ int ParseHosts( char *lphosts)
 		if (i != 4) { //assume its a hostname
 			for(int k=0;k<nports;k++)
 			{
-				AddNewTarget(0,chunk,ports[k].port,ports[k].ssl);
+				AddNewTarget(0,0,chunk,ports[k].port,ports[k].ssl);
 				total++;
 			}
 		} else 
@@ -215,21 +227,13 @@ int ParseHosts( char *lphosts)
 						exit(1);
 					}
 
-					do {
-						for(int k=0;k<nports;k++)
-						{
-							AddNewTarget(ipaddr,NULL,ports[k].port,ports[k].ssl);
-							total++;
-						}
-						ipaddr++;
-					} while (ipaddr <= endipaddr);
-
+					for(int k=0;k<nports;k++) AddNewTarget(ipaddr,endipaddr,NULL,ports[k].port,ports[k].ssl); 
 
 			} else 
 			{
 				for(int k=0;k<nports;k++)
 				{
-					AddNewTarget(ipaddr,NULL,ports[k].port,ports[k].ssl);
+					AddNewTarget(ipaddr,ipaddr+1,NULL,ports[k].port,ports[k].ssl);
 					total++;
 				}
 			}

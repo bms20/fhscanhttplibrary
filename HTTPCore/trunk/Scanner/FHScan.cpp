@@ -425,7 +425,8 @@ int main(int argc, char *argv[]){
 			delete api;
 			return(1);
 		default:
-			if (!csv) {
+			if (!csv) 
+			{
 				printf(" FHSCAN - HTTP vulnerability Scanner v1.4\n");
 				printf("(c) Andres Tarasco - http://www.tarasco.org/security\n\n");
 			}			
