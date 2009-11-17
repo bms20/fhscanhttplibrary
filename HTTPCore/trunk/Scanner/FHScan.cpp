@@ -175,7 +175,10 @@ void *ScanHosts(void *ptr) {
 			{
 				char tmp[256];
 				sprintf(tmp,"%s\n",hostname);
-				fwrite(tmp,1,strlen(tmp),dump);
+				if (dump)
+				{
+					fwrite(tmp,1,strlen(tmp),dump);
+				}
 				if (VulnChecks)
 				{
 

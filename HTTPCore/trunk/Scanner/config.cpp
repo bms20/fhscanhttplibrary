@@ -534,10 +534,10 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 			if (strcmp( argv[i],"--proxyScanOnly")==0)
 			{
 				proxyScanOnly = 1;
+				bruteforce = 0;
 			} else
-
-
-			if (strcmp( argv[i],"--nobruteforce")==0) {
+			if (strcmp( argv[i],"--nobruteforce")==0)
+			{
 				bruteforce=0;
 			} else
 			 if (strcmp( argv[i],"--EnableProxy")==0) {
@@ -658,14 +658,7 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 	} else {
 		if (!csv) printf("[+] Loaded %i user/pass combinations\n",i);
 	}
-	/*   i=LoadIgnoreList("IgnoreList.ini");
-	if (!i) {
-	printf("[-] Unable to load Ignore List\n");
-	return(1);
-	} else {
-	printf("[+] Loaded %i ignored webservers\n",i);
-	}
-	*/
+
 	nRouterAuth=LoadRouterAuth("RouterAuth.ini");
 	if (!nRouterAuth) {
 		if (!csv) printf("[-] Unable to load Router Auth engine\n");
@@ -722,15 +715,15 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 	#ifdef XML_LIBRARY
 	if (nmap) ParseNmapXMLFile(nmap);
 	#endif
-	if (hosts) nhosts = ParseHosts(hosts);	
+	if (hosts) nhosts = ParseHosts(hosts);
 	if (ipfile) nhosts += Parseipfile(ipfile);
 
 
 
 
-	if (( (nhosts==0) && (ipfile==NULL) 
+	if (( (nhosts==0) && (ipfile==NULL)
 #ifdef XML_LIBRARY
-		&& (!nmap) 
+		&& (!nmap)
 #endif
 		)  ) usage();
 
