@@ -175,78 +175,70 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\HTTPCoreClass\CallBacks.cpp"
+				RelativePath=".\HTTPCore\CallBacks.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\ConnectionHandling.cpp"
+				RelativePath=".\HTTPCore\ConnectionHandling.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\CookieHandling.cpp"
+				RelativePath=".\HTTPCore\CookieHandling.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\FileMapping.cpp"
+				RelativePath=".\HTTPCore\FileMapping.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\HtmlParser.cpp"
+				RelativePath=".\HTTPCore\HtmlParser.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\HTTP.cpp"
+				RelativePath=".\HTTPCore\HTTP.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\HTTPData.cpp"
+				RelativePath=".\HTTPCore\HTTPData.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\HTTPHANDLE.cpp"
+				RelativePath=".\HTTPCore\HTTPHANDLE.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\misc.cpp"
+				RelativePath=".\HTTPCore\misc.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\SSLModule.cpp"
+				RelativePath=".\HTTPCore\SSLModule.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\Threading.cpp"
+				RelativePath=".\HTTPCore\Threading.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\Tree.cpp"
+				RelativePath=".\HTTPCore\Tree.cpp"
 				>
 			</File>
 			<Filter
 				Name="Modules"
 				>
 				<File
-					RelativePath=".\HTTPCoreClass\Modules\Encoding_Chunked.cpp"
+					RelativePath=".\HTTPCore\Modules\Encoding_Chunked.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\HTTPCoreClass\Modules\Encoding_Chunked.h"
+					RelativePath=".\HTTPCore\Modules\Encoding_Chunked.h"
 					>
 				</File>
 				<File
-					RelativePath=".\HTTPCoreClass\Modules\Encoding_Deflate.cpp"
+					RelativePath=".\HTTPCore\Modules\Encoding_Deflate.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\HTTPCoreClass\Modules\Encoding_Deflate.h"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCoreClass\Modules\zconf.h"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPCoreClass\Modules\zlib.h"
+					RelativePath=".\HTTPCore\Modules\Encoding_Deflate.h"
 					>
 				</File>
 			</Filter>
@@ -254,19 +246,19 @@
 				Name="Authentication"
 				>
 				<File
-					RelativePath=".\HTTPCoreClass\Authentication\encoders.cpp"
+					RelativePath=".\HTTPCore\Authentication\encoders.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\HTTPCoreClass\Authentication\encoders.h"
+					RelativePath=".\HTTPCore\Authentication\encoders.h"
 					>
 				</File>
 				<File
-					RelativePath=".\HTTPCoreClass\Authentication\ntlm.cpp"
+					RelativePath=".\HTTPCore\Authentication\ntlm.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\HTTPCoreClass\Authentication\ntlm.h"
+					RelativePath=".\HTTPCore\Authentication\ntlm.h"
 					>
 				</File>
 			</Filter>
@@ -369,55 +361,55 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\HTTPCoreClass\Build.h"
+				RelativePath=".\HTTPCore\Build.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\CallBacks.h"
+				RelativePath=".\HTTPCore\CallBacks.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\ConnectionHandling.h"
+				RelativePath=".\HTTPCore\ConnectionHandling.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\CookieHandling.h"
+				RelativePath=".\HTTPCore\CookieHandling.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\FileMapping.h"
+				RelativePath=".\HTTPCore\FileMapping.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\HtmlParser.h"
+				RelativePath=".\HTTPCore\HtmlParser.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\HTTP.h"
+				RelativePath=".\HTTPCore\HTTP.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\HTTPData.h"
+				RelativePath=".\HTTPCore\HTTPData.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\HTTPHANDLE.h"
+				RelativePath=".\HTTPCore\HTTPHANDLE.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\misc.h"
+				RelativePath=".\HTTPCore\misc.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\SSLModule.h"
+				RelativePath=".\HTTPCore\SSLModule.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\Threading.h"
+				RelativePath=".\HTTPCore\Threading.h"
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCoreClass\Tree.h"
+				RelativePath=".\HTTPCore\Tree.h"
 				>
 			</File>
 		</Filter>
