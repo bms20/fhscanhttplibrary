@@ -1395,7 +1395,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 
 							if  (UseOriginalUserAgent) 
 							{   /* By default SendHttpRequest() will append their own user-Agent header, so we must override it */
-								SetHTTPConfig(HTTPHandle,ConfigUserAgent,NULL);
+								SetHTTPConfig(HTTPHandle,ConfigUserAgent,(const char*)NULL);
 							}
 
 							do	
@@ -1454,7 +1454,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 							PREQUEST data = SendHttpRequest(HTTPHandle,vhost ? vhost : host,method,path,ProxyRequest->Data,ProxyRequest->DataSize,NULL,NULL);
 
 							/* Clean the HTTPHandle options */
-							SetHTTPConfig(HTTPHandle,ConfigAdditionalHeader,NULL);
+							SetHTTPConfig(HTTPHandle,ConfigAdditionalHeader,(const char*)NULL);
 							if (vhost) free(vhost);
 
 							if   (data) 
