@@ -499,3 +499,4 @@ GetMD5TextHash((char*)&HAI[0],tmp,(int) strlen(tmp));
 
 	return(resultado);
 }
+

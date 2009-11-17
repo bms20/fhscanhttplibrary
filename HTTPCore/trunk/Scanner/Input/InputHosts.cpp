@@ -199,7 +199,7 @@ int ParseHosts( char *lphosts)
 					IP2[0]=IP1[0];
 					break;
 				default:
-					exit(1);
+					//exit(1);
 					break;
                 }
 					for (i = 0; i < 4; i++)

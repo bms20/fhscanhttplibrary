@@ -166,7 +166,7 @@ CookieStatus::~CookieStatus()
 
 
 
- /* Ripped from wget */
+/* Ripped from wget */
 int CookieStatus::numeric_address_p (const char *addr)
 {
 	const char *p = addr;
@@ -446,7 +446,9 @@ int CookieStatus::ParseCookieData(char *lpCookieData, const char *lpPath, const 
                 }
 				if (deletecookie)
 				{
+#ifdef _DBG_
                 	printf("OLD DATE: %s\n",end);
+#endif
 
 				}
 			}
@@ -478,7 +480,9 @@ int CookieStatus::ParseCookieData(char *lpCookieData, const char *lpPath, const 
 				secure =1;
 			} else
 			{
+#ifdef _DBG_
 				printf("Ignored Unknown Cookie Flag: %s\n",start);
+#endif
 			}
 		}
 		p=strtok(NULL,";");
