@@ -162,9 +162,7 @@ int HTTPIOMapping::InitializeFileMapping(unsigned int DataSize,char *lpData)
 				return(0);
 			}
 #else
-			//strcpy(BufferedFileName,tempnam(NULL,"FHScan") );
 			strcpy(BufferedFileName,"/tmp/Fhscan.XXXXXX");
-			//hTmpFilename  = open(BufferedFileName,O_RDWR | O_CREAT , S_IRUSR | S_IWUSR | S_IRGRP);
 			hTmpFilename = mkstemp(BufferedFileName);
 			if (hTmpFilename<0)
 			{
