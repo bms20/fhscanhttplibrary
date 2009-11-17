@@ -14,12 +14,12 @@ case "$1" in
 	echo "cleaning files..."
   	rm -rf *.o 
 	rm -rf release/Fhscan 
-	rm -rf HTTPCore13.so 
-	rm -rf /usr/lib/HTTPCore13.so 
+	rm -rf HTTPCore14.so 
+	rm -rf /usr/lib/HTTPCore14.so 
   ;;
   static)
   	echo starting static build...
-	g++  -DLINUX  -D_OPENSSL_SUPPORT_ -D_ZLIB_SUPPORT_  -lpthread -lssl -lz HTTPCoreClass/*.cpp HTTPCoreClass/Authentication/*.cpp HTTPCoreClass/Modules/*.cpp Scanner/*.cpp Scanner/Input/*.cpp Scanner/Reporting/*.cpp -o release/Fhscan
+	g++  -DLINUX  -D_ZLIB_SUPPORT_  -lpthread -lssl -lz HTTPCoreClass/*.cpp HTTPCoreClass/Authentication/*.cpp HTTPCoreClass/Modules/*.cpp Scanner/*.cpp Scanner/Input/*.cpp Scanner/Reporting/*.cpp -o release/Fhscan
   ;;
   debug)
         echo starting static build...
@@ -33,16 +33,17 @@ case "$1" in
            exit 1
         fi
 	echo "Starting dynamic build..."
-	g++  -DLINUX  -D_OPENSSL_SUPPORT_ -D_ZLIB_SUPPORT_  -c -fPIC HTTPCoreClass/*.cpp HTTPCoreClass/Authentication/*.cpp HTTPCoreClass/Modules/*.cpp
-	g++ -shared -o HTTPCore13.so -fPIC *.o
-	cp HTTPCore13.so /usr/lib/
-	g++  -lpthread -lssl -lz -DLINUX  -D_OPENSSL_SUPPORT_ -D_ZLIB_SUPPORT_ Scanner/*.cpp Scanner/Input/*.cpp Scanner/Reporting/*.cpp HTTPCore13.so -o release/Fhscan
+	g++  -DLINUX  -D_ZLIB_SUPPORT_  -c -fPIC HTTPCoreClass/*.cpp HTTPCoreClass/Authentication/*.cpp HTTPCoreClass/Modules/*.cpp
+	g++ -shared -o HTTPCore14.so -fPIC *.o
+	cp HTTPCore14.so /usr/lib/libHTTPCore.so
+	ln -s /
+	g++  -lpthread -lssl -lz -lHTTPCore -DLINUX -D_ZLIB_SUPPORT_ Scanner/*.cpp Scanner/Input/*.cpp Scanner/Reporting/*.cpp -o release/Fhscan
 	rm -rf *.o
 	;;
   *)
-    echo "FHscan v1.3 Build script"
+    echo "FHscan v1.4 Build script"
     echo "Usage: ./build.sh  {debug|static|dynamic|clean}"
-    echo "       *NOTE* dynamic build will add HTTPCore13.so to /usr/lib so you require root privileges."
+    echo "       *NOTE* dynamic build will add HTTPCore.so to /usr/lib so you require root privileges."
     exit 1
     ;;
 esac
