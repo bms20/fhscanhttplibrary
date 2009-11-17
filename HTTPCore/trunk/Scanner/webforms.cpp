@@ -264,7 +264,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST reque
 		do {
 			if (AdditionalHeader[0]!='\0') api->SetHTTPConfig(HTTPHandle,ConfigCookie,AdditionalHeader);
 			new_data=api->SendHttpRequest(HTTPHandle,NULL,WEBFORMS[webform].authmethod,WEBFORMS[webform].authurl,post,(unsigned int) strlen(post),NULL,NULL);
-			if (AdditionalHeader[0]!='\0') api->SetHTTPConfig(HTTPHandle,ConfigCookie,NULL);
+			if (AdditionalHeader[0]!='\0') api->SetHTTPConfig(HTTPHandle,ConfigCookie,(const char*)NULL);
 
 			if ( (!new_data) || (!new_data->IsValidHTTPResponse()) )
 			{

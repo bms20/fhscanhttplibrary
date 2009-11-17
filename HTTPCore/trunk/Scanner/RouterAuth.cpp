@@ -71,7 +71,7 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,stru
 				api->SetHTTPConfig(HTTPHandle,ConfigCookie,AuthData->postdata);
 				//new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,NULL,0,userpass[k].UserName,userpass[k].Password,challenge);
 				new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,NULL,0,userpass[k].UserName,userpass[k].Password);
-				api->SetHTTPConfig(HTTPHandle,ConfigCookie,NULL);
+				api->SetHTTPConfig(HTTPHandle,ConfigCookie,(const char*)NULL);
 			}
 
 			if ( (new_response) &&(new_response->IsValidHTTPResponse()) ) break;
@@ -166,7 +166,7 @@ PREQUEST CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,int nR
 					if (CookieNeeded) {
 						api->SetHTTPConfig(HTTPHandle,ConfigCookie,lpcookie);//AuthData[i].postdata);
 						response=api->SendHttpRequest( HTTPHandle,NULL,AuthData[i].method,AuthData[i].authurl,NULL,0,NULL,NULL);
-						api->SetHTTPConfig(HTTPHandle,ConfigCookie,NULL);
+						api->SetHTTPConfig(HTTPHandle,ConfigCookie,(const char*)NULL);
 						free(lpcookie);
 					} else {
 						response=api->SendHttpRequest( HTTPHandle,NULL,AuthData[i].method,AuthData[i].authurl,AuthData[i].postdata,(unsigned int)strlen(AuthData[i].postdata),NULL,NULL);
