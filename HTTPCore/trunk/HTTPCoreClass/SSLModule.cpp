@@ -152,7 +152,7 @@ SSLModule::SSLModule()
 	PEM_READ_BIO_DHPARAMS      = (PEM_READ_BIO_DHPARAMS_FUNC)PEM_read_bio_DHparams;
 
 	BIO_F_BASE64				  = (BIO_F_BASE64_FUNC)BIO_f_base64;
-#ifndef (BIO_set_flags)
+#ifndef BIO_set_flags
 	BIO_SET_FLAGS				  = (BIO_SET_FLAGS_FUNC)BIO_set_flags;
 #endif
 	BIO_NEW						  = (BIO_NEW_FUNC)BIO_new;
