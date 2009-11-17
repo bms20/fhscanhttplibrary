@@ -55,7 +55,7 @@ SUCH DAMAGE.
  #define BIO_GET_MEM_PTR(b,pp)	BIO_CTRL(b,BIO_C_GET_BUF_MEM_PTR,0,(char *)pp)
  #define BIO_FLUSH(b)		(int)BIO_CTRL(b,BIO_CTRL_FLUSH,0,NULL)
  #ifdef BIO_set_flags /* compatibility check with older openssl library */	
-	#define BIO_SET_FLAGS_FUNC BIO_set_flags
+	#define BIO_SET_FLAGS BIO_set_flags
 #endif
 
 
