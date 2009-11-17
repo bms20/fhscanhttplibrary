@@ -434,45 +434,42 @@ void usage(void) {
 	printf(" Fast HTTP vulnerability Scanner (FHScan) v1.4\n");
 	printf(" (c) Andres Tarasco - http://www.tarasco.org\n\n");
 #ifdef __WIN32__RELEASE__
-	printf("\n Usage: fhscan.exe  <parameters>\n\n");
+	printf(" Usage: fhscan.exe  <parameters>\n\n");
 #else
-	printf("\n Usage: ./fhscan  <parameters>\n\n");
+	printf(" Usage: ./fhscan  <parameters>\n\n");
 #endif
-	printf("  --hosts   <ip1[-range][,hostname]>  (ex: --hosts 192.168.1.1-255,10.0.0.0-255.255,www.tarasco.org)\n");
-	printf("  --threads <threads>                 (Number of threads.  default 10)\n");
-	printf("  --ports <port>[,<port>,<port>,..]   (example --p 80,81,82,8080) default --ports 80\n");
-	printf("  --sslports <port>[,<port>,<port>,..](example -P 443,1443)\n");
-	printf("  --logdir <directory>                (Optional report log directory)\n");
-	printf("\n Advanced options:\n");
-	printf("  --timeout <timeout>                 (Connection Timeout. default 10)\n");
-	printf("  --ipfile  <ipfile>                  (scan hosts from <ipfile>)\n");
+	printf(" --hosts <ip1[-range][,hosts]>    ex: --hosts 192.168.1.1-255.255,www.google.com\n");
+	printf(" --threads <threads>              Number of threads.  default 10\n");
+	printf(" --ports <port>[,<port>,..]       example --p 80,81,82,8080 (default --ports 80)\n");
+	printf(" --sslports <sport>[,<sport>,,..] example -P 443,1443\n");
+	printf(" --logdir <directory>             Optional report log directory\n");
+	printf("\n **Advanced options:\n");
+	printf(" --ipfile  <ipfile>               Scan hosts from <ipfile>\n");
 #ifdef XML_LIBRARY
-	printf("  --NmapFile <scan.xml>               (scan hosts and ports from an nmap result file)\n");
+	printf(" --NmapFile <scan.xml>            scan hosts and ports from an nmap result file\n");
 #endif
-	printf("  --fulluserlist                      (Test biggest user list (slowest but more accurate)\n");   
-	printf("  --verbose                           (show verbose fingerprint information, not only vulnerabilities)\n");
-	printf("  --nobruteforce                      (Disable bruteforce (enabled by default) )\n");
-	printf("  --proxyScanOnly                     (Only checks if the remote HTTP host is acting as a proxy server)\n");
+	printf(" --fulluserlist                   Complete user list (slowest but more accurate)\n");   
+	printf(" --verbose                        Display verbose console information\n");
+	printf(" --nobruteforce                   Disable bruteforce (enabled by default)\n");
+	printf(" --proxyScanOnly                  Only searchs for HTTP proxy servers\n");
 
-
-	printf("  --csv                               (Formatted data is sent to stderr to support external applications)\n");
-	printf("  --proxy http://host:port            (Allows FHScan to scan remote servers through proxy)\n");
-	printf("  --proxyauth <username> <password>   (set username and password for the HTTP proxy)\n");
-
-	printf("\n Other options\n");
-	printf("  --update                            (Search online for updated signatures or application)\n");
-	printf("  --EnableProxy                       (*New*  Starts an HTTP Proxy on port 8080 and displays requests)\n");
-	printf("\n Manual request\n");
-	printf("  --request http[s]://host[:p][/url]  (Do an HTTP request. example: --request http://www.tarasco.org/\n");
-	printf("  --showlinks [link type]             (extract Hyperlinks from requested url)\n");
-	printf("  --showresponse                      (Displays the remote HTTP response data)\n");
-	printf("  --data  <data>                      (Add additional data to be submitted though an HTTP Request)\n");
-	printf("  --vhost  <vhost>                    (Alternate Host header)\n");
-	printf("  --method <method>                   (Alternate HTTP method. By default GET)\n");
+	printf(" --csv                            CSV formated output\n");
+	printf(" --proxy http://host:port         Scan remote servers through HTTP proxy\n");
+	printf(" --proxyauth <user> <passwd>      Set username and password for the HTTP proxy\n");
+	printf("\n **Other options\n");
+	printf(" --update                         Download latest Fhscan release\n");
+	printf(" --EnableProxy                    Starts an HTTP Proxy instance at port 8080\n");
+	printf("\n **Manual request\n");
+	printf(" --request http[s]://host[:port][/url] Perform an HTTP request.\n");
+	printf(" --showlinks [link type]          Extract hyperlinks from requested url\n");
+	printf(" --showresponse                   Displays the remote HTTP response data\n");
+	printf(" --data <data>                    Post data to be submitted though HTTP\n");
+	printf(" --vhost <vhost>                  Alternate Host header\n");
+	printf(" --method <method>                Alternate HTTP method (GET by default)\n");
 	printf("\n");
 
-	printf(" Example:\n");
-	printf(" fhscan --ports 80 --sslports 443,1433 --hosts 192.168.0.1-192.168.1.254,10.0.0.0-255  --threads 200\n\n");
+	printf(" **Example:\n");
+	printf(" fhscan --ports 80 --sslports 443,1433 --hosts 192.168.0.1-192.168.1.254 --threads 200\n\n");
 	return;
 
 }

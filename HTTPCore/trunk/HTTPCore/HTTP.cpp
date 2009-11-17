@@ -830,7 +830,13 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTP
 /*******************************************************************************************/
 PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData)
 {
-	return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,PostData,(unsigned int)strlen(PostData),NULL,NULL);
+	if  (PostData)
+	{
+		return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,PostData,(unsigned int)strlen(PostData),NULL,NULL);
+	} else
+	{
+		return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,NULL,0,NULL,NULL);
+	}
 }
 /*******************************************************************************************/
 PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
