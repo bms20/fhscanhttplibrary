@@ -227,7 +227,11 @@ int ParseHosts( char *lphosts)
 						exit(1);
 					}
 
-					for(int k=0;k<nports;k++) AddNewTarget(ipaddr,endipaddr,NULL,ports[k].port,ports[k].ssl); 
+					for(int k=0;k<nports;k++)
+					{
+						AddNewTarget(ipaddr,endipaddr,NULL,ports[k].port,ports[k].ssl);
+						total += (endipaddr -  ipaddr );
+					}
 
 			} else 
 			{
