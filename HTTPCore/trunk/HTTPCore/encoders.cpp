@@ -34,7 +34,7 @@ SUCH DAMAGE.
 */
 #include "encoders.h"
 #include "ntlm.h"
-#include "../Build.h"
+#include "Build.h"
 
 
 encoders::encoders()

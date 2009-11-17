@@ -4,9 +4,7 @@
 #include "FHScan.h"
 #include "estructuras.h"
 
-//#include "../HTTPCoreClass/Authentication/md5.h"
-//#include "../HTTPCoreClass/Authentication/base64.h"
-#include "../HTTPCoreClass/Authentication/encoders.h"
+#include "../HTTPCore/encoders.h"
 #include "webforms.h"
 #include "Reporting/LogSettings.h"
 

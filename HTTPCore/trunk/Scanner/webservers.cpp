@@ -7,7 +7,7 @@
 //SI la url principal "/" requiere auth 401 y todas las paginas requieren auth 401 revisar porque no se realiza autenticacion (por ejemplo NTLM)
 
 #include "FHScan.h"
-#include "../HTTPCoreClass/HTTP.h"
+#include "../HTTPCore/HTTP.h"
 #include "webservers.h"
 #include "Reporting/LogSettings.h"
 

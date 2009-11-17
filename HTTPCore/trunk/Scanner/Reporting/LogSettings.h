@@ -4,9 +4,9 @@
 
 //#include <stdio.h>
 #ifdef OLD_RELEASE
-#include "../HTTPCoreClass/Build.h"
+#include "../HTTPCore/Build.h"
 #else
-#include "../../HTTPCoreClass/Build.h"
+#include "../../HTTPCore/Build.h"
 #endif
 #ifdef __WIN32__RELEASE__
 	#include <windows.h>	

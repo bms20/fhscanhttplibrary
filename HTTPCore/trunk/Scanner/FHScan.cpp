@@ -393,7 +393,6 @@ void HTTPProxy(HTTPAPI *api)
 }
 
 /*******************************************************************************/
-#include "../HTTPCoreClass/Authentication/encoders.h"
 #ifdef __WIN32__RELEASE__
 int __cdecl main(int argc, char *argv[]){
 	HANDLE *thread;

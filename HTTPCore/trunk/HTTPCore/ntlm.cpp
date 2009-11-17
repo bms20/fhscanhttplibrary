@@ -37,7 +37,7 @@
 
    */
 
-#include "../Build.h"
+#include "Build.h"
 
 #ifndef __WIN32__RELEASE__
  #include <unistd.h>

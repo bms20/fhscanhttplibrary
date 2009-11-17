@@ -1,8 +1,8 @@
 #ifndef __AUTHSCANNER_
 #define __AUTHSCANNER_
 
- #include "../HTTPCoreClass/HTTP.h"
- #include "../HTTPCoreClass/Threading.h"
+ #include "../HTTPCore/HTTP.h"
+ #include "../HTTPCore/Threading.h"
 
 #include <stdio.h>
 #include <stdlib.h>

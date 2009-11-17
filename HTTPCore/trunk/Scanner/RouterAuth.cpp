@@ -5,7 +5,7 @@
 *
 */
 
-#include "../HTTPCoreClass/HTTP.h"
+#include "../HTTPCore/HTTP.h"
 #include "estructuras.h"
 #include "FHScan.h"
 #include "Reporting/LogSettings.h"
