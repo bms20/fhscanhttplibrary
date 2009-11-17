@@ -85,7 +85,9 @@ SUCH DAMAGE.
 	typedef void		(*SSL_CTX_SET_VERIFY_DEPTH_FUNC)(SSL_CTX *,int);
 	typedef DH*			(*PEM_READ_BIO_DHPARAMS_FUNC) (BIO*, DH**,int*,void*);
 	typedef BIO_METHOD*	(*BIO_F_BASE64_FUNC)(void);
+#ifndef BIO_set_flags /* compatibility check with older openssl library */
 	typedef int			(*BIO_SET_FLAGS_FUNC)(BIO*,int);
+#endif
 	typedef BIO*		(*BIO_NEW_FUNC)(BIO_METHOD *);
 	typedef int			(*BIO_WRITE_FUNC)(BIO*,const void*, int);
 	typedef BIO*		(*BIO_PUSH_FUNC)(BIO*,BIO*);
@@ -142,7 +144,11 @@ public:
 	PEM_READ_BIO_DHPARAMS_FUNC  PEM_READ_BIO_DHPARAMS;
 
 	BIO_F_BASE64_FUNC           BIO_F_BASE64;
+#ifndef BIO_set_flags /* compatibility check with older openssl library */
 	BIO_SET_FLAGS_FUNC          BIO_SET_FLAGS;
+#else
+	#define BIO_SET_FLAGS_FUNC BIO_set_flags
+#endif
 	BIO_NEW_FUNC                BIO_NEW;
 	BIO_PUSH_FUNC               BIO_PUSH;
 	BIO_READ_FUNC               BIO_READ;

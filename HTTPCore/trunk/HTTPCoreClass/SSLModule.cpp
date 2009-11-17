@@ -83,7 +83,9 @@ SSLModule::SSLModule()
 	PEM_READ_BIO_DHPARAMS      = (PEM_READ_BIO_DHPARAMS_FUNC)GetProcAddress(f_hLIBEAY32, "PEM_read_bio_DHparams");
 
 	BIO_F_BASE64				  = (BIO_F_BASE64_FUNC)GetProcAddress(f_hLIBEAY32, "BIO_f_base64");
+#ifndef BIO_set_flags
 	BIO_SET_FLAGS				  = (BIO_SET_FLAGS_FUNC)GetProcAddress(f_hLIBEAY32, "BIO_set_flags");
+#endif
 	BIO_NEW						  = (BIO_NEW_FUNC)GetProcAddress(f_hLIBEAY32, "BIO_new");
 	BIO_PUSH					  = (BIO_PUSH_FUNC)GetProcAddress(f_hLIBEAY32, "BIO_push");
 	BIO_READ					  = (BIO_READ_FUNC)GetProcAddress(f_hLIBEAY32, "BIO_read");
@@ -150,7 +152,9 @@ SSLModule::SSLModule()
 	PEM_READ_BIO_DHPARAMS      = (PEM_READ_BIO_DHPARAMS_FUNC)PEM_read_bio_DHparams;
 
 	BIO_F_BASE64				  = (BIO_F_BASE64_FUNC)BIO_f_base64;
+#ifndef (BIO_set_flags)
 	BIO_SET_FLAGS				  = (BIO_SET_FLAGS_FUNC)BIO_set_flags;
+#endif
 	BIO_NEW						  = (BIO_NEW_FUNC)BIO_new;
 	BIO_PUSH					  = (BIO_PUSH_FUNC)BIO_push;
 	BIO_READ					  = (BIO_READ_FUNC)BIO_read;
