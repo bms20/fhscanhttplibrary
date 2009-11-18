@@ -895,17 +895,13 @@ char* HTTPAPI::GetPathFromLocationHeader(httpdata* response, int ssl, const char
 					}
 				}
 			}
-
-			if (Location[4+ssl]!=':') break;/* ssl status does not match */
-
 			break;
-
 		default:
-			free(Location);
-			return(NULL);
+			break;
 		}
+		free(Location);
 	}
-	free(Location);
+	
 	return(NULL);
 
 }
