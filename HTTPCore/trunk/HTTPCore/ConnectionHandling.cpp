@@ -115,9 +115,7 @@ int ConnectionHandling::StablishConnection(void)
 	{
 		free(HTTPProxyClientRequestBuffer);
 		HTTPProxyClientRequestSize = 0;
-
 	}
-
 	return (1);
 }
 
@@ -362,12 +360,12 @@ int ConnectionHandling::SendHTTPRequest(httpdata* request)
 
 	if (ssl) 
 	{
-		int err=SSL_WRITE(ssl, request->Header, request->HeaderSize);
+		int err=SSL_WRITE(ssl, request->Header, (int)request->HeaderSize);
 		if (err>0)
 		{
 			if (request->DataSize)
 			{
-				err=SSL_WRITE(ssl, request->Data, request->DataSize);
+				err=SSL_WRITE(ssl, request->Data, (int)request->DataSize);
 			}
 		}
 		if (err <=0)
@@ -380,12 +378,12 @@ int ConnectionHandling::SendHTTPRequest(httpdata* request)
 	} else
 	{
 
-		int err = send(datasock, request->Header, request->HeaderSize, 0);
+		int err = send(datasock, request->Header, (int)request->HeaderSize, 0);
 		if (err > 0)
 		{
 			if (request->DataSize)
 			{
-				err = send(datasock, request->Data, request->DataSize, 0);
+				err = send(datasock, request->Data, (int)request->DataSize, 0);
 			}
 		}
 		if (err <= 0)
@@ -432,9 +430,9 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	struct timeval tv;		       /* Timeout for select events */
 	fd_set fdread, fds, fderr;     /* descriptors to be signaled by select events */
 	char buf[BUFFSIZE+1];          /* Temporary buffer where the received data is stored */
-	int read_size;			       /* Size of the received data chunk */
+	int read_size = 0;			       /* Size of the received data chunk */
 	char *lpBuffer = NULL;	       /* Pointer that stores the returned HTTP Data until its flushed to disk or splited into headers and data */
-	unsigned int BufferSize = 0;   /* Size of the returned HTTP Data lpBuffer */
+	size_t BufferSize = 0;   /* Size of the returned HTTP Data lpBuffer */
 	char *HeadersEnd = NULL;       /* Pointer to the received buffer that indicates where the HTTP headers  end and HTTP data begins */
 	int offset = 0;                /* Number of bytes from the end of headers to the start of HTTP data. Usually 4bytes for "\r\n\r\n" if its RFC compliant*/
 	int BytesToBeReaded = -1;      /* Number of bytes remaining to be readed on the HTTP Stream (-1 means that the number of bytes is still unknown, 0 that we have reached the end of the html data ) */
@@ -458,7 +456,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	/* CHUNK ENCODING VARIABLES  */
 	int ChunkNumber  =  0;         /* If Chunkencoding is supported, this variable stores the number of fully received chunks */
 	char *encodedData = NULL;      /* Pointer to a buffer that stores temporary data chunks to verify how many bytes are still needed to be readed */
-	unsigned int encodedlen = 0 ;  /* Length of the encodedData Buffer */
+	size_t encodedlen = 0 ;  /* Length of the encodedData Buffer */
 	char *TmpChunkData = NULL;     /* Pointer to a buffer that stores temporary data chunks to verify how many bytes are still needed to be readed */
 
 	/* I/O FILE MAPPING FOR THE HTTP DATA */
@@ -475,7 +473,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 		{
 			/* Reuse previously readed data */
 			lpBuffer = HTTPServerResponseBuffer;
-			BufferSize = read_size =HTTPServerResponseSize;
+			BufferSize = read_size = HTTPServerResponseSize;
 			HTTPServerResponseBuffer = NULL;
 			HTTPServerResponseSize = 0;
 			UpdateLastConnectionActivityTime();
@@ -701,7 +699,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 						return ReadHTTPResponseData(ProxyClientConnection, request, ExternalMutex);
 
 					}
-					response = new httpdata (lpBuffer,(unsigned int)(HeadersEnd - lpBuffer) + offset);
+					response = new httpdata (lpBuffer,(HeadersEnd - lpBuffer) + offset);
 
 #ifdef _DBG_
 					printf("Value: %s\n",response->Header);
@@ -794,7 +792,8 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					//Check Status code. //HTTP/1.1 204
 
 					HTTPIOMappingData = new HTTPIOMapping(BufferSize,lpBuffer + response->HeaderSize);
-					if (BufferSize) {
+					if (BufferSize) 
+					{
 						TmpChunkData = (char*)malloc(BufferSize + BUFFSIZE +1);
 						memcpy(TmpChunkData,lpBuffer + response->HeaderSize,BufferSize);
 						encodedlen=BufferSize;
@@ -891,7 +890,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 						break;
 					}
 
-					if ( (unsigned int) encodedlen >= 2 + strlen(chunkcode)+chunk)
+					if ( encodedlen >= 2 + strlen(chunkcode)+chunk)
 					{
 #ifdef _DBG_
 						printf("Encodedlen (%i) >= 2 + strlen(chunkcode)+chunk\n",encodedlen);
@@ -910,7 +909,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 
 					} else
 					{
-						encodedlen-=2 + (unsigned int)strlen(chunkcode);
+						encodedlen-=2 + strlen(chunkcode);
 						BytesToBeReaded = chunk - encodedlen;
 						if (BytesToBeReaded == 0) BytesToBeReaded = -1;
 						encodedlen=0;
@@ -1007,7 +1006,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 		response= new httpdata; //InitHTTPData(NULL,0,NULL,0);
 		if (lpBuffer)
 		{
-			free(response->Data);
+			//free(response->Data);
 			response->Data=lpBuffer;
 			response->DataSize = BufferSize;
 		}
@@ -1262,7 +1261,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 			if (HeadersEnd)
 			{
 				//printf("HEADERS END..\n");
-				response = new httpdata (lpBuffer,(unsigned int)(HeadersEnd-lpBuffer) + offset);
+				response = new httpdata (lpBuffer,(HeadersEnd-lpBuffer) + offset);
 #ifdef _DBG_
 				//printf("[%3.3i] ReadHTTPProxyRequestData(): HeaderSize vale %i de %ibytes\n",conexion->id,response->HeaderSize,BufferSize);
 #endif

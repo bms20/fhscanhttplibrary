@@ -111,7 +111,7 @@ class HTTPAPI : public encoders
 	#endif
 
 	HTTPCHAR BindIpAdress[256];			/* Proxy Bind Address */
-	SOCKET BindPort;					/* Proxy Bind Port */
+	unsigned short BindPort;			/* Proxy Bind Port */
 	SOCKET ListenSocket;				/* Listen proxy socket */
 	int ForceDefaultHTTPPorts;			/* Proxy configuration option */
 	int AnonymousProxy;					/* Proxy configuration option */
@@ -162,13 +162,13 @@ public:
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
-	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);	
+	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,size_t PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);	
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request);
 	PREQUEST   SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	PREQUEST   SendHttpRequest(HTTPCSTR Fullurl);
 	
-	PREQUEST   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, unsigned int HeaderSize, HTTPCSTR PostData, unsigned int PostDataSize);	
-	httpdata* BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,unsigned int PostDataSize);
+	PREQUEST   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, size_t eaderSize, HTTPCSTR PostData, size_t PostDataSize);	
+	httpdata* BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,size_t PostDataSize);
 
 	int        InitHTTPProxy(HTTPCSTR hostname, unsigned short port);
 	int        InitHTTPProxy(HTTPCSTR hostname, HTTPCSTR port);

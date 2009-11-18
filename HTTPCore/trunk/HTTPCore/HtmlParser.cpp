@@ -104,24 +104,24 @@ char *FixUrlTransversal(char *path) {
 		if (*p=='/')
 		{
 			if (p[1]=='/') {
-				unsigned int n= (unsigned int)strlen(p+1);
+				size_t n= strlen(p+1);
 				memcpy(p,p+1,n);
 				p[n]=0;
 			} else if (p[1]=='.')
 			{
 				if (memcmp(p+1,"./",2)==0) {
-					unsigned int n=(unsigned int)strlen(p+2);
+					size_t n=strlen(p+2);
 					memcpy(p,p+2,n);
 					p[n]=0;
 					fix=1;
 				} else if (memcmp(p+1,".../",4)==0)
 				{
-					unsigned int n=(unsigned int)strlen(p+4);
+					size_t n=strlen(p+4);
 					memcpy(p,p+4,n);
 					p[n]=0;
 				} else if (memcmp(p+1,"../",3)==0)
 				{
-					unsigned int n=(unsigned int)strlen(p+3);
+					size_t n=strlen(p+3);
 					if (*last=='/') {
 						memcpy(last,p+3,n);
 					} else {
@@ -142,12 +142,12 @@ char *FixUrlTransversal(char *path) {
 		} else if ((last==p) && (p[0]=='.') )
 		{
 			if (memcmp(p,"./",2)==0) {
-				unsigned int n=(unsigned int)strlen(p+2);
+				size_t n=strlen(p+2);
 				memcpy(p,p+2,n);
 				p[n]=0;
 			} else if (memcmp(p,".../",4)==0)
 			{
-				unsigned int n=(unsigned int)strlen(p+4);
+				size_t n=strlen(p+4);
 				memcpy(p,p+4,n);
 				p[n]=0;
 			} else 	p++;
@@ -231,7 +231,7 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 			salir=0;
 			while ((*p) && (!salir) && (n>0))
 			{
-				unsigned int l =(unsigned int)strlen(p)-1;
+				size_t l =strlen(p)-1;
 				if ( (p[l]=='\\') || (p[l]=='\"') ||  (p[l]=='+') ||  (p[l]=='\'')  ||  (p[l]=='(')  ||  (p[l]==')') ||  (p[l]=='\r') ||  (p[l]=='\n')   )
 				{
 					p[l]=0;
@@ -277,7 +277,7 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 
 						} else
 						{
-                            unsigned int l = (unsigned int)strlen(p);
+                            size_t l = strlen(p);
 							char *x = (char*)malloc(l+2);
 							memcpy(x,p,l);
 							x[l]='/';
@@ -997,7 +997,7 @@ just as well, but this is just an optimization designed to avoid
 unnecessary copying of tags/attributes which the caller doesn't
 care about.)  */
 
-void map_html_tags (const char *text, int size,
+void map_html_tags (const char *text, size_t size,
 			   void (*mapfun) (struct taginfo *, void *,char*,char*,httpdata*), void *maparg,
 			   int flags,
 			   const struct hash_table *allowed_tags,

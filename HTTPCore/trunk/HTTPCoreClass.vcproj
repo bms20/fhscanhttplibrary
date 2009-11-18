@@ -96,7 +96,7 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"
-			WholeProgramOptimization="1"
+			WholeProgramOptimization="3"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -115,17 +115,14 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				FavorSizeOrSpeed="1"
-				EnableFiberSafeOptimizations="true"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_ZLIB_SUPPORT_"
-				StringPooling="true"
-				MinimalRebuild="true"
+				StringPooling="false"
+				MinimalRebuild="false"
 				RuntimeLibrary="0"
-				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
+				DebugInformationFormat="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -139,11 +136,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="1"
-				GenerateDebugInformation="false"
 				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"
+				LargeAddressAware="2"
+				LinkTimeCodeGeneration="0"
+				FixedBaseAddress="1"
 			/>
 			<Tool
 				Name="VCALinkTool"

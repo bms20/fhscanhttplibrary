@@ -28,7 +28,7 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 
 		sprintf(tmp,"GET http://%s:%i%s HTTP/1.1\r\nHost: %s\r\n\r\n",HTTPPROXYTESTHOST,HTTPPROXYTESTPORT,HTTPPROXYTESTURL,HTTPPROXYTESTHOST);
 
-		response = api->SendRawHTTPRequest(HTTPHandle,HTTPAKAMAIPROXYGET,(unsigned int)strlen(HTTPAKAMAIPROXYGET), NULL,0);
+		response = api->SendRawHTTPRequest(HTTPHandle,HTTPAKAMAIPROXYGET,strlen(HTTPAKAMAIPROXYGET), NULL,0);
 		if (response)
 		{
 			if (!response->response->DataSize) {
@@ -53,7 +53,7 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 		if (!ret)
 		{
 			sprintf(tmp,"CONNECT %s:%i HTTP/1.0\r\n\r\n",HTTPPROXYTESTHOST,HTTPPROXYTESTPORT);
-			response = api->SendRawHTTPRequest(HTTPHandle, tmp,(unsigned int)strlen(tmp),NULL,0);
+			response = api->SendRawHTTPRequest(HTTPHandle, tmp,strlen(tmp),NULL,0);
 			if (response)
 			{
 				if (response->status==200)

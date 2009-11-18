@@ -55,7 +55,7 @@ HTTPIOMapping::HTTPIOMapping()
 	BufferedPtr = NULL;
 }
 /******************************************************************************/
-HTTPIOMapping::HTTPIOMapping(unsigned int DataSize = 0, char *lpData = NULL)
+HTTPIOMapping::HTTPIOMapping(size_t DataSize = 0, char *lpData = NULL)
 {
 	assigned = 0;
 	BufferedPtr = NULL;
@@ -103,7 +103,7 @@ HTTPIOMapping::~HTTPIOMapping()
 }
 /******************************************************************************/
 
-unsigned long HTTPIOMapping::GetMappingSize(void)
+size_t HTTPIOMapping::GetMappingSize(void)
 {
 	#ifdef __WIN32__RELEASE__
 	if ((!BufferedPtr) && (hTmpFilename>0) )
@@ -135,7 +135,7 @@ int HTTPIOMapping::IsAssigned(void)
 	return (assigned);
 }
 /******************************************************************************/
-int HTTPIOMapping::InitializeFileMapping(unsigned int DataSize,char *lpData)
+int HTTPIOMapping::InitializeFileMapping(size_t DataSize,char *lpData)
 {
 
 #ifdef __WIN32__RELEASE__
@@ -209,7 +209,7 @@ char *HTTPIOMapping::UpdateFileMapping()
 	return(BufferedPtr);
 }
 /******************************************************************************/
-int HTTPIOMapping::WriteMappingData(unsigned int length, char *lpData )
+size_t HTTPIOMapping::WriteMappingData(size_t length, char *lpData )
 {
 #ifdef __WIN32__RELEASE__
 	if (hTmpFilename==INVALID_HANDLE_VALUE)

@@ -34,7 +34,7 @@ SUCH DAMAGE.
 
 */
 /** \file CallBacks.h
- * Fast HTTP Auth Scanner - HTTP Engine v1.2.
+ * Fast HTTP Auth Scanner - HTTP Engine v1.4.
  * This include file contains all needed information to manage the CallBacks interface .
  * \author Andres Tarasco Acuna - http://www.tarasco.org
  */

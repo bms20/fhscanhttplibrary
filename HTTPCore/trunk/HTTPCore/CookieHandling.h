@@ -107,7 +107,7 @@ public:
 	int MatchCookie(char *lppath,char *lpdomain,char *lpCookieName, int securevalue);
 	void SetDate(time_t cExpire);
 	time_t GetDate(void) { return expire;}
-	int path_matches (const char *RequestedPath);
+	size_t path_matches (const char *RequestedPath);
 	char *GetCookieName(void) { return (lpCookieName); }
 	char *GetCookieValue(void) { return (lpCookieValue); }
 	char *GetCookiePath(void)  { return (path); }

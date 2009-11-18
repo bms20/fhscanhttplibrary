@@ -185,7 +185,8 @@ int ParseHosts( char *lphosts)
 				}  
 				ipaddr |= IP1[i] << 8*(3-i);
 			} 
-			if (p=strchr(chunk, '-'))
+			p=strchr(chunk, '-');
+			if (p)
 			{
 				i = sscanf(p+1, "%d.%d.%d.%d", &IP2[0], &IP2[1], &IP2[2], &IP2[3]);
 				switch (i)
@@ -255,7 +256,7 @@ int ReadAndSanitizeInput(FILE *file, char *buffer,int len) {
 	//if the line is not a comment, true is returned
 	fgets(buffer,len,file);
 	buffer[len-1]='\0';
-	unsigned int bufferSize = ( unsigned int ) strlen(buffer);
+	size_t bufferSize =  strlen(buffer);
 	if ( (bufferSize>3) && buffer[0]!='#'  && buffer[0]!=';'  ) {
 		char *p=buffer+bufferSize-1;
 		while ( (*p=='\r' ) || (*p=='\n') || (*p==' ') ) { p[0]='\0'; --p; }

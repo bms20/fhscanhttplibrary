@@ -514,7 +514,7 @@ httpdata* HTTPAPI::BuildHTTPRequest(
 									 HTTPCSTR HTTPMethod,
 									 HTTPCSTR url,
 									 HTTPCSTR PostData,
-									 unsigned int PostDataSize)
+									 size_t PostDataSize)
 {
 	if ( (!url) || (*url!='/') )
 	{
@@ -636,7 +636,7 @@ httpdata* HTTPAPI::BuildHTTPRequest(
 	}
 	rb+="\r\n";
 
-	return (new httpdata(rb.c_str(),(unsigned int)rb.length(),PostData,PostDataSize) );
+	return (new httpdata(rb.c_str(),rb.length(),PostData,PostDataSize) );
 }
 
 
@@ -651,6 +651,7 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 	char url[4096];
 	char *p,*q;
 	int AuthMethod = 0;
+	HTTPSTR AuthenticationHeader;
 
 
 	class HTTPAPIHANDLE *RealHTTPHandle=(class HTTPAPIHANDLE *)HTTPHandleTable[HTTPHandle];
@@ -700,8 +701,8 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 					}
 				}
 			}
-			HTTPSTR AuthenticationHeader;
-			if (AuthenticationHeader=CreateDigestAuth(RealHTTPHandle->GetLastAuthenticationString(),lpUsername,lpPassword,HTTPMethod,url,0))
+			AuthenticationHeader=CreateDigestAuth(RealHTTPHandle->GetLastAuthenticationString(),lpUsername,lpPassword,HTTPMethod,url,0);
+			if (AuthenticationHeader)
 			{
 				request->AddHeader(AuthenticationHeader);
 				free(AuthenticationHeader);
@@ -808,10 +809,9 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 		if (Location)
 		{
 			PREQUEST RedirectedData = SendHttpRequest(HTTPHandle,NULL,"GET",Location,NULL,0,lpUsername,lpPassword);
+			free(Location);
 			if (RedirectedData)
 			{
-				free(Location);
-				//DATA->request=NULL; /* We are reutilizing the same request, so avoid deleting memory twice */
 				delete DATA;
 				return (RedirectedData);
 			}
@@ -832,7 +832,7 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTP
 {
 	if  (PostData)
 	{
-		return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,PostData,(unsigned int)strlen(PostData),NULL,NULL);
+		return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,PostData,strlen(PostData),NULL,NULL);
 	} else
 	{
 		return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,NULL,0,NULL,NULL);
@@ -841,10 +841,10 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTP
 /*******************************************************************************************/
 PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
 {
-	return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,PostData,(unsigned int)strlen(PostData),lpUsername,lpPassword);	
+	return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,PostData,strlen(PostData),lpUsername,lpPassword);	
 }
 /*******************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,unsigned int PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
+PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,size_t PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
 {
 	httpdata* request=BuildHTTPRequest(HTTPHandle,VHost,HTTPMethod,lpPath,PostData,PostDataSize);
 	if (request)
@@ -896,7 +896,7 @@ char* HTTPAPI::GetPathFromLocationHeader(httpdata* response, int ssl, const char
 				}
 			}
 
-			if (Location[4+ssl]!=':') return(NULL); /* ssl status does not match */
+			if (Location[4+ssl]!=':') break;/* ssl status does not match */
 
 			break;
 
@@ -904,8 +904,8 @@ char* HTTPAPI::GetPathFromLocationHeader(httpdata* response, int ssl, const char
 			free(Location);
 			return(NULL);
 		}
-		free(Location);
 	}
+	free(Location);
 	return(NULL);
 
 }
@@ -970,7 +970,7 @@ PREQUEST	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
 
 
 /*******************************************************************************************/
-PREQUEST HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, unsigned int HeaderSize, HTTPCSTR postdata, unsigned int PostDataSize)
+PREQUEST HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, size_t HeaderSize, HTTPCSTR postdata, size_t PostDataSize)
 {
 	httpdata* request= new httpdata ((HTTPSTR)headers,HeaderSize,(HTTPSTR)postdata, PostDataSize);
 
@@ -1053,7 +1053,7 @@ void HTTPAPI::SendHTTPProxyErrorMessage( ConnectionHandling* connection,int conn
 
 	free(request->Data);
 	request->Data = strdup(tmp);
-	request->DataSize=(unsigned int )strlen(tmp);
+	request->DataSize=strlen(tmp);
 	connection->SendHTTPRequest(request);
 	delete request;
 }
@@ -1077,7 +1077,7 @@ void *HTTPAPI::ListenConnection(void *foo)
 #else
 	pthread_t e_th;
 #endif
-	int id=0;
+	//int id=0;
 	if ((ListenSocket=socket(PF_INET,SOCK_STREAM,IPPROTO_TCP))==INVALID_SOCKET)
 	{
 #ifdef __WIN32__RELEASE__
@@ -1116,7 +1116,7 @@ void *HTTPAPI::ListenConnection(void *foo)
 	/*This is our trick to call a class function and send them params */
 	do
 	{
-		int clientLen= sizeof(struct sockaddr_in);
+		//int clientLen= sizeof(struct sockaddr_in);
 		ConnectionHandling *connection = new ConnectionHandling;
 		connection->Acceptdatasock( ListenSocket );
 #ifdef _DBG_
@@ -1264,7 +1264,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 						HTTPSTR header = data->response->GetHeaderValue("Content-Length:",0);
 						if (header)
 						{
-							unsigned int DataSize = atoi(header);
+							size_t DataSize = atoi(header);
 							if (DataSize != data->response->DataSize)
 							{
 								/* Fix the Content-Length  header because the server returned bad or Incomplete Response */
@@ -1298,7 +1298,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 			char method[10000];
 			char host[10000];
 			char path[10000];
-			int  port;
+			int  port = 80;
 			char protocol[10000]="HTTP/1.1";		
 
 			/* Get information from the incoming HTTP Request */
@@ -1391,8 +1391,8 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 						} else
 						{
 							char 		 *ClientRequest=NULL;
-							unsigned int  ClientRequestLength  = 0;
-							unsigned int HeaderLength ;
+							size_t       ClientRequestLength  = 0;
+							size_t       HeaderLength ;
 							char 		 tmp[256];
 							unsigned int id =1;
 							char 		 *p;
@@ -1411,7 +1411,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 								{
 									if (!SkipHeader(p)) 
 									{ 
-										HeaderLength  = (unsigned int)strlen(p);
+										HeaderLength  = strlen(p);
 										if (!ClientRequestLength  )
 										{
 											ClientRequest = (HTTPSTR)malloc(HeaderLength  +2 +1);
@@ -1438,7 +1438,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 							if (!AnonymousProxy)
 							{   /* Append Remote user identification Header */
 								sprintf(tmp,"X-Forwarded-For: %s\r\n",ClientConnection->GettargetDNS());
-								HeaderLength  = (unsigned int)strlen(tmp);
+								HeaderLength  = strlen(tmp);
 								if (!ClientRequest) 
 								{
 									ClientRequest = (HTTPSTR)malloc(HeaderLength  + 1);

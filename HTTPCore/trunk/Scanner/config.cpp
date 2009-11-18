@@ -56,7 +56,7 @@ extern int proxyScanOnly;
 /******************************************************************************/
 static void ValidateLine(char *source,char *dst) {
 	int j=0;
-	unsigned int len = ( unsigned int )strlen(source);
+	size_t len = strlen(source);
 	for (unsigned int i=0;i<len;i++) {
 		if (source[i]=='\\') {
 			switch (source[i+1]) {

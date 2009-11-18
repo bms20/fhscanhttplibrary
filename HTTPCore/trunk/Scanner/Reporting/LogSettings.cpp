@@ -69,18 +69,18 @@ void FixXSS(char *data, char *dst) {
 //__inline static void FixXSS(char *data) {while (*(data++)) { char *q=strchr(ok_chars,*data); *data=(q) ? *q :'_' ; }   }
 /**************************************************************************/
 /*******************************************************************************/
-static int GetHtmlTitle(PREQUEST data, char *output, unsigned int dstSize) {
+static int GetHtmlTitle(PREQUEST data, char *output, size_t dstSize) {
 
     char *p,*q;
 	char *buffer;
-	unsigned int BufferSize;// = (unsigned int ) strlen(buffer);
+	size_t BufferSize;// = (unsigned int ) strlen(buffer);
 
 	if (data->response->DataSize == 0) {
     	*output=0;
         return(0);
 	}
 	buffer=data->response->Data;
-	BufferSize = (unsigned int ) strlen(buffer);
+	BufferSize =  strlen(buffer);
 
 	if ( (buffer) && BufferSize>15) {
         for (unsigned int i=0;i<BufferSize-14;i++)
@@ -99,7 +99,7 @@ static int GetHtmlTitle(PREQUEST data, char *output, unsigned int dstSize) {
 						if ( (q-p)<(int)dstSize) memcpy(output,p,q-p);
 						else            memcpy(output,p,dstSize-1);
 					} else {
-						BufferSize = ( unsigned int )strlen(p);
+						BufferSize = strlen(p);
 						if (BufferSize>dstSize)
 						{
 							memcpy(output,p,dstSize-1);
@@ -302,8 +302,8 @@ struct _ports *ports,
 		}
 		if (TemplateHTML) {
 			char tmp[4096*2];
-			unsigned int readbytes;
-			int total=0;
+			size_t readbytes;
+			size_t total=0;
 			char *lpHTML=NULL;
 #ifdef __WIN32__RELEASE__
 			if (!*DirectoryLog) snprintf(DirectoryLog,sizeof(DirectoryLog),".\\%4.4i-%2.2i-%2.2i--%2.2i%2.2i%2.2i",LogTime.wYear,LogTime.wMonth,LogTime.wDay,LogTime.wHour,LogTime.wMinute,LogTime.wSecond);
@@ -321,7 +321,7 @@ struct _ports *ports,
 			//Read HTML Template
 			while (!feof(TemplateHTML)) {
 				memset(tmp,'\0',sizeof(tmp));
-				readbytes=(unsigned int)fread(tmp,1,sizeof(tmp)-1,TemplateHTML);
+				readbytes=fread(tmp,1,sizeof(tmp)-1,TemplateHTML);
 				//				printf("leidos: %i - Total: %i\n",readbytes,total);
 				lpHTML=(char *)realloc((char *)lpHTML,total+readbytes+1);
 				memcpy(lpHTML+total,tmp,readbytes);

@@ -88,7 +88,7 @@ class ConnectionHandling : public SSLModule
 {
 	long 			 target;
 	char 			 targetDNS[256];
-	int 			 port;
+	unsigned short	 port;
 	
 	int 			 NeedSSL; //IsSSLNeeded
 	SSL_CTX *		 ctx;

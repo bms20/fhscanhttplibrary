@@ -32,7 +32,7 @@ void BruteForceDirectory(HTTPAPI *api,HTTPHANDLE HTTPHandle, char *base)
 	while (Directories[i][0])
 	{
 		sprintf(path, "%s%s/", base, Directories[i]);
-		response = api->SendRawHTTPRequest(HTTPHandle, tmp,(unsigned int)strlen(tmp), NULL,0);
+		response = api->SendRawHTTPRequest(HTTPHandle, tmp,strlen(tmp), NULL,0);
 		if (response)
 		{
 			if ( (response->IsValidHTTPResponse()) && (response->status == 200) )
@@ -52,7 +52,7 @@ void BruteForceDirectory(HTTPAPI *api,HTTPHANDLE HTTPHandle, char *base)
 		while (Extensions[j++][0])
 		{
 			sprintf(path, "%s/%s.%s", base, Files[i], Extensions[j]);
-			response = api->SendRawHTTPRequest(HTTPHandle, tmp,(unsigned int)strlen(tmp), NULL,0);
+			response = api->SendRawHTTPRequest(HTTPHandle, tmp,strlen(tmp), NULL,0);
 			if (response) {
 				if ( (response->IsValidHTTPResponse()) && (response->status == 200) )
 				{

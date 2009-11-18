@@ -102,14 +102,14 @@ char* encoders::decodebase64(char *lpoutput, const char *input)
 
 }
 
-char* encoders::encodebase64(char *lpoutput, const char *input, unsigned int inputlen)
+char* encoders::encodebase64(char *lpoutput, const char *input, size_t inputlen)
 {
 	if (inputlen)
 	{
 		BIO * b642  = BIO_NEW(BIO_F_BASE64());
 		BIO * bmem2 = BIO_NEW(BIO_S_MEM());
 		b642 = BIO_PUSH(b642, bmem2);
-		BIO_WRITE(b642, input, inputlen);
+		BIO_WRITE(b642, input, (int)inputlen);
 		BIO_CTRL(b642,BIO_CTRL_FLUSH,0,NULL);
 		BUF_MEM *bptr = NULL;
 		BIO_GET_MEM_PTR(b642, &bptr);
@@ -132,7 +132,7 @@ char* encoders::encodebase64(char *lpoutput, const char *input, unsigned int inp
 	return(NULL);
 }
 
-unsigned char* encoders::GetMD2BinaryHash(char *lpoutput, const char *data, unsigned int len)
+unsigned char* encoders::GetMD2BinaryHash(char *lpoutput, const char *data, size_t len)
 {
 	unsigned char *output;
 	if (lpoutput)
@@ -143,12 +143,12 @@ unsigned char* encoders::GetMD2BinaryHash(char *lpoutput, const char *data, unsi
 	}
 	MD2_CTX hash;
 	MD2_INIT(&hash);
-	MD2_UPDATE(&hash,data,len);
+	MD2_UPDATE(&hash,data,(unsigned long)len);
 	MD2_FINAL(output,&hash);
 	return(output);
 }
 
-char* encoders::GetMD2TextHash(char *lpoutput, const char *data, unsigned int len)
+char* encoders::GetMD2TextHash(char *lpoutput, const char *data, size_t len)
 {
 	unsigned char md2sum[16];	
 	unsigned char *result;
@@ -162,7 +162,7 @@ char* encoders::GetMD2TextHash(char *lpoutput, const char *data, unsigned int le
 	#define a md2sum
 
 	MD2_INIT(&hash);
-	MD2_UPDATE(&hash,data,len);
+	MD2_UPDATE(&hash,data,(unsigned long)len);
 	MD2_FINAL(md2sum,&hash);
 	snprintf((char *)result,sizeof(md2sum)*2+1,
 	 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -172,7 +172,7 @@ char* encoders::GetMD2TextHash(char *lpoutput, const char *data, unsigned int le
 	return((char*)result);
 }
 
-unsigned char* encoders::GetMD4BinaryHash(char *lpoutput, const char *data, unsigned int len)
+unsigned char* encoders::GetMD4BinaryHash(char *lpoutput, const char *data, size_t len)
 {
 	unsigned char *result;
 	if (lpoutput)
@@ -184,12 +184,12 @@ unsigned char* encoders::GetMD4BinaryHash(char *lpoutput, const char *data, unsi
 	}
 	MD4_CTX hash;
 	MD4_INIT(&hash);
-	MD4_UPDATE(&hash,data,len);
+	MD4_UPDATE(&hash,data,(unsigned long)len);
 	MD4_FINAL(result,&hash);
 	return(result);
 }
 
-char* encoders::GetMD4TextHash(char *lpoutput, const char *data, unsigned int len)
+char* encoders::GetMD4TextHash(char *lpoutput, const char *data, size_t len)
 {
 	unsigned char md4sum[16];
 	unsigned char *result;
@@ -205,7 +205,7 @@ char* encoders::GetMD4TextHash(char *lpoutput, const char *data, unsigned int le
 	#define a md4sum
 
 	MD4_INIT(&hash);
-	MD4_UPDATE(&hash,data,len);
+	MD4_UPDATE(&hash,data,(unsigned long)len);
 	MD4_FINAL(md4sum,&hash);
 	snprintf((char *)result,sizeof(md4sum)*2+1,
 	 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -215,7 +215,7 @@ char* encoders::GetMD4TextHash(char *lpoutput, const char *data, unsigned int le
 	return((char*)result);
 }
 
-unsigned char* encoders::GetMD5BinaryHash(char *lpoutput, const char *data, unsigned int len)
+unsigned char* encoders::GetMD5BinaryHash(char *lpoutput, const char *data, size_t len)
 {
 	unsigned char *result ;
 	if (lpoutput)
@@ -227,12 +227,12 @@ unsigned char* encoders::GetMD5BinaryHash(char *lpoutput, const char *data, unsi
 	}
 	MD5_CTX hash;
 	MD5_INIT(&hash);
-	MD5_UPDATE(&hash,data,len);
+	MD5_UPDATE(&hash,data,(unsigned long)len);
 	MD5_FINAL(result,&hash);
 	return(result);
 }
 
-char* encoders::GetMD5TextHash(char *lpoutput, const char *data, unsigned int len)
+char* encoders::GetMD5TextHash(char *lpoutput, const char *data, size_t len)
 {
 	unsigned char md5sum[16];
 	unsigned char *result;
@@ -249,7 +249,7 @@ char* encoders::GetMD5TextHash(char *lpoutput, const char *data, unsigned int le
 	#define a md5sum
 
 	MD5_INIT(&hash);
-	MD5_UPDATE(&hash,data,len);
+	MD5_UPDATE(&hash,data,(unsigned long)len);
 	MD5_FINAL(md5sum,&hash);
 	snprintf((char *)result,sizeof(md5sum)*2+1,
 	 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -261,7 +261,7 @@ char* encoders::GetMD5TextHash(char *lpoutput, const char *data, unsigned int le
 
 /******************************************************************************/
 
-unsigned char* encoders::GetSHA1BinaryHash(char *lpoutput, const char *data, unsigned int len)
+unsigned char* encoders::GetSHA1BinaryHash(char *lpoutput, const char *data, size_t len)
 {
 	unsigned char *result;
 	if (lpoutput)
@@ -272,12 +272,12 @@ unsigned char* encoders::GetSHA1BinaryHash(char *lpoutput, const char *data, uns
 	}
 	SHA_CTX hash;
 	SHA1_INIT(&hash);
-	SHA1_UPDATE(&hash,data,len);
+	SHA1_UPDATE(&hash,data,(unsigned long)len);
 	SHA1_FINAL(result,&hash);
 	return(result);
 }
 
-char* encoders::GetSHA1TextHash(char *lpoutput, const char *data, unsigned int len)
+char* encoders::GetSHA1TextHash(char *lpoutput, const char *data, size_t len)
 {
 	unsigned char sha1sum[20];
 	unsigned char *result;
@@ -293,7 +293,7 @@ char* encoders::GetSHA1TextHash(char *lpoutput, const char *data, unsigned int l
 	#define a sha1sum
 
 	SHA1_INIT(&hash);
-	SHA1_UPDATE(&hash,data,len);
+	SHA1_UPDATE(&hash,data,(unsigned long)len);
 	SHA1_FINAL(sha1sum,&hash);
 	snprintf((char *)result,sizeof(sha1sum)*2+1,
 	 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",

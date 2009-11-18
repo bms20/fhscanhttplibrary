@@ -113,19 +113,19 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 					strncat(output,password,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 2:
-					HTTPEncoder.encodebase64((char *)tmp,(const char *)username,( unsigned int )strlen(username));
+					HTTPEncoder.encodebase64((char *)tmp,(const char *)username,strlen(username));
 					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 3:
-					HTTPEncoder.encodebase64((char *)tmp,(const char *)password,( unsigned int )strlen(password));
+					HTTPEncoder.encodebase64((char *)tmp,(const char *)password,strlen(password));
 					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 4:
-					HTTPEncoder.GetMD5TextHash(tmp,username,( unsigned int )strlen(username));
+					HTTPEncoder.GetMD5TextHash(tmp,username,strlen(username));
 					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 5:
-					HTTPEncoder.GetMD5TextHash(tmp,password,( unsigned int )strlen(password));
+					HTTPEncoder.GetMD5TextHash(tmp,password,strlen(password));
 					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 6:
@@ -154,14 +154,14 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 
 					break;
 				case 9:
-					HTTPEncoder.GetMD5TextHash(tmp,username,( unsigned int )strlen(username));
+					HTTPEncoder.GetMD5TextHash(tmp,username,strlen(username));
 					tmp[16]='\0';
-					strncat(output,tmp,MAX_POST_LENGTH-( unsigned int )strlen(output));
+					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 10:
-					HTTPEncoder.GetMD5TextHash(tmp,password,( unsigned int )strlen(password));
+					HTTPEncoder.GetMD5TextHash(tmp,password,strlen(password));
 					tmp[16]='\0';
-					strncat(output,tmp,MAX_POST_LENGTH-( unsigned int )strlen(output));
+					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 11:
 					//printf("analizando: -%s-\n",where);
@@ -178,9 +178,9 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 						GenerateAuth(encodedpacket, decodedpacket,username,password,ip,port);
 						//printf("El paquete decoded es: %s\n",decodedpacket);
 
-						HTTPEncoder.GetMD5TextHash(tmp,decodedpacket,( unsigned int )strlen(decodedpacket));
+						HTTPEncoder.GetMD5TextHash(tmp,decodedpacket,strlen(decodedpacket));
 						//printf("El hash es: %s\n",tmp);
-						strncat(output,tmp,MAX_POST_LENGTH-( unsigned int )strlen(output));
+						strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 						opt += 8 + strlen(encodedpacket) + 4 -13;
 
 					}
@@ -193,7 +193,7 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 			where=opt+13;
 		} else
 		{ //copiamos el final
-			strncat(output,where,MAX_POST_LENGTH-( unsigned int )strlen(output));
+			strncat(output,where,MAX_POST_LENGTH-strlen(output));
 		}
 	} while(opt!=NULL);
 	//printf("Hemos decodificado esto a: %s\n",output);
@@ -261,7 +261,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST reque
 		RequestRetry=2;
 		do {
 			if (AdditionalHeader[0]!='\0') api->SetHTTPConfig(HTTPHandle,ConfigCookie,AdditionalHeader);
-			new_data=api->SendHttpRequest(HTTPHandle,NULL,WEBFORMS[webform].authmethod,WEBFORMS[webform].authurl,post,(unsigned int) strlen(post),NULL,NULL);
+			new_data=api->SendHttpRequest(HTTPHandle,NULL,WEBFORMS[webform].authmethod,WEBFORMS[webform].authurl,post, strlen(post),NULL,NULL);
 			if (AdditionalHeader[0]!='\0') api->SetHTTPConfig(HTTPHandle,ConfigCookie,(const char*)NULL);
 
 			if ( (!new_data) || (!new_data->IsValidHTTPResponse()) )

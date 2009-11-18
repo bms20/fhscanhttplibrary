@@ -54,7 +54,7 @@ enum AuthenticationType {
 class HTTPAPIHANDLE {
 	long 		target;
 	HTTPCHAR	targetDNS[256];
-	int  		port;
+	unsigned short	port;
 #ifdef __WIN32__RELEASE__
 	int			ThreadID;
 #else
@@ -88,7 +88,7 @@ public:
 
 //Definir como metodos restringidos a CONEXION!
 	long GetTarget() { return target; }
-	int GetPort() { return(port); }
+	unsigned short GetPort() { return(port); }
 	int IsSSLNeeded() 
 	{ 		
 			return NeedSSL; 
@@ -136,7 +136,7 @@ public:
 
 	HTTPAPIHANDLE(void);	
 	~HTTPAPIHANDLE();
-	int InitHandle(HTTPSTR,int,int);	
+	int InitHandle(HTTPSTR,unsigned short,int);	
 	int SetHTTPConfig(int,HTTPCSTR);
 	int SetHTTPConfig(int,int);
 	HTTPSTR GetHTTPConfig(int);

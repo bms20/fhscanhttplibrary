@@ -57,7 +57,7 @@ SUCH DAMAGE.
 	\note If the function fails due to malformed or incomplete datachunks, NULL is returned instead. If that happends, the user must use the original lpBuffer data
 */
 /******************************************************************************/
-class HTTPIOMapping *DecodeChunk(char *lpBuffer, unsigned int encodedlen)
+class HTTPIOMapping *DecodeChunk(char *lpBuffer, size_t  encodedlen)
 {
 
     char *encoded=lpBuffer;
@@ -95,7 +95,7 @@ class HTTPIOMapping *DecodeChunk(char *lpBuffer, unsigned int encodedlen)
         }
         *p='\0';
         chunk=strtol(chunkcode,NULL,16);
-        if ( (unsigned int) encodedlen > strlen(chunkcode)+ 2 + chunk) 
+        if (  encodedlen > strlen(chunkcode)+ 2 + chunk) 
 		{
 			if (!HTTPIoMapping)
 			{

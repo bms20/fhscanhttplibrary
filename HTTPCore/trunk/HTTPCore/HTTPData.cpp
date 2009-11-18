@@ -83,7 +83,7 @@ int prequest::HasResponseData(void)
 /*******************************************************************************************************/
 
 /*******************************************************************************************************/
-void httpdata::InitHTTPData(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize)
+void httpdata::InitHTTPData(const char *header,size_t headersize, const char *lpPostData,size_t PostDataSize)
 {
 	if ( (headersize) && (header) )
 	{
@@ -91,12 +91,11 @@ void httpdata::InitHTTPData(const char *header,unsigned int headersize, const ch
 		memcpy(Header,header,headersize);
 		Header[headersize]='\0';
 		HeaderSize = headersize;
-	} else
+	}  else
 	{
-		Header=(char*)malloc(1);
-		Header[0]='\0';
-		HeaderSize=0;
-	}
+		Header = NULL;
+		HeaderSize = 0;
+    }
 	if ( (PostDataSize ) && (lpPostData) )
 	{
 		Data= (char*)malloc(PostDataSize+1);
@@ -105,10 +104,9 @@ void httpdata::InitHTTPData(const char *header,unsigned int headersize, const ch
 		DataSize = PostDataSize;
 	} else
 	{
-		Data=(char*)malloc(1);
-		Data[0]='\0';
-		DataSize=0;
-	}
+		Data = NULL;
+		DataSize = 0;
+    }
 	HTTPIOMappingData = NULL;	
 	nUrlCrawled = 0;
 	UrlCrawled = NULL;
@@ -131,14 +129,14 @@ httpdata::httpdata()
 	Comments = NULL;
 }
 /*******************************************************************************************************/
-httpdata::httpdata(const char *header)	 {  InitHTTPData(header,(unsigned int)strlen(header),NULL,0); }
-httpdata::httpdata(const char *header, int headersize)   {	InitHTTPData(header,headersize,NULL,0); }
-httpdata::httpdata(const char *header, const char *lpPostData) {	InitHTTPData(header,(unsigned int)strlen(header),lpPostData,(unsigned int)strlen(lpPostData)); }
-httpdata::httpdata(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize) { InitHTTPData(header,headersize,lpPostData,PostDataSize); }
+httpdata::httpdata(const char *header)	 {  InitHTTPData(header,strlen(header),NULL,0); }
+httpdata::httpdata(const char *header, size_t  headersize)   {	InitHTTPData(header,headersize,NULL,0); }
+httpdata::httpdata(const char *header, const char *lpPostData) {	InitHTTPData(header,strlen(header),lpPostData,strlen(lpPostData)); }
+httpdata::httpdata(const char *header,size_t headersize, const char *lpPostData,size_t  PostDataSize) { InitHTTPData(header,headersize,lpPostData,PostDataSize); }
 /*******************************************************************************************************/
-void httpdata::InitHTTPData(const char *header) {	InitHTTPData(header,(unsigned int)strlen(header),NULL,0); }
-void httpdata::InitHTTPData(const char *header, int headersize) {	InitHTTPData(header,headersize,NULL,0); }
-void httpdata::InitHTTPData(const char *header, const char *lpPostData) {	InitHTTPData(header,(unsigned int)strlen(header),lpPostData,(unsigned int)strlen(lpPostData)); }
+void httpdata::InitHTTPData(const char *header) {	InitHTTPData(header,strlen(header),NULL,0); }
+void httpdata::InitHTTPData(const char *header, size_t headersize) {	InitHTTPData(header,headersize,NULL,0); }
+void httpdata::InitHTTPData(const char *header, const char *lpPostData) {	InitHTTPData(header,strlen(header),lpPostData,strlen(lpPostData)); }
 /*******************************************************************************************************/
 char *httpdata::GetRequestedURL()
 {
@@ -211,7 +209,7 @@ char * httpdata::AddHeader(const char *newheader)
 	if (!HeaderSize)
 	{
 		int CLRFNeeded = 0;
-		int l = (unsigned int)strlen(newheader);
+		size_t l = strlen(newheader);
 		if (memcmp(newheader + l -2,"\r\n",2)!=0) CLRFNeeded+=2;
 		if (memcmp(newheader + l -4,"\r\n",2)!=0) CLRFNeeded+=2;		
 		Header = (char*)realloc(Header,l+CLRFNeeded+1);		
@@ -230,7 +228,7 @@ char * httpdata::AddHeader(const char *newheader)
 	} 
 	else
 	{
-		unsigned int NewSize= (unsigned int) strlen(newheader);
+		size_t NewSize=  strlen(newheader);
 		int CLRFNeeded = 0;
 
 		if (newheader[NewSize-1] != '\n') CLRFNeeded = 2;
@@ -261,7 +259,7 @@ char * httpdata::RemoveHeader(const char *oldheader)
 
 	if ( (HeaderSize) && (Header) && (oldheader) )
 	{
-		unsigned int HeaderLen= (unsigned int) strlen(oldheader);
+		size_t HeaderLen= strlen(oldheader);
 		while (*end) {
 			if (*end=='\n')
 			{
@@ -270,7 +268,7 @@ char * httpdata::RemoveHeader(const char *oldheader)
 					end=strchr(base,'\n');
 					memcpy(Header + (base - Header),end+1,strlen(end+1)+1);
 					Header=(char *)realloc(Header,HeaderSize - (end - base +1) +1 );
-					HeaderSize = (unsigned int) strlen(Header);
+					HeaderSize = strlen(Header);
 					break;
 				}
 				base=end+1;
@@ -415,7 +413,7 @@ char *httpdata::GetHeaderValue(const char *value,int n)
 	end=base=Header;
 	if ( (Header) && (value) )
 	{
-		unsigned int valuelen= (unsigned int) strlen(value);
+		size_t valuelen=  strlen(value);
 		while (*end) 
 		{
 			if (*end=='\n')
@@ -426,7 +424,7 @@ char *httpdata::GetHeaderValue(const char *value,int n)
 					{
 						base  = base + valuelen;
 						while  (( *base==' ') || (*base==':') )  { base++; }
-						unsigned int len = (unsigned int) (end-base);
+						size_t len =  (end-base);
 						char *header=(char*)malloc(len+1);
 						memcpy(header,base,len);
 						if (header[len-1]=='\r')
@@ -509,7 +507,7 @@ void httpdata::UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping)
 		if (HTTPIOMappingData)
 		{
 			if (Data == HTTPIOMappingData->GetMappingData())
-			{ /* previous filemapping existed */
+			{ /* previous filemapping existed , remove the filemapping however do not interact with memory*/
 				Data = NULL;
 				DataSize = 0;
 			}

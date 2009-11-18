@@ -87,13 +87,15 @@ static long GetNextTarget(char *hostname, int dstSize, int *port, int *ssl)
 
 	if (currenttarget<ntargets)
 	{		
-		if (targets[currenttarget].hostname) {
-			strcpy(hostname,targets[currenttarget].hostname);
+		if (targets[currenttarget].hostname) 
+		{
+			strncpy(hostname,targets[currenttarget].hostname,dstSize-1);			
 		} else {
 			struct sockaddr_in ip;
 			ip.sin_addr.s_addr = htonl((long)targets[currenttarget].currentip);
-			strcpy(hostname,inet_ntoa(ip.sin_addr));
+			strncpy(hostname,inet_ntoa(ip.sin_addr),dstSize-1);
 		}
+		hostname[dstSize-1]='\0';
 		*port = targets[currenttarget].port;
 		*ssl = targets[currenttarget].ssl;
 		currenttarget++;
@@ -370,7 +372,7 @@ int CBLog(int cbType,HTTPAPI *api, HTTPHANDLE HTTPHandle, httpdata*  request, ht
 	if ( (request) && (response))
 	{
 		char *data =request->GetRequestedURL();
-		char status = response->GetStatus();
+		int status = response->GetStatus();
 		char *method =request->GetHTTPMethod();
 		if (method)
 		{
@@ -406,7 +408,6 @@ int main(int argc, char *argv[]){
 
 	int ret;
 	HTTPAPI *api = new (HTTPAPI);
-
 	ret = LoadConfigurationFiles( api,argc,argv);
 	switch (ret) {
 		case 1:
@@ -443,6 +444,7 @@ int main(int argc, char *argv[]){
 	if (nthreads>MAXIMUM_WAIT_OBJECTS) {
 		nthreads=MAXIMUM_WAIT_OBJECTS;
 	}
+
 #ifdef __WIN32__RELEASE__
 	thread=(HANDLE*)malloc(sizeof(HANDLE)*nthreads);
 #endif
@@ -466,7 +468,6 @@ int main(int argc, char *argv[]){
 		pthread_create(&e_th, NULL, ScanHosts, (void *)api);
 #endif
 	}
-
 #ifdef __WIN32__RELEASE__
 	WaitForMultipleObjects(nthreads,thread,TRUE,INFINITE);
 #else
@@ -521,7 +522,6 @@ int main(int argc, char *argv[]){
 	{
 		fclose(dump);
 	}
-
 	delete api;
 	return(1);
 

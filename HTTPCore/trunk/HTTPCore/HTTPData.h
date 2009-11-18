@@ -94,23 +94,23 @@ public:
 	HTTPSTR Header;
     /*!< Pointer to a null terminated string that stores the HTTP Headers.\n 
 	The data stored under this parameter can b*/	
-	unsigned int HeaderSize;
+	size_t HeaderSize;
     /*!< Size of the HTTP Headers. */
 	HTTPSTR Data;
     /*!< Pointer to a null terminated string that stores the HTTP Data. */
-	unsigned int DataSize;
+	size_t DataSize;
     /*!< Size of the HTTP Data. */
 
 	/* Initialization */
 	httpdata();
 	httpdata(const char *header);
-	httpdata(const char *header, int headersize);
+	httpdata(const char *header, size_t headersize);
 	httpdata(const char *header, const char *lpPostData);
-	httpdata(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);	
+	httpdata(const char *header,size_t headersize, const char *lpPostData,size_t  PostDataSize);	
 	void InitHTTPData(const char *header);
-	void InitHTTPData(const char *header, int headersize);
+	void InitHTTPData(const char *header, size_t headersize);
 	void InitHTTPData(const char *header, const char *lpPostData);
-	void InitHTTPData(const char *header,unsigned int headersize, const char *lpPostData,unsigned int PostDataSize);
+	void InitHTTPData(const char *header,size_t  headersize, const char *lpPostData,size_t  PostDataSize);
 	~httpdata();
 
 	/* Header manipulation */

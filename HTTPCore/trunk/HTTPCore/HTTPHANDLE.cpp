@@ -98,7 +98,7 @@ HTTPAPIHANDLE::HTTPAPIHANDLE(void)
 }
 /*******************************************************************************************************/
 
-int HTTPAPIHANDLE::InitHandle(HTTPSTR hostname,int HTTPPort,int ssl)
+int HTTPAPIHANDLE::InitHandle(HTTPSTR hostname,unsigned short HTTPPort,int ssl)
 {
 	struct sockaddr_in remote;
 	remote.sin_addr.s_addr = inet_addr(hostname);
@@ -508,7 +508,7 @@ char *HTTPAPIHANDLE::GetAdditionalHeaderValue(const char *value,int n)
 	end=base=AdditionalHeader;
 	if ( (AdditionalHeader) && (value) )
 	{
-		unsigned int valuelen= (unsigned int) strlen(value);
+		size_t valuelen = strlen(value);
 		while (*end) {
 			if (*end=='\n')
 			{
@@ -518,7 +518,7 @@ char *HTTPAPIHANDLE::GetAdditionalHeaderValue(const char *value,int n)
 					{
 						base  = base + valuelen;
 						while  (( *base==' ') || (*base==':') )  { base++; }
-						unsigned int len = (unsigned int) (end-base);
+						size_t len = (end-base);
 						char *header=(char*)malloc(len+1);
 						memcpy(header,base,len);
 						if (header[len-1]=='\r')

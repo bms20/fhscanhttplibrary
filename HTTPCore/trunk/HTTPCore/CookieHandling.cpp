@@ -33,7 +33,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 */
 /** \file CookieHandling.h
-* Fast HTTP Auth Scanner - HTTP Engine v1.3.
+* Fast HTTP Auth Scanner - HTTP Engine v1.4
 * This include file contains functions needed to Handle Cookies From the HTTP API.
 * \author Andres Tarasco Acuna - http://www.tarasco.org
 */
@@ -80,9 +80,9 @@ void Cookie::SetDate(time_t cExpire)
 	expire = cExpire;
 }
 
-int Cookie::path_matches (const char *RequestedPath)
+size_t Cookie::path_matches (const char *RequestedPath)
 {
-	int len = strlen (path);
+	size_t len = strlen (path);
 	if (strncmp (RequestedPath, path, len))
 		/* FULL_PATH doesn't begin with PREFIX. */
 		return 0;
@@ -189,7 +189,7 @@ This check is compliant with rfc2109.  */
 
 int CookieStatus::check_domain_match (const char *cookie_domain, const char *host)
 {
-	int headlen;
+	size_t headlen;
 	const char *tail;
 	/* Numeric address requires exact match.  It also requires HOST to
 	be an IP address.  I suppose we *could* resolve HOST with
@@ -201,7 +201,7 @@ int CookieStatus::check_domain_match (const char *cookie_domain, const char *hos
 
 	/* The domain must contain at least one embedded dot. */
 	const char *rest = cookie_domain;
-	int len = strlen (rest);
+	size_t len = strlen (rest);
 	if (*rest == '.')
 		++rest, --len;            /* ignore first dot */
 	if (len <= 0)
@@ -288,9 +288,9 @@ char *CookieStatus::ReturnCookieHeaderFor(const char *lpDomain,const char *path,
 		DomainNameTreeNode = lpDomain;
 	} else
 	{
-		int len = strlen (lpDomain) -1;
+		size_t len = strlen (lpDomain) -1;
 		int n=0;
-		while (len>=0)
+		while (len>0)
 		{
 			if (lpDomain[len]=='.') n++;
 			if (n==2)
@@ -370,9 +370,9 @@ int CookieStatus::ParseCookieData(char *lpCookieData, const char *lpPath, const 
 		DomainNameTreeNode = lpDomain;
 	} else 
 	{
-		int len = strlen (lpDomain) -1;
+		size_t len = strlen (lpDomain) -1;
 		int n=0;
-		while (len>=0)
+		while (len>0)
 		{
 			if (lpDomain[len]=='.') n++;
 			if (n==2) 
@@ -414,7 +414,7 @@ int CookieStatus::ParseCookieData(char *lpCookieData, const char *lpPath, const 
 				}
 			} else if IS_MAXAGE(start)
 			{
-				double maxage = -1;
+				time_t maxage = -1;
 				sscanf (end, "%lf", &maxage);
 				if (maxage !=-1)
 				{

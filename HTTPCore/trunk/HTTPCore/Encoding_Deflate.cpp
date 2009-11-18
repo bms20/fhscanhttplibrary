@@ -87,7 +87,7 @@ __inline static int get_byte(z_stream *strm)
 	NULL is returned instead.
 */
 /******************************************************************************/
-HTTPIOMapping *gunzip(char *in, int inSize, int what)
+HTTPIOMapping *gunzip(char *in, size_t inSize, int what)
 {
 	int ret;
     unsigned have;
@@ -107,7 +107,7 @@ HTTPIOMapping *gunzip(char *in, int inSize, int what)
     strm.avail_in = strm.avail_out = 0;
 	strm.next_in  = strm.next_out  = 0;
 
-	strm.avail_in = inSize;
+	strm.avail_in = (unsigned int) inSize;
 	strm.next_in=(Bytef*)in;
 
 	if (what == GZIP_DATA )
