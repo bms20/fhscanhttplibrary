@@ -288,24 +288,29 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 
 		if (type != NORMAL_DATA)
 		{
+			if (response->Data)
+			{
+
+
 			HTTPIOMapping *decoded = gunzip(response->Data, response->DataSize,type);
 			if (decoded)
 			{
-				#ifdef _DBG_
-					printf("CBDeflate(): uncompressed %i bytes to %i. Data: %s\n",response->DataSize,total,p);
-				#endif
-				response->UpdateAndReplaceFileMappingData(decoded);
-				response->RemoveHeader("Content-Encoding:");
-				response->RemoveHeader("Content-Length:");
-				char tmp[256];
-				sprintf(tmp,"Content-Length: %i\r\n",response->DataSize);
-				response->AddHeader(tmp);
-			} else 
-			{
-				printf("CBDeflate(): Error decoding buffer with %s\n",p);
-				#ifdef _DBG_
+					#ifdef _DBG_
+						printf("CBDeflate(): uncompressed %i bytes to %i. Data: %s\n",response->DataSize,total,p);
+					#endif
+					response->UpdateAndReplaceFileMappingData(decoded);
+					response->RemoveHeader("Content-Encoding:");
+					response->RemoveHeader("Content-Length:");
+					char tmp[256];
+					sprintf(tmp,"Content-Length: %i\r\n",response->DataSize);
+					response->AddHeader(tmp);
+				} else
+				{
 					printf("CBDeflate(): Error decoding buffer with %s\n",p);
-				#endif
+					#ifdef _DBG_
+						printf("CBDeflate(): Error decoding buffer with %s\n",p);
+					#endif
+				}
 			}
 		}
 		free(encoding);

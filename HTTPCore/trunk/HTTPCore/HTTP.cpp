@@ -1245,9 +1245,9 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 			{   /* Deliver the HTTP request to the HTTP server */
 				PREQUEST data = SendRawHTTPRequest(HTTPHandle,ProxyRequest->Header,ProxyRequest->HeaderSize,ProxyRequest->Data,ProxyRequest->DataSize);
 
-				if (data) {
+				if (data)
+				{
 					ret = HTTPCallBack.DoCallBack( CBTYPE_PROXY_RESPONSE ,HTTPHandle,ProxyRequest,data->response);
-				}
 
 				if (!AsyncHTTPRequest)
 				{   /* Perform minor modifications to the HTTP Response and send it again to the client */
@@ -1289,6 +1289,9 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 						}									
 						ClientConnection->SendHTTPRequest(data->response);				
 					}
+				}
+				} else {
+					SendHTTPProxyErrorMessage( ClientConnection,0, 403,"HTTP/1.1", "Blocked Request", (HTTPSTR) 0, "The HTTP request was blocked before sending." );
 				}
 			}
 		} else
