@@ -86,6 +86,9 @@ SUCH DAMAGE.
 #define ERROR_PARSING_DATA     					0xFFFFFF
 
 #define TARGET_FREE   							0
+#ifndef SOCKET_ERROR
+#define SOCKET_ERROR (-1)
+#endif
 
 class ConnectionHandling : public SSLModule 
 {
@@ -125,6 +128,7 @@ class ConnectionHandling : public SSLModule
 	int              StablishConnection(void);
 	int              InitSSLConnection();
 	double 			 ReadChunkNumber(char *encodedData, size_t encodedlen, char *chunkcode);
+	int SendBufferToProxyClient(class ConnectionHandling *ProxyClientConnection, char *buf,int read_size);
 
 public:
 	ConnectionHandling();

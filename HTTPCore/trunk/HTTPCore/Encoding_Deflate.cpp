@@ -233,8 +233,6 @@ HTTPIOMapping *gunzip(char *in, size_t inSize, int what)
 /******************************************************************************/
 int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response)
 {
-
-
 #ifdef __WIN32__RELEASE__
 
 	if (!f_hLIBZ)
@@ -255,8 +253,6 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 			printf("## FATAL - ZLIB LIBRARY IMPORTS ERROR\n");
 			exit(1);
 		}
-//		printf("\n############ LIBRERIAS CARGADAS ##########\n");
-
 	}
 #endif
 
@@ -292,7 +288,6 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 
 		if (type != NORMAL_DATA)
 		{
-			//char *decoded = (char *) (response->Data, response->DataSize, &total, type);
 			HTTPIOMapping *decoded = gunzip(response->Data, response->DataSize,type);
 			if (decoded)
 			{
@@ -307,7 +302,7 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 				response->AddHeader(tmp);
 			} else 
 			{
-            	printf("CBDeflate(): Error decoding buffer with %s\n",p);
+				printf("CBDeflate(): Error decoding buffer with %s\n",p);
 				#ifdef _DBG_
 					printf("CBDeflate(): Error decoding buffer with %s\n",p);
 				#endif
