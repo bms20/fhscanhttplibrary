@@ -804,7 +804,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					}
 
 					char chunkcode[MAX_CHUNK_LENGTH+1];
-					if (!FirstChunk)
+					if (FirstChunk>0)
 					{
 						memcpy(TmpChunkData+ChunkDataLength,buf,read_size);
 						ChunkDataLength+=read_size;
