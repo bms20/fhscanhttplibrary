@@ -8,17 +8,17 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
 are met:
 1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
+notice, this list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
-   must display the following acknowledgement:
-    This product includes software developed by Andres Tarasco fhscan 
-    project and its contributors.
+must display the following acknowledgement:
+This product includes software developed by Andres Tarasco fhscan 
+project and its contributors.
 4. Neither the name of the project nor the names of its contributors
-   may be used to endorse or promote products derived from this software
-   without specific prior written permission.
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -38,7 +38,6 @@ SUCH DAMAGE.
 #include "HTTP.h"
 #include "ConnectionHandling.h"
 #include "CookieHandling.h"
-#include "Encoding_Chunked.h"
 #include "Encoding_Deflate.h"
 #ifdef __WIN32__RELEASE__
 #pragma comment(lib,"ws2_32.lib")
@@ -277,18 +276,17 @@ void  HTTPAPI::CleanConnectionTable(LPVOID *unused)
 		{
 			if ( (Connection_Table[i]->GetTarget()!=TARGET_FREE) && (!Connection_Table[i]->Getio()) && (!Connection_Table[i]->GetPENDINGPIPELINEREQUESTS()) )
 			{
-				//TODO: El recurso .io deberia estar protegido por el mutex de conexion[i].lock ?
 #ifdef __WIN32__RELEASE__
-				LastUsedTime.HighPart= Connection_Table[i]->tlastused.dwHighDateTime;
-				LastUsedTime.LowPart= Connection_Table[i]->tlastused.dwLowDateTime;
+				LastUsedTime.HighPart= Connection_Table[i]->LastConnectionActivity.dwHighDateTime;
+				LastUsedTime.LowPart= Connection_Table[i]->LastConnectionActivity.dwLowDateTime;
 				if ( (CurrentTime.QuadPart - LastUsedTime.QuadPart) > MAX_INACTIVE_CONNECTION )
 #else
-				if ( (fcurrenttime - Connection_Table[i]->tlastused)> MAX_INACTIVE_CONNECTION )
+				if ( (fcurrenttime - Connection_Table[i]->LastConnectionActivity)> MAX_INACTIVE_CONNECTION )
 #endif
 				{
 
 #ifdef _DBG_
-					printf("DBG: Eliminando conexion %3.3i against %s:%i \n",i,Connection_Table[i].targetDNS,Connection_Table[i].port);
+					printf("DBG: Removing connection %3.3i against %s:%i \n",i,Connection_Table[i].targetDNS,Connection_Table[i].port);
 #endif
 					Connection_Table[i]->FreeConnection();
 				}
@@ -306,7 +304,7 @@ class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTP
 	ConnectionTablelock.LockMutex();
 
 	class ConnectionHandling *connection = (class ConnectionHandling *) HTTPHandle->GetConnectionptr();
-	
+
 	if (connection) /* Seach if the HANDLE is already binded to a valid CONNECTION struct */
 	{
 		connection->IoOperationLock.LockMutex();
@@ -315,20 +313,20 @@ class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTP
 			(connection->GetThreadID() == HTTPHandle->GetThreadID()) && 
 			( (connection->GetPort()==HTTPHandle->GetPort()) || ((connection->GetConnectionAgainstProxy()) && (connection->GetPort()==HTTPHandle->GetPort()) ) ) )
 		{ 
-			
+
 			if  (!connection->Getio())
 			{
-	#ifdef _DBG_
+#ifdef _DBG_
 				printf("[DBG]: Direct Reuse Connection %3.3i- (%3.3i requests against %s)\n",HTTPHandle->conexion->id,HTTPHandle->conexion->NumberOfRequests,HTTPHandle->targetDNS);
-	#endif
+#endif
 				*id=connection->AddPipeLineRequest(request);
 			} else
 			{
 				while (!connection->Getio())
 				{
-	#ifdef _DBG_
+#ifdef _DBG_
 					printf("[DBG]: Thread %i Waiting for io\n",*id);
-	#endif
+#endif
 					Sleep(500);
 				}
 				*id=connection->AddPipeLineRequest(request);				
@@ -341,8 +339,8 @@ class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTP
 		} 
 		connection->IoOperationLock.UnLockMutex();
 	}
-	
-	
+
+
 
 	/*reause stablished connections that are not currently binded to our handle but are already stablished. */
 	int FirstIdleSlot=GetFirstIdleConnectionAgainstTarget(HTTPHandle);
@@ -369,7 +367,7 @@ class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTP
 	{
 #ifdef _DBG_
 		printf("[DBG]: Unable to get a free Socket connection against target. Maybe your application is too aggresive\nUNABLE TO GET FREE SOCKET!!!\n");
-		
+
 #endif	
 		printf("[DBG]: Unable to get a free Socket connection against target. Maybe your application is too aggresive\nUNABLE TO GET FREE SOCKET!!!\n");
 		*id = 0;
@@ -391,9 +389,7 @@ class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTP
 	}
 
 	ConnectionTablelock.LockMutex();
-
 	HTTPHandle->SetConnection((void*)Connection_Table[FirstEmptySlot]);
-	//printf("Creando nueva conexion con id: %i\n",FirstEmptySlot);
 	if (request) 
 	{
 		*id=Connection_Table[FirstEmptySlot]->AddPipeLineRequest(request);
@@ -456,67 +452,48 @@ httpdata* HTTPAPI::DispatchHTTPRequest(HTTPHANDLE HTTPHandle,httpdata* request)
 	unsigned long RequestID;
 
 
-	try
+	if (request)
 	{
 
-		if (request)
-		{
-
-			ret = HTTPCallBack.DoCallBack(CBTYPE_CLIENT_REQUEST ,HTTPHandle,request,response);
-
-			if (ret & CBRET_STATUS_CANCEL_REQUEST)
-			{
-				return(response);
-			}
-			conexion=GetSocketConnection(HTTPHandleTable[HTTPHandle],request,&RequestID);
-			if (!conexion)
-			{
-				return(NULL);
-			}
-			conexion->SendHTTPRequest(request);
-		} else
-		{
-			conexion=GetSocketConnection(HTTPHandleTable[HTTPHandle],request,&RequestID);
-		}
-
-		while (RequestID != conexion->GetPIPELINERequestID()[0])
-		{
-#ifdef _DBG_
-			printf("Waiting for ReadHTTPResponseData() %d / %d\n",RequestID,conexion->PIPELINE_Request_ID[0]);
-#endif
-			Sleep(100);
-		}
-#ifdef _DBG_
-		printf("LECTURA: LEYENDO PETICION %i en conexion %i\n",RequestID,conexion->id);
-#endif
-
-		response = conexion->ReadHTTPResponseData((ConnectionHandling*) HTTPHandleTable[HTTPHandle]->GetClientConnection(),request,NULL);
-
-		ret = HTTPCallBack.DoCallBack(CBTYPE_CLIENT_RESPONSE ,HTTPHandle,request,response);
+		ret = HTTPCallBack.DoCallBack(CBTYPE_CLIENT_REQUEST ,HTTPHandle,request,response);
 
 		if (ret & CBRET_STATUS_CANCEL_REQUEST)
 		{
-			delete response;
+			return(response);
+		}
+		conexion=GetSocketConnection(HTTPHandleTable[HTTPHandle],request,&RequestID);
+		if (!conexion)
+		{
 			return(NULL);
 		}
-
-
-	}
-	catch(...)
+		conexion->SendHTTPRequest(request);
+	} else
 	{
-
-		try
-		{
-			printf("#FATAL# ::DispatchHTTPRequest exception catch()\n");
-			return (NULL);
-		}
-		catch(...)
-		{
-
-
-		}
-
+		conexion=GetSocketConnection(HTTPHandleTable[HTTPHandle],request,&RequestID);
 	}
+
+	while (RequestID != conexion->GetPIPELINERequestID()[0])
+	{
+#ifdef _DBG_
+		printf("Waiting for ReadHTTPResponseData() %d / %d\n",RequestID,conexion->PIPELINE_Request_ID[0]);
+#endif
+		Sleep(100);
+	}
+#ifdef _DBG_
+	printf("LECTURA: LEYENDO PETICION %i en conexion %i\n",RequestID,conexion->id);
+#endif
+
+	response = conexion->ReadHTTPResponseData((ConnectionHandling*) HTTPHandleTable[HTTPHandle]->GetClientConnection(),request,NULL);
+
+	ret = HTTPCallBack.DoCallBack(CBTYPE_CLIENT_RESPONSE ,HTTPHandle,request,response);
+
+	if (ret & CBRET_STATUS_CANCEL_REQUEST)
+	{
+		delete response;
+		return(NULL);
+	}
+
+
 
 	return(response);
 
@@ -525,12 +502,12 @@ httpdata* HTTPAPI::DispatchHTTPRequest(HTTPHANDLE HTTPHandle,httpdata* request)
 
 /*******************************************************************************************************/
 httpdata* HTTPAPI::BuildHTTPRequest(
-									 HTTPHANDLE HTTPHandle,
-									 HTTPCSTR VHost,
-									 HTTPCSTR HTTPMethod,
-									 HTTPCSTR url,
-									 HTTPCSTR PostData,
-									 size_t PostDataSize)
+									HTTPHANDLE HTTPHandle,
+									HTTPCSTR VHost,
+									HTTPCSTR HTTPMethod,
+									HTTPCSTR url,
+									HTTPCSTR PostData,
+									size_t PostDataSize)
 {
 	if ( (!url) || (*url!='/') )
 	{
@@ -768,7 +745,7 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 		RealHTTPHandle->SetLastRequestedUri(NULL);
 		return(NULL);
 	}
-	
+
 
 	if ( (RealHTTPHandle->ProxyEnabled()) && (RealHTTPHandle->IsSSLNeeded()) &&
 		( (!RealHTTPHandle->GetConnectionptr()) ||
@@ -917,7 +894,7 @@ char* HTTPAPI::GetPathFromLocationHeader(httpdata* response, int ssl, const char
 		}
 		free(Location);
 	}
-	
+
 	return(NULL);
 
 }
@@ -1239,13 +1216,13 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 	/* Read an HTTP request from the connected client */
 	while ( (!ConnectionClose) && (ProxyRequest=ClientConnection->ReadHTTPProxyRequestData()) )
 	{
-	/*
-			printf("-------------------\n");
+		/*
+		printf("-------------------\n");
 		printf("%6.6i Leida peticion:\n%s",GetCurrentThreadId(),ProxyRequest->Header);
 		if (ProxyRequest->Data)
-			printf("Leidos datos de peticion:\n%s\n",ProxyRequest->Data);
+		printf("Leidos datos de peticion:\n%s\n",ProxyRequest->Data);
 		printf("-------------------\n");
-      */
+		*/
 		if (connect)
 		{   /* We are intercepting an HTTPS request. Just replay the request with some minor modifications */
 			if (DisableBrowserCache)
@@ -1817,7 +1794,7 @@ httpdata* HTTPAPI::BuildHTTPProxyResponseHeader( int isSSLStablished,int closeco
 			sprintf( tmp,"Connection: close\r\n\r\n" );
 		else
 			sprintf( tmp,"Proxy-connection: close\r\n\r\n" ); 						  
-		
+
 		strcat(headers,tmp);		
 	} else  { 
 		strcat(headers,"\r\n"); 
@@ -1836,53 +1813,53 @@ static int password_cb(char *buf,int num, int rwflag,void *userdata)
 
 int HTTPAPI::InitProxyCTX(void)
 {
-		SSL_METHOD *meth;
-		/* Load SSL options */
-		meth=SSLV23_METHOD();
-		ctx=SSL_CTX_NEW(meth);
-		if(!(SSL_CTX_USE_CERTIFICATE_CHAIN_FILE((SSL_CTX*)ctx, KEYFILE)))
-		{
-			printf("# SSL PROXY FATAL ERROR: Unable to read Certificate File\n");
-			return(0);
-		}
-		SSL_CTX_SET_DEFAULT_PASSWD_CB((SSL_CTX*)ctx, password_cb);
-		if(!(SSL_CTX_USE_PRIVATEKEY_FILE((SSL_CTX*)ctx,KEYFILE,SSL_FILETYPE_PEM)))
-		{
-			printf("# SSL PROXY FATAL ERROR: Unable to read key File\n");
-			return(0);
-		}
+	SSL_METHOD *meth;
+	/* Load SSL options */
+	meth=SSLV23_METHOD();
+	ctx=SSL_CTX_NEW(meth);
+	if(!(SSL_CTX_USE_CERTIFICATE_CHAIN_FILE((SSL_CTX*)ctx, KEYFILE)))
+	{
+		printf("# SSL PROXY FATAL ERROR: Unable to read Certificate File\n");
+		return(0);
+	}
+	SSL_CTX_SET_DEFAULT_PASSWD_CB((SSL_CTX*)ctx, password_cb);
+	if(!(SSL_CTX_USE_PRIVATEKEY_FILE((SSL_CTX*)ctx,KEYFILE,SSL_FILETYPE_PEM)))
+	{
+		printf("# SSL PROXY FATAL ERROR: Unable to read key File\n");
+		return(0);
+	}
 
-		/* Load the CAs we trust*/
-		if(!(SSL_CTX_LOAD_VERIFY_LOCATIONS((SSL_CTX*)ctx, CA_LIST,0)))
-		{
-			printf("# SSL PROXY FATAL ERROR: Unable to read CA LIST\n");
-			return(0);
-		}
+	/* Load the CAs we trust*/
+	if(!(SSL_CTX_LOAD_VERIFY_LOCATIONS((SSL_CTX*)ctx, CA_LIST,0)))
+	{
+		printf("# SSL PROXY FATAL ERROR: Unable to read CA LIST\n");
+		return(0);
+	}
 #if (OPENSSL_VERSION_NUMBER < 0x00905100L)
-		SSL_CTX_SET_VERIFY_DEPTH((SSL_CTX*)ctx,1);
+	SSL_CTX_SET_VERIFY_DEPTH((SSL_CTX*)ctx,1);
 #endif
 
 
-		DH *ret=0;
-		BIO *bio;
+	DH *ret=0;
+	BIO *bio;
 
-		if ((bio=BIO_NEW_FILE(DHFILE,"r")) == NULL)
-		{
-			printf("# SSL PROXY FATAL ERROR: Unable to open DH file\n");
+	if ((bio=BIO_NEW_FILE(DHFILE,"r")) == NULL)
+	{
+		printf("# SSL PROXY FATAL ERROR: Unable to open DH file\n");
 
-			return(0);
-		}
+		return(0);
+	}
 
 
-		ret=(DH*)PEM_READ_BIO_DHPARAMS(bio,NULL,NULL,NULL);
-		BIO_FREE(bio);
+	ret=(DH*)PEM_READ_BIO_DHPARAMS(bio,NULL,NULL,NULL);
+	BIO_FREE(bio);
 
-		if(SSL_CTX_SET_TMP_DH((SSL_CTX*)ctx,ret)<0)
-		{
-			printf("# SSL PROXY FATAL ERROR: Unable to set DH parameters\n");
+	if(SSL_CTX_SET_TMP_DH((SSL_CTX*)ctx,ret)<0)
+	{
+		printf("# SSL PROXY FATAL ERROR: Unable to set DH parameters\n");
 
-			return(0);
-		}
+		return(0);
+	}
 
 	return(1);
 }

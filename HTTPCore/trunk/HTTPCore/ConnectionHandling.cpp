@@ -69,7 +69,7 @@ int ConnectionHandling::StablishConnection(void)
 {
 	fd_set fds, fderr;
 	struct timeval tv;
-	io = 1;
+	Setio(1);
 	pending = 0;
 
 	datasock = (int) socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -100,7 +100,7 @@ int ConnectionHandling::StablishConnection(void)
 		printf("StablishConnection::Unable to connect Conexion %i to  (%s):%i\n",id,inet_ntoa(webserver.sin_addr),port);
 #endif
 		closesocket(datasock);
-		io = 0;
+		Setio(0);
 		return (0);
 	}
 
@@ -119,7 +119,7 @@ int ConnectionHandling::StablishConnection(void)
 		free(HTTPProxyClientRequestBuffer);
 		HTTPProxyClientRequestSize = 0;
 	}
-	io = 0;
+	Setio(0);
 	return (1);
 }
 
@@ -136,13 +136,13 @@ ConnectionHandling::ConnectionHandling()
 	NeedSSL = 0;
 
 #ifdef __WIN32__RELEASE__
-	tlastused.dwHighDateTime = 0;
-	tlastused.dwLowDateTime = 0;
+	LastConnectionActivity.dwHighDateTime = 0;
+	LastConnectionActivity.dwLowDateTime = 0;
 #else
-	tlastused = 0;
+	LastConnectionActivity = 0;
 #endif
 	NumberOfRequests = 0;
-	io = 0;
+	InputOutputOperation = 0;
 	PIPELINE_Request = NULL;
 	PIPELINE_Request_ID = 0;
 	PENDING_PIPELINE_REQUESTS = 0;
@@ -192,7 +192,7 @@ int ConnectionHandling::GetConnection(class HTTPAPIHANDLE *HTTPHandle)
 {
 	if (datasock==0)
 	{
-		io = 1;
+		Setio(1);
 		target=HTTPHandle->GetTarget();
 		port=HTTPHandle->GetPort();
 		NeedSSL = HTTPHandle->IsSSLNeeded();
@@ -209,21 +209,13 @@ int ConnectionHandling::GetConnection(class HTTPAPIHANDLE *HTTPHandle)
 		int ret = StablishConnection();
 		if (!ret)
 		{
-			io = 0;
-			//			*id = 0;
 			return(0);
 		}
 
 		BwLimit=HTTPHandle->GetDownloadBwLimit();
 		DownloadLimit=HTTPHandle->GetDownloadLimit();
 		ThreadID = HTTPHandle->GetThreadID();
-
 		HTTPHandle->SetConnection((void*)this);
-		io=0;
-
-	} else
-	{
-		//		printf("LLamada obviada a GetConnection\n");
 	}
 	return(1);
 }
@@ -247,12 +239,12 @@ void ConnectionHandling::Disconnect(BOOL reconnect)
 	closesocket(datasock);
 	datasock = 0;
 	NumberOfRequests=0;
-	io=reconnect;
+	Setio(reconnect);
 #ifdef __WIN32__RELEASE__
-	tlastused.dwHighDateTime=0;
-	tlastused.dwLowDateTime=0;
+	LastConnectionActivity.dwHighDateTime=0;
+	LastConnectionActivity.dwLowDateTime=0;
 #else
-	tlastused=0;
+	LastConnectionActivity=0;
 #endif
 
 }
@@ -398,12 +390,7 @@ int ConnectionHandling::SendHTTPRequest(httpdata* request)
 
 	}
 
-
-#ifdef __WIN32__RELEASE__
-	GetSystemTimeAsFileTime (&tlastused);
-#else
-	time(&tlastused);
-#endif
+	UpdateLastConnectionActivityTime();
 	return (1);
 }
 
@@ -474,17 +461,13 @@ int ConnectionHandling::ReadBytesFromConnection(char *buf, size_t bufSize, struc
 		{
 			read_size = recv(datasock, buf, bufSize, 0);
 		}
-		return(read_size);
 	}
-
-
+	return(read_size);
 }
 
 /************************************************************************************************************************/
-#define CHUNK_INSUFFICIENT_SIZE -1
-#define CHUNK_ERROR        -2
 
-double ReadChunkNumber(char *encodedData, size_t encodedlen, char *chunkcode)
+double ConnectionHandling::ReadChunkNumber(char *encodedData, size_t encodedlen, char *chunkcode)
 {
 	char *p;
 	if (encodedlen<=2)
@@ -512,6 +495,17 @@ double ReadChunkNumber(char *encodedData, size_t encodedlen, char *chunkcode)
 	}
 	*p='\0';
 	unsigned long chunk=strtol(chunkcode,NULL,16);
+	/*Security check! */
+	if (chunk == 0)
+	{
+		p = chunkcode;
+		do {
+			if (*p!='0') {
+				return (CHUNK_ERROR);
+			}
+			p++;
+		} while (*p!='\0');
+	}
 	return(chunk);
 
 }
@@ -522,23 +516,20 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 
 	/* IO VARIABLES TO HANDLE HTTP RESPONSE */
 	struct timeval tv;		       /* Timeout for select events */	
-	char buf[BUFFSIZE+1];          /* Temporary buffer where the received data is stored */
+	char buf[BUFFSIZE];          /* Temporary buffer where the received data is stored */
 	int read_size = 0;			       /* Size of the received data chunk */
 	char *lpBuffer = NULL;	       /* Pointer that stores the returned HTTP Data until its flushed to disk or splited into headers and data */
 	size_t BufferSize = 0;   /* Size of the returned HTTP Data lpBuffer */
 	char *HeadersEnd = NULL;       /* Pointer to the received buffer that indicates where the HTTP headers  end and HTTP data begins */
 	int offset = 0;                /* Number of bytes from the end of headers to the start of HTTP data. Usually 4bytes for "\r\n\r\n" if its RFC compliant*/
 	int BytesToBeReaded = -1;      /* Number of bytes remaining to be readed on the HTTP Stream (-1 means that the number of bytes is still unknown, 0 that we have reached the end of the html data ) */
-	int i;                         /* Just a counter */
-	//int pending      =  0;         /* Signals if there is Buffered data to read under and SSL connection*/
+	int i;                         /* Just a counter */	
 	httpdata* response = NULL;    /* Returned HTTP Information */
-
 
 	/* SOME CRITICAL INFORMATION THAT WE WILL GATHER FROM THE HTTP STREAM*/
 	unsigned int ChunkEncodeSupported = 0; /* HTTP PROTOCOL FLAG: Server supports chunk encoding */
 	unsigned int ConnectionClose	  = 0; /* HTTP PROTOCOL FLAG: Connection close is needed because of server header or protocol I/O error */
 	unsigned int ContentLength		  = 0; /* HTTP PROTOCOL FLAG: Server support the ContentLength header */
-
 
 	/* IO BW LIMIT CONTROL VARIABLES */
 	int BwDelay;                   /* Number of miliseconds that the application should wait until reading the next data chunk */
@@ -547,30 +538,30 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	unsigned int ChunkSize = 0;    /* Stores how many bytes have been readed   */
 
 	/* CHUNK ENCODING VARIABLES  */
-	int ChunkNumber  =  0;         /* If Chunkencoding is supported, this variable stores the number of fully received chunks */
-	char *encodedData = NULL;      /* Pointer to a buffer that stores temporary data chunks to verify how many bytes are still needed to be readed */
-	size_t encodedlen = 0 ;  /* Length of the encodedData Buffer */
+	int FirstChunk  =  0;         /* If Chunkencoding is supported, this variable stores the number of processed chunks */
+	size_t ChunkDataLength = 0 ;  /* Length of the Buffer that is storing chunks*/
 	char *TmpChunkData = NULL;     /* Pointer to a buffer that stores temporary data chunks to verify how many bytes are still needed to be readed */
+	unsigned int SkipChunkCLRF = 0; /*Number of bytes (CLRF) to be skipped before the chunk data is readed */
+	long chunk=0;				/* Length of the next data chunk */
 
 	/* I/O FILE MAPPING FOR THE HTTP DATA */
-	class HTTPIOMapping *HTTPIOMappingData = NULL;
+	class HTTPIOMapping *HTTPIOMappingData = NULL; /*Filemapping where the returned HTTP data is stored */
 
-	//LockMutex(&conexion->lock);
-	//lock.LockMutex();
 	tv.tv_sec = HTTP_READ_TIMEOUT;
 	tv.tv_usec = 0;
 
+
 	while ( BytesToBeReaded != 0 )
 	{
-//		printf("leyendo: %i bytes ",  BytesToBeReaded);
-		if ( (BytesToBeReaded!=-1) && (BytesToBeReaded < BUFFSIZE )){
+		if ( (BytesToBeReaded!=-1) && (BytesToBeReaded < BUFFSIZE ))
+		{
 			read_size = ReadBytesFromConnection(buf,BytesToBeReaded,&tv);
-		} else {
+		} else
+		{
 			read_size = ReadBytesFromConnection(buf,sizeof(buf),&tv);
 		}
-//		printf("Leidos: %i\n",read_size);
 
-		if (read_size <= 0) //if ( (read_size <= 0) && (FD_ISSET(datasock, &fderr)) )
+		if (read_size <= 0)
 		{
 			ConnectionClose = 1;
 			BytesToBeReaded = 0;
@@ -579,7 +570,6 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 				/* If the socket is reused for more than one request, always try to send it again. (assume persistent connections)*/
 				if (NumberOfRequests > 0)
 				{
-					//printf("Reconectando con la conexion previa\n");
 					shutdown(datasock,2);
 					closesocket(datasock);
 					i = StablishConnection();
@@ -591,8 +581,9 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 						SendHTTPRequest(PIPELINE_Request[i]);
 					}
 					return ReadHTTPResponseData(ProxyClientConnection, request, NULL);
-				} else {
-					//printf("CONECTA::DBG Error recv(). Se han recibido 0 bytes. Purgando conexion..\n");
+				} else
+				{
+					/*Maybe network error or invalid http server. who cares. deleting connection */
 					FreeConnection();
 					if (ConnectionAgainstProxy) return (NULL);
 					return ( new httpdata);
@@ -636,7 +627,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 			}
 
 			/* I/O DELAY OPTIONS - CHECK IF WE NEED TO WAIT TO AVOID NETWORK CONGESTION */
-			if ( (BwLimit) && (read_size>0) )
+			if (BwLimit)
 			{
 				ChunkSize +=read_size;
 				gettimeofday(&CurrentTime,NULL);
@@ -691,7 +682,20 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					}
 
 					/* Check for Connection status headers */
-						p = response->GetHeaderValue("Connection:", 0);
+					p = response->GetHeaderValue("Connection:", 0);
+					if (p)
+					{
+						if (strnicmp(p, "close", 7) == 0)
+						{
+							ConnectionClose = 1;
+						} else if (strnicmp(p, "Keep-Alive", 10) == 0)
+						{
+							ConnectionClose = 0;
+						}
+						free(p);
+					} else
+					{
+						p = response->GetHeaderValue("Proxy-Connection:", 0);
 						if (p)
 						{
 							if (strnicmp(p, "close", 7) == 0)
@@ -702,71 +706,58 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 								ConnectionClose = 0;
 							}
 							free(p);
+						}
+					}
+
+					if ((p = response->GetHeaderValue("Content-Length:", 0))!= NULL)
+					{
+						ContentLength = atoi(p);
+						if (p[0] == '-') //Negative Content Length
+						{
+							ConnectionClose = 1;
+							free(lpBuffer);
+							lpBuffer = NULL;
+							break;
 						} else
 						{
-							p = response->GetHeaderValue("Proxy-Connection:", 0);
-							if (p)
-							{
-								if (strnicmp(p, "close", 7) == 0)
-								{
-									ConnectionClose = 1;
-								} else if (strnicmp(p, "Keep-Alive", 10) == 0)
-								{
-									ConnectionClose = 0;
-								}
-								free(p);
-							}
+							BytesToBeReaded = ContentLength - BufferSize + response->HeaderSize;
 						}
+						free(p);
+					}
 
-						if ((p = response->GetHeaderValue("Content-Length:", 0))!= NULL)
+					/*HTTP 1.1 HEAD RESPONSES SHOULD NOT SEND BODY DATA.*/
+					if (strnicmp(request->Header, "HEAD ", 5) == 0)
+					{
+						if ((lpBuffer[7] == '1') && (ContentLength))
 						{
-							ContentLength = atoi(p);
-							if (p[0] == '-') //Negative Content Length
-							{
-								ConnectionClose = 1;
-								free(lpBuffer);
-								lpBuffer = NULL;
-								break;
-							} else
-							{
-								BytesToBeReaded = ContentLength - BufferSize + response->HeaderSize;
-							}
-							free(p);
-						}
-
-						/*HTTP 1.1 HEAD RESPONSES SHOULD NOT SEND BODY DATA.*/
-						if (strnicmp(request->Header, "HEAD ", 5) == 0)
-						{
-							if ((lpBuffer[7] == '1') && (ContentLength))
-							{
-								free(lpBuffer);
-								lpBuffer = NULL;
-								break;
-							}
-						}
-
-						/*HTTP 1.1 HEAD RESPONSE DOES NOT SEND BODY DATA. */
-						if (strnicmp(request->Header, "CONNECT ", 8) == 0)
-						{
-							BytesToBeReaded=0;
 							free(lpBuffer);
 							lpBuffer = NULL;
 							break;
 						}
+					}
 
-						p = response->GetHeaderValue( "Transfer-Encoding:", 0);
-						if (p)
+					/*HTTP 1.1 HEAD RESPONSE DOES NOT SEND BODY DATA. */
+					if (strnicmp(request->Header, "CONNECT ", 8) == 0)
+					{
+						BytesToBeReaded=0;
+						free(lpBuffer);
+						lpBuffer = NULL;
+						break;
+					}
+
+					p = response->GetHeaderValue( "Transfer-Encoding:", 0);
+					if (p)
+					{
+						if (strnicmp(p, "chunked", 7) == 0)
 						{
-							if (strnicmp(p, "chunked", 7) == 0)
-							{
-								ChunkEncodeSupported = 1;
+							ChunkEncodeSupported = 1;
 #ifdef _DBG_
-								printf("Leido content chunked\n");
+							printf("Leido content chunked\n");
 #endif
-							}
-							free(p);
 						}
-						BufferSize = BufferSize - response->HeaderSize;
+						free(p);
+					}
+					BufferSize = BufferSize - response->HeaderSize;
 
 				}
 			}
@@ -780,7 +771,8 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 						HTTPIOMappingData = new HTTPIOMapping(BufferSize,lpBuffer + response->HeaderSize);
 						free(lpBuffer);
 						lpBuffer=NULL;
-					} else {
+					} else
+					{
 						HTTPIOMappingData->WriteMappingData(read_size,buf);
 						BufferSize += read_size;
 					}
@@ -796,6 +788,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 							memcpy(HTTPServerResponseBuffer,HTTPIOMappingData->GetMappingData() + HTTPIOMappingData->GetMappingSize() - HTTPServerResponseSize ,HTTPServerResponseSize);
 							HTTPServerResponseBuffer[HTTPServerResponseSize]='\0';
 							BytesToBeReaded=0;
+							break;
 						}
 					}
 				} else {
@@ -803,72 +796,90 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					if (!HTTPIOMappingData)
 					{
 						HTTPIOMappingData = new HTTPIOMapping(0,NULL);
-						if (BufferSize) 
-						{
-							TmpChunkData = (char*)malloc(BufferSize + BUFFSIZE +1);
-							memcpy(TmpChunkData,lpBuffer + response->HeaderSize,BufferSize);
-							encodedlen=BufferSize;
-							TmpChunkData[BufferSize]='\0';
-						}
+						TmpChunkData = (char*)malloc(BufferSize + BUFFSIZE );
+						memcpy(TmpChunkData,lpBuffer + response->HeaderSize,BufferSize);
+						ChunkDataLength=BufferSize;
 						free(lpBuffer);
 						lpBuffer=NULL;
 					}
 
+
 					char chunkcode[MAX_CHUNK_LENGTH+1];
 					char *p;
-					unsigned long chunk=1;
 
-					encodedData = TmpChunkData;
-					if (ChunkNumber>0)
+					//					encodedData = TmpChunkData;
+					if (FirstChunk>0)
 					{
 						/* Si no es asi, los datos ya los hemos copiado de lpBuffer + response->HeaderSize */
-						memcpy(TmpChunkData+encodedlen,buf,read_size);
-						encodedlen+=read_size;
-						TmpChunkData[encodedlen]='\0';
-					} else {
-						response->RemoveHeader("Transfer-Encoding:");
+						memcpy(TmpChunkData+ChunkDataLength,buf,read_size);
+						ChunkDataLength+=read_size;
 					}
-
-					#define CHUNK_DATA_EXISTS (encodedlen >=  strlen(chunkcode)+2+chunk +2)
+					FirstChunk++;
+#define CHUNK_DATA_AVAILABLE (ChunkDataLength >= chunk)
+#define PARTIAL_CHUNK_DATA_AVAILABLE (ChunkDataLength >= BytesToBeReaded)
+#define CHUNK_VALUE strlen(chunkcode) +2
 					do
 					{
-						if (BytesToBeReaded <=0) 
+						//						printf("Inicio bucle: Tenemos %i bytes\n",   ChunkDataLength);
+						if (SkipChunkCLRF)
 						{
-							chunk = ReadChunkNumber(encodedData,encodedlen,(char*)&chunkcode);
-							switch (chunk)
+							/* SKIP CLRF anter chunk data */
+							if (ChunkDataLength >=SkipChunkCLRF)
 							{
-							case CHUNK_INSUFFICIENT_SIZE:
+								ChunkDataLength -=SkipChunkCLRF;
+								memcpy(TmpChunkData,TmpChunkData+SkipChunkCLRF,ChunkDataLength);
+								SkipChunkCLRF = 0;
+								if ( chunk == 0 )
+								{
+									//                                	printf("salimos\n");
+									BytesToBeReaded = 0;
+									break;
+								}
+							} else {
+								BytesToBeReaded = SkipChunkCLRF;
 								break;
-							case CHUNK_ERROR:
+							}
+						}
+						if (ChunkDataLength == 0) {
+							break;
+						}
+						if (BytesToBeReaded == -1)
+						{
+							chunk = ReadChunkNumber(TmpChunkData,ChunkDataLength,(char*)&chunkcode);
+							//                            chunkcode[sizeof(chunkcode)-1]='\0';
+							//							printf("Leido chunk %ld - Tenemos %i\n",chunk,ChunkDataLength);
+
+							if (chunk==CHUNK_INSUFFICIENT_SIZE)
+							{
+								BytesToBeReaded = -1;
+								break;
+							}
+							if (chunk==CHUNK_ERROR)
+							{
 								BytesToBeReaded = 0;
 								break;
 							}
-							ChunkNumber++;
-							//printf("Leido chunk: %ld. Tenemos %i bytes\n",chunk,encodedlen);
 
-							if ( CHUNK_DATA_EXISTS )
+							/* Skip chunk value */
+							ChunkDataLength-= CHUNK_VALUE;
+							memcpy(TmpChunkData,TmpChunkData+CHUNK_VALUE,ChunkDataLength);
+
+							//							printf("Leido chunk: %ld. Tenemos %i bytes\n",chunk,ChunkDataLength);
+
+							if ( CHUNK_DATA_AVAILABLE )
 							{
-								encodedlen-=strlen(chunkcode) +2 + chunk +2;					
-								memcpy(TmpChunkData,encodedData+strlen(chunkcode)+2+chunk+2,encodedlen);			
-								HTTPIOMappingData->WriteMappingData(chunk,TmpChunkData+strlen(chunkcode)+2);
-								encodedData=TmpChunkData;
-								TmpChunkData[encodedlen]='\0';
-								if ( chunk == 0 ) 
-								{	
-									//printf("Hemos terminado de leer\n");
-									BytesToBeReaded=0;
-									break;
-								} else {
-									BytesToBeReaded = -1;
-								}
-								//printf("Quedan: %i bytes\n",encodedlen);
+								ChunkDataLength-= chunk;
+								HTTPIOMappingData->WriteMappingData(chunk,TmpChunkData);
+								memcpy(TmpChunkData,TmpChunkData+chunk,ChunkDataLength);
+								BytesToBeReaded = -1;
+								SkipChunkCLRF = 2;
+
 							} else
 							{
-								encodedlen-=  strlen(chunkcode) +2;
-								HTTPIOMappingData->WriteMappingData(encodedlen,TmpChunkData+strlen(chunkcode)+2);
-								BytesToBeReaded = chunk +2 - encodedlen;
+								HTTPIOMappingData->WriteMappingData(ChunkDataLength,TmpChunkData);
+								BytesToBeReaded = chunk - ChunkDataLength;
 								if (BytesToBeReaded == 0) BytesToBeReaded = -1;
-								encodedlen=0;
+								ChunkDataLength=0;
 #ifdef _DBG_
 								printf("No llegan los datos: BytesToBeReaded asignado a %i\n",BytesToBeReaded);
 #endif
@@ -876,30 +887,29 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 						} else
 						{
 #ifdef _DBG_
-							printf("Tenemos un trozo de %i bytes . necesitamos %i bytes\n",encodedlen,BytesToBeReaded);
+							printf("Tenemos un trozo de %i bytes . necesitamos %i bytes\n",ChunkDataLength,BytesToBeReaded);
 #endif
-							if ((int)encodedlen >= BytesToBeReaded)
+							if (PARTIAL_CHUNK_DATA_AVAILABLE)
 							{
-								HTTPIOMappingData->WriteMappingData(BytesToBeReaded-2,TmpChunkData);
-								encodedData+=BytesToBeReaded;
-								encodedlen-=BytesToBeReaded;
-								BytesToBeReaded=-1;
-								memcpy(TmpChunkData,encodedData,encodedlen);
-								TmpChunkData[encodedlen]='\0';
+								HTTPIOMappingData->WriteMappingData(BytesToBeReaded,TmpChunkData);
+								ChunkDataLength-=BytesToBeReaded;
+								memcpy(TmpChunkData,TmpChunkData + BytesToBeReaded,ChunkDataLength);
+								BytesToBeReaded=-1; /* We still dont know how many bytes we need to gather.. */
+								SkipChunkCLRF = 2;
 #ifdef _DBG_
-								printf("Nos quedan %i bytes para seguir trabajando\n",encodedlen);
+								printf("Nos quedan %i bytes para seguir trabajando\n",ChunkDataLength);
 #endif
 							} else
 							{
-								BytesToBeReaded -=encodedlen;
-								encodedlen=0;
-								HTTPIOMappingData->WriteMappingData(encodedlen,TmpChunkData);
+								HTTPIOMappingData->WriteMappingData(ChunkDataLength,TmpChunkData);
+								BytesToBeReaded -=ChunkDataLength;
+								ChunkDataLength=0;
 #ifdef _DBG_
 								printf("Seguimos necesitando %i bytes\n",BytesToBeReaded);
 #endif
 							}
 						}
-					} while (encodedlen);
+					} while (ChunkDataLength);
 				}
 			}
 
@@ -911,14 +921,15 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	if (!response)
 	{
 		ConnectionClose = 1;
-		printf("error de respuesta\n");
-	} else {
+	} else
+	{
 		response->UpdateAndReplaceFileMappingData(HTTPIOMappingData);
 		if (ChunkEncodeSupported)
 		{
 			char tmp[100];
-			sprintf(tmp,"Content-Length: %i",HTTPIOMappingData->GetMappingSize());
+			sprintf(tmp,"Content-Length: %i",response->DataSize);
 			response->AddHeader(tmp);
+			response->RemoveHeader("Transfer-Encoding:");
 		}
 	}
 	if (TmpChunkData) free(TmpChunkData);
@@ -936,7 +947,6 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	{
 		NumberOfRequests++;
 		RemovePipeLineRequest();
-		io = 0;
 	}
 	return (response);
 
@@ -1032,14 +1042,14 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 	int offset=0;
 	httpdata* response=NULL;
 	int		BytesPorLeer=-1;
-	unsigned int pending = 0;
+	
 
 
 
 	while ( (BytesPorLeer!=0)  && (!ConnectionClose ) )
 	{
-			tv.tv_sec = HTTP_READ_TIMEOUT;
-	tv.tv_usec = 0;
+		tv.tv_sec = HTTP_READ_TIMEOUT;
+		tv.tv_usec = 0;
 		if (HTTPProxyClientRequestBuffer)
 		{
 			lpBuffer =HTTPProxyClientRequestBuffer;
@@ -1147,7 +1157,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 					{
 						if (BufferSize <= ContentLength)
 						{
-                        	lpBuffer=(char*)realloc(lpBuffer,BufferSize+1);
+							lpBuffer=(char*)realloc(lpBuffer,BufferSize+1);
 							lpBuffer[BufferSize]='\0';
 
 						} else
@@ -1159,7 +1169,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 
 							//strdup(lpBuffer + ContentLength);
 							//HTTPProxyClientRequestSize = BufferSize -ContentLength;
-                        }
+						}
 					} else
 					{
 						HTTPProxyClientRequestBuffer = lpBuffer;
@@ -1169,7 +1179,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 				}   else {
 					free( lpBuffer);
 					lpBuffer = NULL;
-					}
+				}
 
 			}
 
@@ -1183,11 +1193,11 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 		}
 		if (response)
 		{        /*
-			if ( (response->DataSize==0) && (BufferSize) )
-			{
-				//printf("HAY RESPONSE: %s\n",lpBuffer);
-				free(response->Data);
-			}  */
+				 if ( (response->DataSize==0) && (BufferSize) )
+				 {
+				 //printf("HAY RESPONSE: %s\n",lpBuffer);
+				 free(response->Data);
+				 }  */
 			if (BufferSize)
 			{
 				if (!ContentLength) 
@@ -1238,7 +1248,6 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 	{
 		NumberOfRequests++;
 		RemovePipeLineRequest();
-		io=0;
 	}
 	return(response);
 }
@@ -1251,6 +1260,88 @@ void ConnectionHandling::SetCTX(void *proxyctx)
 	sbio = BIO_NEW_SOCKET(datasock,BIO_NOCLOSE);
 	ssl=SSL_NEW(ctx);
 	SSL_SET_BIO(ssl,sbio,sbio);
+}
+
+/*******************************************************************************************/
+
+void ConnectionHandling::Acceptdatasock( SOCKET ListenSocket )
+{
+	int clientLen= sizeof(struct sockaddr_in);
+	datasock= (int) accept(ListenSocket,(struct sockaddr *) &webserver,(socklen_t *)&clientLen);
+	target=webserver.sin_addr.s_addr;
+	strcpy(targetDNS,inet_ntoa(webserver.sin_addr));		
+	id++;
+}
+/*******************************************************************************************/
+void ConnectionHandling::UpdateLastConnectionActivityTime(void)
+{
+#ifdef __WIN32__RELEASE__
+	GetSystemTimeAsFileTime (&LastConnectionActivity);
+#else
+	time(&LastConnectionActivity);
+#endif
+}
+
+/*******************************************************************************************/
+
+void ConnectionHandling::CloseSocket(void) 
+{ 
+	closesocket(datasock); 
+}
+/*******************************************************************************************/
+char *ConnectionHandling::GettargetDNS(void)
+{
+	return targetDNS;
+}
+/*******************************************************************************************/
+long ConnectionHandling::GetTarget(void) 
+{ 
+	return target; 
+}
+/*******************************************************************************************/
+int  ConnectionHandling::GetPort(void) 
+{ 
+	return(port); 
+}
+/*******************************************************************************************/
+int  ConnectionHandling::GetThreadID(void) 
+{ 
+	return ThreadID; 
+}
+/*******************************************************************************************/
+unsigned int ConnectionHandling::Getio(void) 
+{ 
+	return InputOutputOperation;
+}
+/*******************************************************************************************/
+void ConnectionHandling::Setio(unsigned int value) 
+{ 
+	InputOutputOperation = value; 
+}
+/*******************************************************************************************/
+int ConnectionHandling::GetPENDINGPIPELINEREQUESTS(void) 
+{ 
+	return PENDING_PIPELINE_REQUESTS; 
+}
+/*******************************************************************************************/
+unsigned long *ConnectionHandling::GetPIPELINERequestID(void) 
+{ 
+	return PIPELINE_Request_ID; 
+}
+/*******************************************************************************************/
+int ConnectionHandling::GetConnectionAgainstProxy(void) 
+{ 
+	return ConnectionAgainstProxy; 
+}
+/*******************************************************************************************/
+void *ConnectionHandling::IsSSLInitialized(void) 
+{ 
+	return (void*)ssl; 
+}	
+/*******************************************************************************************/
+void ConnectionHandling::SetBioErr(void *bio)
+{
+	bio_err = (BIO*)bio;
 }
 
 /*******************************************************************************************/

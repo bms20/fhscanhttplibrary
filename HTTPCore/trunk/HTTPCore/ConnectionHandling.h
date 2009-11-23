@@ -72,7 +72,7 @@ SUCH DAMAGE.
 
 #define HTTP_READ_TIMEOUT		10
 #define HTTP_CONN_TIMEOUT		10
-#define BUFFSIZE								4096 //default read buffer
+#define BUFFSIZE                4096 /*default read size buffer */
 #define MAX_CHECK_TIME_FOR_BW_UTILIZATION  200
 #define HTTP_CONN_TIMEOUT 10
 #define HTTP_READ_TIMEOUT 10
@@ -80,6 +80,9 @@ SUCH DAMAGE.
 
 #define MAX_CHUNK_LENGTH						12
 #define ERROR_MORE_DATA_NEEDED 					-1
+#define CHUNK_INSUFFICIENT_SIZE                 -1
+#define CHUNK_ERROR                             -2
+
 #define ERROR_PARSING_DATA     					0xFFFFFF
 
 #define TARGET_FREE   							0
@@ -89,115 +92,73 @@ class ConnectionHandling : public SSLModule
 	long 			 target;
 	char 			 targetDNS[256];
 	unsigned short	 port;
-	
-	int 			 NeedSSL; //IsSSLNeeded
+	int 			 NeedSSL; /*Signals if the connection is against an SSL service */
+	int				 ConnectionAgainstProxy; /* Signals if HTTP Proxy is enabled */
+
 	SSL_CTX *		 ctx;
-	SSL *			 ssl;
+	SSL *			 ssl; /* Signals if the ssl connection have already been initialized */
 	BIO				*bio_err;
 
-	unsigned int	 datasock;
+	unsigned int	 datasock; /* connection socket */
 	struct sockaddr_in webserver;
-	//FILETIME 		 tlastused;
-	
-	unsigned int	 NumberOfRequests;
-	unsigned int	 io;
+	unsigned int	 NumberOfRequests; /* Number of HTTP requests performed since connected */
+	unsigned int	 InputOutputOperation;  /* Signals if the connection is currently trying to connect to a remote host*/
 	int				 PENDING_PIPELINE_REQUESTS;
-
-	struct httpdata	**PIPELINE_Request;//httpdata**		 PIPELINE_Request;
-	unsigned long*	 PIPELINE_Request_ID; //Identificador de la conexion
+	struct httpdata	**PIPELINE_Request;
+	unsigned long*	 PIPELINE_Request_ID; /* Connection identifier */
 	unsigned long	 CurrentRequestID;
 	int 			 id;
-	unsigned int	 BwLimit;
-	unsigned int	 DownloadLimit;
+	unsigned int	 BwLimit; /*Bandwith limit */
+	unsigned int	 DownloadLimit; /* Download size limit */
 #ifdef __WIN32__RELEASE__
-	int				 ThreadID;
+	int				 ThreadID;  /*Thread Identifier of the calling process */
 #else
 	pthread_t		 ThreadID;
 #endif
-	int				ConnectionAgainstProxy;
-/*
-	char			*BufferedData;
-	unsigned int	BufferedDataSize;
-  */
 
-	char *HTTPServerResponseBuffer;
-	unsigned int HTTPServerResponseSize;
+	char *           HTTPServerResponseBuffer;
+	unsigned int     HTTPServerResponseSize;
+	char *           HTTPProxyClientRequestBuffer;
+	unsigned int     HTTPProxyClientRequestSize;
+	int              pending; /* Signals if there is cached data available for reading under an SSL connection*/
+	int              LimitIOBandwidth(unsigned long ChunkSize, struct timeval LastTime, struct timeval CurrentTime, int MAX_BW_LIMIT);
+	int              StablishConnection(void);
+	int              InitSSLConnection();
+	double 			 ReadChunkNumber(char *encodedData, size_t encodedlen, char *chunkcode);
 
-	char *HTTPProxyClientRequestBuffer;
-	unsigned int HTTPProxyClientRequestSize;
-	int pending;
-
-
-	int LimitIOBandwidth(unsigned long ChunkSize, struct timeval LastTime, struct timeval CurrentTime, int MAX_BW_LIMIT);
-	int StablishConnection(void);
-
-	
-		int InitSSLConnection();
 public:
-	class Threading  IoOperationLock;	//avoid pipelining
-	FILETIME 		 tlastused;
 	ConnectionHandling();
 	~ConnectionHandling();
-	int ReadBytesFromConnection(char *buf, size_t bufsize,struct timeval *tv);
+	class Threading IoOperationLock;	//support pipelining
+	FILETIME 		LastConnectionActivity; /* Called externally by CleanConnectionTable() */
+	int             ReadBytesFromConnection(char *buf, size_t bufsize,struct timeval *tv);
 	void			FreeConnection(void);
 	int				RemovePipeLineRequest(void);
-	unsigned long	AddPipeLineRequest(httpdata *request);//, unsigned long RequestID);
+	unsigned long	AddPipeLineRequest(httpdata *request);
 	int				GetConnection(class HTTPAPIHANDLE *HTTPHandle);	
 	int				SendHTTPRequest(httpdata* request);
-	
+
 	httpdata		*SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,httpdata *request);
-	void Disconnect(BOOL reconnect);
+	void            Disconnect(BOOL reconnect);
+	void            CloseSocket(void);
 
-	/*************/
-	//Funciones para proxy
-	struct httpdata *ReadHTTPProxyRequestData();	
+	struct httpdata *ReadHTTPProxyRequestData();
 	struct httpdata *ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request,class Threading *ExternalMutex);
-	void Acceptdatasock( SOCKET ListenSocket )
-	{
-		int clientLen= sizeof(struct sockaddr_in);
-		datasock= (int) accept(ListenSocket,(struct sockaddr *) &webserver,(socklen_t *)&clientLen);
-		target=webserver.sin_addr.s_addr;
-		strcpy(targetDNS,inet_ntoa(webserver.sin_addr));		
-		id++;
-	}
-	void CloseSocket() { closesocket(datasock); }
-	char *GettargetDNS() { return targetDNS; }
-	/*************/
-
-	long GetTarget() { return target; }
-	int  GetPort() { return(port); }
-	int  GetThreadID() { return ThreadID; }
-	unsigned int Getio() { return io;}
-	void Setio(unsigned int value) { io = value; }
-	int GetPENDINGPIPELINEREQUESTS() { return PENDING_PIPELINE_REQUESTS; }
-	unsigned long *GetPIPELINERequestID() { return PIPELINE_Request_ID; }
-	int GetConnectionAgainstProxy() { return ConnectionAgainstProxy; }
-
-	void UpdateLastConnectionActivityTime(void)
-	{
-	#ifdef __WIN32__RELEASE__
-		GetSystemTimeAsFileTime (&tlastused);
-	#else
-		time(&tlastused);
-	#endif
-    }
-
-	
-	void *IsSSLInitialized() { return (void*)ssl; }	
-	void SetBioErr(void *bio)
-	{
-		bio_err = (BIO*)bio;
-	}
-
-	void SetCTX(void *proxyctx);
-
-
-
+	void            Acceptdatasock( SOCKET ListenSocket );
+	char *          GettargetDNS(void);
+	long            GetTarget(void);
+	int             GetPort(void);
+	int             GetThreadID(void);
+	unsigned int    Getio(void);
+	void            Setio(unsigned int value);
+	int             GetPENDINGPIPELINEREQUESTS(void);
+	unsigned long*  GetPIPELINERequestID(void);
+	int             GetConnectionAgainstProxy(void);
+	void            UpdateLastConnectionActivityTime(void);
+	void *          IsSSLInitialized(void);
+	void            SetBioErr(void *bio);
+	void            SetCTX(void *proxyctx);
 };
-
-
-
-
-
-
 #endif
+
+
