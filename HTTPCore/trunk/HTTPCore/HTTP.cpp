@@ -97,7 +97,6 @@ HTTPAPI::HTTPAPI()
 	HandleLock.InitThread((void*)ThreadFunc,(void*)this); 
 
 	HTTPCallBack.SetHTTPApiInstance((void*)this);
-	//HTTPCallBack.RegisterHTTPCallBack( CBTYPE_CLIENT_RESPONSE | CBTYPE_PROXY_RESPONSE, (HTTP_IO_REQUEST_CALLBACK)CBDecodeChunk,"HTTP Chunk encoding decoder");
 #ifdef _ZLIB_SUPPORT_
 	HTTPCallBack.RegisterHTTPCallBack( CBTYPE_CLIENT_REQUEST | CBTYPE_CLIENT_RESPONSE, (HTTP_IO_REQUEST_CALLBACK)CBDeflate,"HTTP Gzip / Deflate decoder");
 #endif

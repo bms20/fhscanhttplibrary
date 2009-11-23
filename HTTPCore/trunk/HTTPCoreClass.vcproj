@@ -192,10 +192,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCore\Encoding_Chunked.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\HTTPCore\Encoding_Deflate.cpp"
 				>
 			</File>
@@ -355,10 +351,6 @@
 			</File>
 			<File
 				RelativePath=".\HTTPCore\encoders.h"
-				>
-			</File>
-			<File
-				RelativePath=".\HTTPCore\Encoding_Chunked.h"
 				>
 			</File>
 			<File
