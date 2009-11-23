@@ -78,7 +78,7 @@ SUCH DAMAGE.
 #define HTTP_READ_TIMEOUT 10
 #define HTTP_MAX_CONNECTIONS 100
 
-#define MAX_CHUNK_LENGTH						10
+#define MAX_CHUNK_LENGTH						12
 #define ERROR_MORE_DATA_NEEDED 					-1
 #define ERROR_PARSING_DATA     					0xFFFFFF
 
@@ -98,7 +98,7 @@ class ConnectionHandling : public SSLModule
 	unsigned int	 datasock;
 	struct sockaddr_in webserver;
 	//FILETIME 		 tlastused;
-	class Threading  lock;	//avoid pipelining
+	
 	unsigned int	 NumberOfRequests;
 	unsigned int	 io;
 	int				 PENDING_PIPELINE_REQUESTS;
@@ -125,6 +125,7 @@ class ConnectionHandling : public SSLModule
 
 	char *HTTPProxyClientRequestBuffer;
 	unsigned int HTTPProxyClientRequestSize;
+	int pending;
 
 
 	int LimitIOBandwidth(unsigned long ChunkSize, struct timeval LastTime, struct timeval CurrentTime, int MAX_BW_LIMIT);
@@ -133,9 +134,11 @@ class ConnectionHandling : public SSLModule
 	
 		int InitSSLConnection();
 public:
+	class Threading  IoOperationLock;	//avoid pipelining
 	FILETIME 		 tlastused;
 	ConnectionHandling();
 	~ConnectionHandling();
+	int ReadBytesFromConnection(char *buf, size_t bufsize,struct timeval *tv);
 	void			FreeConnection(void);
 	int				RemovePipeLineRequest(void);
 	unsigned long	AddPipeLineRequest(httpdata *request);//, unsigned long RequestID);
@@ -143,7 +146,7 @@ public:
 	int				SendHTTPRequest(httpdata* request);
 	
 	httpdata		*SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,httpdata *request);
-	void Disconnect(void);
+	void Disconnect(BOOL reconnect);
 
 	/*************/
 	//Funciones para proxy

@@ -85,11 +85,7 @@ HTTPAPIHANDLE::HTTPAPIHANDLE(void)
 	lpProxyUserName  = NULL;
 	lpProxyPassword = NULL;
 	memset(lpTmpData,0,sizeof(lpTmpData));
-	#ifdef __WIN32__RELEASE__
-	ThreadID = GetCurrentThreadId();
-	#else
-	ThreadID = pthread_self();
-	#endif
+
 	challenge = NO_AUTH;
 	CookieSupported  = 1; /* Enabled by default */
 	AutoRedirect	 = 1;
@@ -118,7 +114,12 @@ int HTTPAPIHANDLE::InitHandle(HTTPSTR hostname,unsigned short HTTPPort,int ssl)
 
 	NeedSSL			= ssl;
 	version			= 1;
-	ThreadID		= 0;
+	#ifdef __WIN32__RELEASE__
+	ThreadID = GetCurrentThreadId();
+	#else
+	ThreadID = pthread_self();
+	#endif
+
 	AdditionalHeader = NULL;
 	Cookie = NULL;
 	UserAgent= NULL;
@@ -148,6 +149,7 @@ HTTPAPIHANDLE::~HTTPAPIHANDLE()
 	port = 0;
 	NeedSSL = 0;
 	version=0;
+	ThreadID = 0;
 	if (AdditionalHeader) free(AdditionalHeader);
 	AdditionalHeader = NULL;
 

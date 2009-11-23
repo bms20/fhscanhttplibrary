@@ -8,17 +8,17 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
 are met:
 1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
+notice, this list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
-   must display the following acknowledgement:
-    This product includes software developed by Andres Tarasco fhscan 
-    project and its contributors.
+must display the following acknowledgement:
+This product includes software developed by Andres Tarasco fhscan 
+project and its contributors.
 4. Neither the name of the project nor the names of its contributors
-   may be used to endorse or promote products derived from this software
-   without specific prior written permission.
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -69,6 +69,8 @@ int ConnectionHandling::StablishConnection(void)
 {
 	fd_set fds, fderr;
 	struct timeval tv;
+	io = 1;
+	pending = 0;
 
 	datasock = (int) socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	webserver.sin_family = AF_INET;
@@ -98,6 +100,7 @@ int ConnectionHandling::StablishConnection(void)
 		printf("StablishConnection::Unable to connect Conexion %i to  (%s):%i\n",id,inet_ntoa(webserver.sin_addr),port);
 #endif
 		closesocket(datasock);
+		io = 0;
 		return (0);
 	}
 
@@ -109,13 +112,14 @@ int ConnectionHandling::StablishConnection(void)
 	if (HTTPServerResponseBuffer)
 	{
 		free(HTTPServerResponseBuffer);
-        HTTPServerResponseSize = 0;
+		HTTPServerResponseSize = 0;
 	}
 	if (HTTPServerResponseBuffer)
 	{
 		free(HTTPProxyClientRequestBuffer);
 		HTTPProxyClientRequestSize = 0;
 	}
+	io = 0;
 	return (1);
 }
 
@@ -219,13 +223,13 @@ int ConnectionHandling::GetConnection(class HTTPAPIHANDLE *HTTPHandle)
 
 	} else
 	{
-//		printf("LLamada obviada a GetConnection\n");
+		//		printf("LLamada obviada a GetConnection\n");
 	}
 	return(1);
 }
 
 
-void ConnectionHandling::Disconnect(void)
+void ConnectionHandling::Disconnect(BOOL reconnect)
 {
 
 	if (NeedSSL)
@@ -243,7 +247,7 @@ void ConnectionHandling::Disconnect(void)
 	closesocket(datasock);
 	datasock = 0;
 	NumberOfRequests=0;
-	io=0;
+	io=reconnect;
 #ifdef __WIN32__RELEASE__
 	tlastused.dwHighDateTime=0;
 	tlastused.dwLowDateTime=0;
@@ -255,29 +259,24 @@ void ConnectionHandling::Disconnect(void)
 
 void ConnectionHandling::FreeConnection(void)
 {
-
-//	printf("llamando a free connection..\n");
+	/* Remove our request header from the request pool */
 	RemovePipeLineRequest();
 
-	Disconnect();
+	/* Close the socket connection. Signal (io = 0) only if there are no pending requests */
+	Disconnect(PENDING_PIPELINE_REQUESTS);
 
+	/* We need to reconnect and resend our requests */
 	if (PENDING_PIPELINE_REQUESTS)
 	{
-#ifdef _DBG_
-		printf("LLAMANDO A STABLISH CONNECTION desde FreeConnection\n"); 
-#endif
-		io=1;
 		int i = StablishConnection();
 		if (i)
 		{
 			for (i = 0; i < PENDING_PIPELINE_REQUESTS; i++)
 			{
-//				printf("reenviando peticion HTTP %i\n",i);
 				SendHTTPRequest(PIPELINE_Request[i]);
 			}
 		} else
 		{
-			/* TODO 1 : Que pasa si no podemos reconectar?... COMO SE GESTIONAN los errores... */
 			datasock = 0;
 #ifdef _DBG_
 			printf("ERROR UNABLE TO RECONNECT\n");
@@ -290,11 +289,11 @@ void ConnectionHandling::FreeConnection(void)
 		port=TARGET_FREE;
 		NeedSSL=TARGET_FREE;
 	}
-	io=0;
 }
 
 int ConnectionHandling::RemovePipeLineRequest(void)
 {
+	IoOperationLock.LockMutex();
 	if (PENDING_PIPELINE_REQUESTS) 
 	{
 		for (int i=0;i<PENDING_PIPELINE_REQUESTS -1;i++)
@@ -309,15 +308,18 @@ int ConnectionHandling::RemovePipeLineRequest(void)
 		{
 			PIPELINE_Request=NULL;
 			PIPELINE_Request_ID = NULL;
+			IoOperationLock.UnLockMutex();
 			return(0);
 		} 
 	}
+	IoOperationLock.UnLockMutex();
 	return(PENDING_PIPELINE_REQUESTS);
 
 }
 
 unsigned long ConnectionHandling::AddPipeLineRequest(httpdata *request)//, unsigned long RequestID)
-{
+{	
+	IoOperationLock.LockMutex();
 #ifdef _DBG_
 	printf("*** AddPipeLineRequest: Añadiendo %i en conexion %i (%i +1)\n",CurrentRequestID,id,PENDING_PIPELINE_REQUESTS);
 #endif
@@ -327,7 +329,7 @@ unsigned long ConnectionHandling::AddPipeLineRequest(httpdata *request)//, unsig
 	PIPELINE_Request_ID= (unsigned long *) realloc(PIPELINE_Request_ID,sizeof(unsigned long) * (PENDING_PIPELINE_REQUESTS+1));	
 	PIPELINE_Request_ID[PENDING_PIPELINE_REQUESTS ]=CurrentRequestID++; //RequestID++;
 	PENDING_PIPELINE_REQUESTS++;	
-	//UnLockMutex(&lock);
+	IoOperationLock.UnLockMutex();
 	/* TODO 1 : Revisar de donde sale ese unlockmutex- Es necesario? el acceso esta restringido con el mutex global LOCK */
 	return(PIPELINE_Request_ID[PENDING_PIPELINE_REQUESTS -1]);
 }
@@ -421,14 +423,105 @@ httpdata* ConnectionHandling::SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandl
 	}
 }
 /**********************************************************/
+int ConnectionHandling::ReadBytesFromConnection(char *buf, size_t bufSize, struct timeval *tv)
+{
+	fd_set fdread, fds, fderr;     /* descriptors to be signaled by select events */
+	UpdateLastConnectionActivityTime();
+	if (HTTPServerResponseBuffer)
+	{
+		/* Reuse previously readed data */
+		memcpy(buf,HTTPServerResponseBuffer,HTTPServerResponseSize);
+		free(HTTPServerResponseBuffer);
+		HTTPServerResponseBuffer = NULL;
+		HTTPServerResponseSize = 0;
+		return  HTTPServerResponseSize;
+	} 
+	/* Wait for readable data at the socket */
+	FD_ZERO(&fds);
+	FD_SET(datasock, &fds);
+	FD_ZERO(&fderr);
+	FD_SET(datasock, &fderr);
+	FD_ZERO(&fdread);
+	FD_SET(datasock, &fdread);
+
+	int read_size = 0;
+
+	if (pending) 
+	{
+		if (ssl) 
+		{
+			read_size=SSL_READ(ssl, buf, bufSize );
+			pending= SSL_PENDING(ssl);
+		}
+		return (read_size);
+	}
+
+	int i = select((int) datasock + 1, &fdread, NULL,&fderr, tv);
+	/* No events from the select means that connection timed out (due to network error, read timeout or maybe and http protocol error */
+	if (i == 0)
+	{		
+		return(0);
+	}
+
+	if ( FD_ISSET(datasock, &fdread) ) 
+	{
+		if (ssl)
+		{
+			read_size=SSL_READ(ssl, buf, bufSize);
+			pending= SSL_PENDING(ssl);
+			SSL_GET_ERROR(ssl,read_size);
+		} else
+		{
+			read_size = recv(datasock, buf, bufSize, 0);
+		}
+		return(read_size);
+	}
 
 
-httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request,class Threading *ExternalMutex)// void *lock)
+}
+
+/************************************************************************************************************************/
+#define CHUNK_INSUFFICIENT_SIZE -1
+#define CHUNK_ERROR        -2
+
+double ReadChunkNumber(char *encodedData, size_t encodedlen, char *chunkcode)
+{
+	char *p;
+	if (encodedlen<=2)
+	{
+		return(CHUNK_INSUFFICIENT_SIZE);
+	}
+	if (encodedlen>=MAX_CHUNK_LENGTH)
+	{						
+		memcpy(chunkcode,encodedData,MAX_CHUNK_LENGTH);
+		chunkcode[MAX_CHUNK_LENGTH]='\0';
+		p=strstr(chunkcode,"\r\n");
+		if (!p)
+		{
+#ifdef _DBG_
+			printf("Chunk encoding Error. Data chunk Format error %s\n",chunkcode);
+#endif
+			return (CHUNK_ERROR);
+		}
+	} else
+	{
+		memcpy(chunkcode,encodedData,encodedlen);
+		chunkcode[encodedlen]='\0';
+		p=strstr(chunkcode,"\r\n");
+		if (!p) return CHUNK_INSUFFICIENT_SIZE; /*Chunk encoding Error. Not enought data. Waiting for next chunk*/
+	}
+	*p='\0';
+	unsigned long chunk=strtol(chunkcode,NULL,16);
+	return(chunk);
+
+}
+/************************************************************************************************************************/
+
+httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request,class Threading *ExternalMutexx)// void *lock)
 {
 
 	/* IO VARIABLES TO HANDLE HTTP RESPONSE */
-	struct timeval tv;		       /* Timeout for select events */
-	fd_set fdread, fds, fderr;     /* descriptors to be signaled by select events */
+	struct timeval tv;		       /* Timeout for select events */	
 	char buf[BUFFSIZE+1];          /* Temporary buffer where the received data is stored */
 	int read_size = 0;			       /* Size of the received data chunk */
 	char *lpBuffer = NULL;	       /* Pointer that stores the returned HTTP Data until its flushed to disk or splited into headers and data */
@@ -437,7 +530,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	int offset = 0;                /* Number of bytes from the end of headers to the start of HTTP data. Usually 4bytes for "\r\n\r\n" if its RFC compliant*/
 	int BytesToBeReaded = -1;      /* Number of bytes remaining to be readed on the HTTP Stream (-1 means that the number of bytes is still unknown, 0 that we have reached the end of the html data ) */
 	int i;                         /* Just a counter */
-	int pending      =  0;         /* Signals if there is Buffered data to read under and SSL connection*/
+	//int pending      =  0;         /* Signals if there is Buffered data to read under and SSL connection*/
 	httpdata* response = NULL;    /* Returned HTTP Information */
 
 
@@ -463,241 +556,123 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	class HTTPIOMapping *HTTPIOMappingData = NULL;
 
 	//LockMutex(&conexion->lock);
-	lock.LockMutex();
+	//lock.LockMutex();
 	tv.tv_sec = HTTP_READ_TIMEOUT;
 	tv.tv_usec = 0;
 
-	while (BytesToBeReaded != 0)
+	while ( BytesToBeReaded != 0 )
 	{
-		if (HTTPServerResponseBuffer)
+//		printf("leyendo: %i bytes ",  BytesToBeReaded);
+		if ( (BytesToBeReaded!=-1) && (BytesToBeReaded < BUFFSIZE )){
+			read_size = ReadBytesFromConnection(buf,BytesToBeReaded,&tv);
+		} else {
+			read_size = ReadBytesFromConnection(buf,sizeof(buf),&tv);
+		}
+//		printf("Leidos: %i\n",read_size);
+
+		if (read_size <= 0) //if ( (read_size <= 0) && (FD_ISSET(datasock, &fderr)) )
 		{
-			/* Reuse previously readed data */
-			lpBuffer = HTTPServerResponseBuffer;
-			BufferSize = read_size = HTTPServerResponseSize;
-			HTTPServerResponseBuffer = NULL;
-			HTTPServerResponseSize = 0;
-			UpdateLastConnectionActivityTime();
-		   //	printf("Quedan datos: !%s!\n",lpBuffer);
-
-		} else
-		{
-
-			/* Wait for readable data at the socket */
-			FD_ZERO(&fds);
-			FD_SET(datasock, &fds);
-			FD_ZERO(&fderr);
-			FD_SET(datasock, &fderr);
-			FD_ZERO(&fdread);
-			FD_SET(datasock, &fdread);
-
-			if (!pending)
+			ConnectionClose = 1;
+			BytesToBeReaded = 0;
+			if ( (!lpBuffer) && (HTTPIOMappingData == NULL) )
 			{
-				i = select((int) datasock + 1, &fdread, NULL,&fderr, &tv);
-
-				UpdateLastConnectionActivityTime();
-				/* No events from the select means that connection timed out (due to network error, read timeout or maybe and http protocol error */
-				if ((i == 0))
+				/* If the socket is reused for more than one request, always try to send it again. (assume persistent connections)*/
+				if (NumberOfRequests > 0)
 				{
-					//Como liberamos lpBuffer con el mapping, debemos verificar que exista "hTmpFilename" o lo que es lo mismo, la struct "response"
-					if ( (!lpBuffer) && (!HTTPIOMappingData) )
-					{
-						lock.UnLockMutex();
-						//UnLockMutex(&conexion->lock);
-						ExternalMutex->LockMutex();
-						//LockMutex(lock);
+					//printf("Reconectando con la conexion previa\n");
+					shutdown(datasock,2);
+					closesocket(datasock);
+					i = StablishConnection();
+					if (!i) {
 						FreeConnection();
-						//FreeConnection(conexion);
-						ExternalMutex->UnLockMutex();
-						if (ConnectionAgainstProxy)
-						{
-							return ( NULL) ;
-						} else
-						{
-							//return (InitHTTPData(NULL,0,NULL,0));
-							return (new httpdata) ;
-						}
+						return (NULL);
 					}
-					ConnectionClose = 1;
-					break;
-				}
-				read_size = 1;
-			}
-
-			/* Verify that there is pending readable data (over ssl) */
-			if ((FD_ISSET(datasock, &fdread)) || pending)
-			{
-
-				if (ssl)
-				{
-					read_size=SSL_READ(ssl, buf, BytesToBeReaded> sizeof(buf)-1 ? sizeof(buf)-1 :BytesToBeReaded);
-					pending= SSL_PENDING(ssl);
-					//int ret=SSL_get_error(ssl,read_size);
-					SSL_GET_ERROR(ssl,read_size);
-#ifdef _DBG_
-					printf("SSL: read: %i bytes (pending %i)\n",read_size,pending);
-#endif
-				} else
-				{
-					read_size = recv(datasock, buf, BytesToBeReaded > sizeof(buf) - 1 ? sizeof(buf) - 1 : BytesToBeReaded, 0);
-				}
-				if (read_size>0) buf[read_size]='\0'; else *buf='\0';
-#ifdef _DBG_
-				if (read_size>0)
-				{
-					printf("---------- read: \n%s\n-----------\n",buf); fflush(stdout);
-				}
-#endif
-			}
-
-			/* Verify if there are errors */
-			if ((!pending) && ((FD_ISSET(datasock, &fderr)) || (read_size <= 0)))
-			{
-//				printf("llegamos aqui con read_size = %i\n",read_size);
-				if (read_size <= 0)
-				{
-					if ( (!lpBuffer) && (HTTPIOMappingData == NULL) )
-					{
-						/* If the socket is reused for more than one request, always try to send it again. (assume persistent connections)*/
-						lock.UnLockMutex();
-						//UnLockMutex(&conexion->lock);
-						if (NumberOfRequests > 0)
-						{
-#ifdef _DBG_
-							printf("CONECTA::DBG Error recv() en peticion reutilizada\n");
-							printf("LLAMANDO A StablishConnection desde peticion fallida reutilizada\n");
-#endif
-							//LockMutex(lock);
-							ExternalMutex->LockMutex();
-							shutdown(datasock,2);
-							closesocket(datasock);
-							i = StablishConnection();
-							if (!i)
-							{
-								FreeConnection();
-								ExternalMutex->UnLockMutex();
-								//UnLockMutex(lock);
-								return (NULL);
-							}
-							for (i = 0; i <= PENDING_PIPELINE_REQUESTS - 1; i++)
-							{
-								SendHTTPRequest(PIPELINE_Request[i]);
-							}
-
-							//UnLockMutex(lock);
-							ExternalMutex->UnLockMutex();
-							return ReadHTTPResponseData(ProxyClientConnection, request, ExternalMutex);
-						} else
-						{
-							//						printf("peticiones <=0\n");
-#ifdef _DBG_
-							printf("CONECTA::DBG Error recv(). Se han recibido 0 bytes. Purgando conexion..\n");
-#endif
-							//LockMutex(lock);
-							ExternalMutex->LockMutex();
-							FreeConnection();
-							ExternalMutex->UnLockMutex();
-							//UnLockMutex(lock);
-							//return (InitHTTPData(NULL,0,NULL,0));
-							return ( new httpdata);
-						}
+					for (i = 0; i <= PENDING_PIPELINE_REQUESTS - 1; i++) {
+						SendHTTPRequest(PIPELINE_Request[i]);
 					}
-
+					return ReadHTTPResponseData(ProxyClientConnection, request, NULL);
+				} else {
+					//printf("CONECTA::DBG Error recv(). Se han recibido 0 bytes. Purgando conexion..\n");
+					FreeConnection();
+					if (ConnectionAgainstProxy) return (NULL);
+					return ( new httpdata);
 				}
-#ifdef _DBG_
-				if (FD_ISSET(datasock, &fderr)) printf("es fderr\n");
-#endif
-				ConnectionClose = 1;
-				BytesToBeReaded = 0;
 			}
-			/* END OF I/O READ FUNCTIONS. NOW WE ARE GOING TO PARSE THE DATA */
-
-
-			/* WRITE RECEIVED DATA (IF POSSIBLE) TO A TEMPORARY FILE  */
-			if (read_size>0) 
+		} else 
+		{
+			/* Asyncronous HTTP REQUEST. Deliver the received data to the browser */
+			if (ProxyClientConnection!=NULL)
 			{
-				/* Asyncronous HTTP REQUEST. Deliver the received data to the browser */
-				if (ProxyClientConnection!=NULL)
-				{
 #ifndef SOCKET_ERROR
 #define SOCKET_ERROR (-1)
 #endif
-                	UpdateLastConnectionActivityTime();
-					if (ProxyClientConnection->ssl)
-					{
-						if (SSL_WRITE(ProxyClientConnection->ssl,buf,read_size) <=0)
-						{
-							/* Cancel the asyncronous request due to an SSL communication Error with the proxy client. */
-							/* We should debug this and raise an alert */
-							BytesToBeReaded=0;
-							ConnectionClose=1;
-						}
-					} else
-					{
-						if (send(ProxyClientConnection->datasock,buf,read_size, 0) == SOCKET_ERROR ) 
-						{
-							/* Cancel the asyncronous request as the Proxy client have been disconnected somehow*/
-							BytesToBeReaded=0;
-							ConnectionClose=1;
-						}
+				int ret;
+				if (ProxyClientConnection->ssl)
+				{	
+					ret = SSL_WRITE(ProxyClientConnection->ssl,buf,read_size);
+					if (ret <= 0){
+						/* Cancel the asyncronous request due to an SSL communication Error with the proxy client. */
+						/* We should debug this and raise an alert */
+						BytesToBeReaded=0;
+						ConnectionClose=1;
 					}
-
-				}
-				if  (HTTPIOMappingData)
-				{
-					//printf("Añadiendo: %i bytes\n",read_size);
-					HTTPIOMappingData->WriteMappingData(read_size,buf);
-					BufferSize += read_size;
 				} else
 				{
-					lpBuffer = (char*) realloc(lpBuffer, BufferSize + read_size + 1);
-					memcpy(lpBuffer + BufferSize, buf, read_size);
-					BufferSize += read_size;
-					lpBuffer[BufferSize] = '\0';
+					ret = send(ProxyClientConnection->datasock,buf,read_size, 0);
+					if (ret == SOCKET_ERROR ) {
+						/* Cancel the asyncronous request as the Proxy client have been disconnected somehow*/
+						BytesToBeReaded=0;
+						ConnectionClose=1;
+					}
 				}
 			}
-		}
-
-
-		/* I/O DELAY OPTIONS - CHECK IF WE NEED TO WAIT TO AVOID NETWORK CONGESTION */
-		if ( (BwLimit) && (read_size>0) )
-		{
-			ChunkSize +=read_size;
-			gettimeofday(&CurrentTime,NULL);
-			BwDelay = LimitIOBandwidth( ChunkSize, LastTime, CurrentTime,BwLimit);
-			if (BwDelay >= 0)
+			/* WRITE RECEIVED DATA to a buffer until filemapping is available */
+			if  (!HTTPIOMappingData)
 			{
-				Sleep(BwDelay);
-				gettimeofday(&LastTime,NULL);
-				ChunkSize=0;
+				lpBuffer = (char*) realloc(lpBuffer, BufferSize + read_size + 1);
+				memcpy(lpBuffer + BufferSize, buf, read_size);
+				BufferSize += read_size;
+				lpBuffer[BufferSize] = '\0';
 			}
-		}
 
-		/* Check if the remote HTTP Headers arrived completely */
-		if ( (!HeadersEnd) && (read_size >0) )//Buscamos el fin de las cabeceras
-		{
-			char *p = strstr(lpBuffer, "\r\n\r\n");
-			if (p)
+			/* I/O DELAY OPTIONS - CHECK IF WE NEED TO WAIT TO AVOID NETWORK CONGESTION */
+			if ( (BwLimit) && (read_size>0) )
 			{
-				offset = 4;
-				HeadersEnd = p;
-			}
-			p = strstr(lpBuffer, "\n\n"); // no rfc compliant (like d-link routers)
-			if (p)
-				if ((!HeadersEnd) || (p < HeadersEnd))
+				ChunkSize +=read_size;
+				gettimeofday(&CurrentTime,NULL);
+				BwDelay = LimitIOBandwidth( ChunkSize, LastTime, CurrentTime,BwLimit);
+				if (BwDelay >= 0)
 				{
-					offset = 2;
+					Sleep(BwDelay);
+					gettimeofday(&LastTime,NULL);
+					ChunkSize=0;
+				}
+			}
+
+			/* Check if the remote HTTP Headers arrived completely */
+			if (!HeadersEnd)  
+			{
+				char *p = strstr(lpBuffer, "\r\n\r\n");
+				if (p) {
+					offset = 4;
 					HeadersEnd = p;
+				}
+				p = strstr(lpBuffer, "\n\n"); // no rfc compliant (like d-link routers)
+				if (p) {
+					if ((!HeadersEnd) || (p < HeadersEnd))
+					{
+						offset = 2;
+						HeadersEnd = p;
+					}
 				}
 
 				/* Extract Information from the remote HTTP Headers */
 				if (HeadersEnd)
 				{
-
-					if (strnicmp(lpBuffer, "HTTP/1.1 100 Continue", 21) == 0)
-					{ //HTTP 1.1 Continue Message.
+					if (strnicmp(lpBuffer, "HTTP/1.1 100 Continue", 21) == 0) /*HTTP 1.1 Continue Message.*/
+					{ 
 						free(lpBuffer);
-						return ReadHTTPResponseData(ProxyClientConnection, request, ExternalMutex);
-
+						return ReadHTTPResponseData(ProxyClientConnection, request, NULL);
 					}
 					response = new httpdata (lpBuffer,(HeadersEnd - lpBuffer) + offset);
 
@@ -706,331 +681,248 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 #endif
 					if (response->HeaderSize>8)
 					{
-						if (strcmp(response->Header+9,"204")==0)
+						/* Check for Status not modified */
+						if (strcmp(response->Header+9,"204")==0) 
 						{
-							return(response);
+							BytesToBeReaded = 0;						
 						}
-						//Use "Connection: Close" as default for HTTP/1.0
+						/*Use "Connection: Close" as default for HTTP/1.0 */
 						if (response->Header[7] =='0') ConnectionClose = 1;
-
 					}
-					p = response->GetHeaderValue("Connection:", 0);
-					//p = GetHeaderValue(response->Header, "Connection:", 0);
-					if (p)
-					{
-						if (strnicmp(p, "close", 7) == 0)
+
+					/* Check for Connection status headers */
+						p = response->GetHeaderValue("Connection:", 0);
+						if (p)
 						{
-							ConnectionClose = 1;
-						} else if (strnicmp(p, "Keep-Alive", 10) == 0)
-						{
-							ConnectionClose = 0;
-						}
-						free(p);
-					} else
-					{
-						p = response->GetHeaderValue("Proxy-Connection:", 0);
-						//p = response->GetHeaderValue("Proxy-Connection:", 0);
-						//p = GetHeaderValue(response->Header, "Proxy-Connection:", 0);
-						if (p) 
-						{
-							if (strnicmp(p, "close", 7) == 0) 
+							if (strnicmp(p, "close", 7) == 0)
 							{
 								ConnectionClose = 1;
 							} else if (strnicmp(p, "Keep-Alive", 10) == 0)
 							{
 								ConnectionClose = 0;
 							}
-							free(p);					
-						}							
-					}					
-					if ((p = response->GetHeaderValue("Content-Length:", 0))!= NULL)
-					{
-						ContentLength = atoi(p);
-						if (p[0] == '-') //Negative Content Length
-						{
-							ConnectionClose = 1;
-							free(lpBuffer);
-							lpBuffer = NULL;
-							break;
+							free(p);
 						} else
 						{
-							BytesToBeReaded = ContentLength - BufferSize
-								+ response->HeaderSize;// - offset;
+							p = response->GetHeaderValue("Proxy-Connection:", 0);
+							if (p)
+							{
+								if (strnicmp(p, "close", 7) == 0)
+								{
+									ConnectionClose = 1;
+								} else if (strnicmp(p, "Keep-Alive", 10) == 0)
+								{
+									ConnectionClose = 0;
+								}
+								free(p);
+							}
 						}
-						free(p);
-					}
-					if (strnicmp(request->Header, "HEAD ", 5) == 0)
-					{ //HTTP 1.1 HEAD RESPONSES SHOULD NOT SEND BODY DATA.
-						if ((lpBuffer[7] == '1') && (ContentLength))
+
+						if ((p = response->GetHeaderValue("Content-Length:", 0))!= NULL)
 						{
+							ContentLength = atoi(p);
+							if (p[0] == '-') //Negative Content Length
+							{
+								ConnectionClose = 1;
+								free(lpBuffer);
+								lpBuffer = NULL;
+								break;
+							} else
+							{
+								BytesToBeReaded = ContentLength - BufferSize + response->HeaderSize;
+							}
+							free(p);
+						}
+
+						/*HTTP 1.1 HEAD RESPONSES SHOULD NOT SEND BODY DATA.*/
+						if (strnicmp(request->Header, "HEAD ", 5) == 0)
+						{
+							if ((lpBuffer[7] == '1') && (ContentLength))
+							{
+								free(lpBuffer);
+								lpBuffer = NULL;
+								break;
+							}
+						}
+
+						/*HTTP 1.1 HEAD RESPONSE DOES NOT SEND BODY DATA. */
+						if (strnicmp(request->Header, "CONNECT ", 8) == 0)
+						{
+							BytesToBeReaded=0;
 							free(lpBuffer);
 							lpBuffer = NULL;
 							break;
 						}
-					}
-					if (strnicmp(request->Header, "CONNECT ", 8) == 0)
-					{ //HTTP 1.1 HEAD RESPONSE DOES NOT SEND BODY DATA.
-						BytesToBeReaded=0;
+
+						p = response->GetHeaderValue( "Transfer-Encoding:", 0);
+						if (p)
+						{
+							if (strnicmp(p, "chunked", 7) == 0)
+							{
+								ChunkEncodeSupported = 1;
+#ifdef _DBG_
+								printf("Leido content chunked\n");
+#endif
+							}
+							free(p);
+						}
+						BufferSize = BufferSize - response->HeaderSize;
+
+				}
+			}
+
+			if (HeadersEnd)
+			{
+				if (!ChunkEncodeSupported)
+				{
+					if (!HTTPIOMappingData)
+					{
+						HTTPIOMappingData = new HTTPIOMapping(BufferSize,lpBuffer + response->HeaderSize);
 						free(lpBuffer);
-						lpBuffer = NULL;
-						break;						
+						lpBuffer=NULL;
+					} else {
+						HTTPIOMappingData->WriteMappingData(read_size,buf);
+						BufferSize += read_size;
 					}
 
-					p = response->GetHeaderValue( "Transfer-Encoding:", 0);
-					if (p)
+					if ( ContentLength ) 
 					{
-						if (strnicmp(p, "chunked", 7) == 0)
+						BytesToBeReaded = ContentLength - BufferSize;
+						if (BytesToBeReaded < 0)
 						{
-							ChunkEncodeSupported = 1;
-#ifdef _DBG_
-							printf("Leido content chunked\n");
-#endif
-						}
-						free(p);
-					}
-					BufferSize = BufferSize - response->HeaderSize;
-					//Check Status code. //HTTP/1.1 204
-
-					HTTPIOMappingData = new HTTPIOMapping(BufferSize,lpBuffer + response->HeaderSize);
-					if (BufferSize) 
-					{
-						TmpChunkData = (char*)malloc(BufferSize + BUFFSIZE +1);
-						memcpy(TmpChunkData,lpBuffer + response->HeaderSize,BufferSize);
-						encodedlen=BufferSize;
-						TmpChunkData[BufferSize]='\0';
-					}
-					free(lpBuffer);
-					lpBuffer=NULL;
-				}
-
-		}
-
-
-		/* We Must Validate here the chunked Data */
-		if ( (ChunkEncodeSupported) && (read_size>0 ) )
-		{
-			char chunkcode[MAX_CHUNK_LENGTH+1];
-			char *p;
-			unsigned long chunk=1;
-
-			encodedData = TmpChunkData;
-			if (ChunkNumber>0)
-			{
-				/* Si no es asi, los datos ya los hemos copiado de lpBuffer + response->HeaderSize */
-				memcpy(TmpChunkData+encodedlen,buf,read_size);
-				encodedlen+=read_size;
-				TmpChunkData[encodedlen]='\0';
-			}
-			do
-			{
-#ifdef _DBG_
-				printf("\n\n*+++++++++++++++++++++++*\n");
-				printf("Parseando buffer de %i bytes\n",encodedlen);
-				if (encodedlen==2) printf("%x %x\n",encodedData[0],encodedData[1]);
-
-#endif
-
-				if (BytesToBeReaded <=0) 
-				{
-#ifdef _DBG_
-					printf("%s\n",encodedData);
-					printf("\n\n*----------------*\n");
-#endif
-					if (encodedlen<=2) break;
-					//printf("Bytes por leer: %i\n",BytesToBeReaded);
-					if (ChunkNumber !=0) //Sobrepasamos el CLRF del principio
-					{
-						encodedData+=2;
-						encodedlen-=2;
-					}
-					/* Read the next chunk Value (example 1337\r\n*/
-					if (encodedlen>=MAX_CHUNK_LENGTH)
-					{
-						//memset(chunkcode,0,sizeof(chunkcode));
-						memcpy(chunkcode,encodedData,MAX_CHUNK_LENGTH);
-						chunkcode[MAX_CHUNK_LENGTH]='\0';
-						p=strstr(chunkcode,"\r\n");
-						if (!p)
-						{
-#ifdef _DBG_
-							//printf("Chunk encoding Error. Data chunk Format error %s\n",encodedData);
-							printf("Chunk encoding Error. Data chunk Format error %s\n",chunkcode);
-							printf("MORE: %s\n",encodedData);
-							//exit(1);
-#endif
-							ChunkEncodeSupported = 0; //avoid further tests
-							ConnectionClose=1; //ERRRORR!!!!
-							free(TmpChunkData);
-							TmpChunkData=NULL;
-							break;
-						}
-					} else
-					{
-						memcpy(chunkcode,encodedData,encodedlen);
-						chunkcode[encodedlen]='\0';
-						p=strstr(chunkcode,"\r\n");
-						if (!p)
-						{
-#ifdef _DBG_
-							printf("Chunk encoding Error. Not enought data. Waiting for next chunk\n");
-#endif
-							if (ChunkNumber !=0) encodedlen+=2; //restauramos la longitud del chunk que vamos a analizar
-							break;
+							HTTPServerResponseSize = BytesToBeReaded *(-1);
+							HTTPServerResponseBuffer = (char*)malloc(HTTPServerResponseSize+1);
+							HTTPIOMappingData->GetMappingData();
+							memcpy(HTTPServerResponseBuffer,HTTPIOMappingData->GetMappingData() + HTTPIOMappingData->GetMappingSize() - HTTPServerResponseSize ,HTTPServerResponseSize);
+							HTTPServerResponseBuffer[HTTPServerResponseSize]='\0';
+							BytesToBeReaded=0;
 						}
 					}
-					ChunkNumber++;
-					*p='\0';
-					chunk=strtol(chunkcode,NULL,16);
-#ifdef _DBG_
-					printf("Leido chunk de valor : %i\n",chunk);
-#endif
-					if (chunk==0)
+				} else {
+					/* Decoded chunk */
+					if (!HTTPIOMappingData)
 					{
-						BytesToBeReaded=0;
-						break;
+						HTTPIOMappingData = new HTTPIOMapping(0,NULL);
+						if (BufferSize) 
+						{
+							TmpChunkData = (char*)malloc(BufferSize + BUFFSIZE +1);
+							memcpy(TmpChunkData,lpBuffer + response->HeaderSize,BufferSize);
+							encodedlen=BufferSize;
+							TmpChunkData[BufferSize]='\0';
+						}
+						free(lpBuffer);
+						lpBuffer=NULL;
 					}
 
-					if ( encodedlen >= 2 + strlen(chunkcode)+chunk)
-					{
-#ifdef _DBG_
-						printf("Encodedlen (%i) >= 2 + strlen(chunkcode)+chunk\n",encodedlen);
-#endif
-						encodedlen-=2+chunk+strlen(chunkcode);
-						//						printf("ahora quedan %i bytes\n");
-						//printf("Exactamente: %s\n",encodedData);
-						//encodedData+=2+chunk+strlen(chunkcode);
-						BytesToBeReaded = -1;
-						//memcpy(TmpChunkData,encodedData,encodedlen);
-						//HACK: REVISAR SI FUNCIONA.
-						memcpy(TmpChunkData,encodedData+2+chunk+strlen(chunkcode),encodedlen);
+					char chunkcode[MAX_CHUNK_LENGTH+1];
+					char *p;
+					unsigned long chunk=1;
 
-						encodedData=TmpChunkData;
+					encodedData = TmpChunkData;
+					if (ChunkNumber>0)
+					{
+						/* Si no es asi, los datos ya los hemos copiado de lpBuffer + response->HeaderSize */
+						memcpy(TmpChunkData+encodedlen,buf,read_size);
+						encodedlen+=read_size;
 						TmpChunkData[encodedlen]='\0';
-
-					} else
-					{
-						encodedlen-=2 + strlen(chunkcode);
-						BytesToBeReaded = chunk - encodedlen;
-						if (BytesToBeReaded == 0) BytesToBeReaded = -1;
-						encodedlen=0;
-
-#ifdef _DBG_
-						printf("No llegan los datos: BytesToBeReaded asignado a %i\n",BytesToBeReaded);
-#endif
+					} else {
+						response->RemoveHeader("Transfer-Encoding:");
 					}
-				} else
-				{
-#ifdef _DBG_
-					printf("Tenemos un trozo de %i bytes . necesitamos %i bytes\n",encodedlen,BytesToBeReaded);
-#endif
-					if ((int)encodedlen >= BytesToBeReaded)
+
+					#define CHUNK_DATA_EXISTS (encodedlen >=  strlen(chunkcode)+2+chunk +2)
+					do
 					{
+						if (BytesToBeReaded <=0) 
+						{
+							chunk = ReadChunkNumber(encodedData,encodedlen,(char*)&chunkcode);
+							switch (chunk)
+							{
+							case CHUNK_INSUFFICIENT_SIZE:
+								break;
+							case CHUNK_ERROR:
+								BytesToBeReaded = 0;
+								break;
+							}
+							ChunkNumber++;
+							//printf("Leido chunk: %ld. Tenemos %i bytes\n",chunk,encodedlen);
 
-						encodedData+=BytesToBeReaded;
-						encodedlen-=BytesToBeReaded;
-						BytesToBeReaded=-1;
-						memcpy(TmpChunkData,encodedData,encodedlen);
-						TmpChunkData[encodedlen]='\0';
+							if ( CHUNK_DATA_EXISTS )
+							{
+								encodedlen-=strlen(chunkcode) +2 + chunk +2;					
+								memcpy(TmpChunkData,encodedData+strlen(chunkcode)+2+chunk+2,encodedlen);			
+								HTTPIOMappingData->WriteMappingData(chunk,TmpChunkData+strlen(chunkcode)+2);
+								encodedData=TmpChunkData;
+								TmpChunkData[encodedlen]='\0';
+								if ( chunk == 0 ) 
+								{	
+									//printf("Hemos terminado de leer\n");
+									BytesToBeReaded=0;
+									break;
+								} else {
+									BytesToBeReaded = -1;
+								}
+								//printf("Quedan: %i bytes\n",encodedlen);
+							} else
+							{
+								encodedlen-=  strlen(chunkcode) +2;
+								HTTPIOMappingData->WriteMappingData(encodedlen,TmpChunkData+strlen(chunkcode)+2);
+								BytesToBeReaded = chunk +2 - encodedlen;
+								if (BytesToBeReaded == 0) BytesToBeReaded = -1;
+								encodedlen=0;
 #ifdef _DBG_
-						printf("Nos quedan %i bytes para seguir trabajando\n",encodedlen);
+								printf("No llegan los datos: BytesToBeReaded asignado a %i\n",BytesToBeReaded);
 #endif
-					} else
-					{
-						BytesToBeReaded -=encodedlen;
-						encodedlen=0;
+							}
+						} else
+						{
 #ifdef _DBG_
-						printf("Seguimos necesitando %i bytes\n",BytesToBeReaded);
+							printf("Tenemos un trozo de %i bytes . necesitamos %i bytes\n",encodedlen,BytesToBeReaded);
 #endif
-					}
-				}
-			} while (encodedlen);
+							if ((int)encodedlen >= BytesToBeReaded)
+							{
+								HTTPIOMappingData->WriteMappingData(BytesToBeReaded-2,TmpChunkData);
+								encodedData+=BytesToBeReaded;
+								encodedlen-=BytesToBeReaded;
+								BytesToBeReaded=-1;
+								memcpy(TmpChunkData,encodedData,encodedlen);
+								TmpChunkData[encodedlen]='\0';
 #ifdef _DBG_
-			printf("Salimos del bucle\n");
+								printf("Nos quedan %i bytes para seguir trabajando\n",encodedlen);
 #endif
-		}
-
-		if ( (ContentLength) && (read_size>0) )
-		{
-			BytesToBeReaded = ContentLength - BufferSize;
-			if (BytesToBeReaded < 0)
-			{
+							} else
+							{
+								BytesToBeReaded -=encodedlen;
+								encodedlen=0;
+								HTTPIOMappingData->WriteMappingData(encodedlen,TmpChunkData);
 #ifdef _DBG_
-				printf("***********\nError leyendo..\n************\n");
+								printf("Seguimos necesitando %i bytes\n",BytesToBeReaded);
 #endif
-				HTTPServerResponseSize = BytesToBeReaded *(-1);
-				HTTPServerResponseBuffer = (char*)malloc(HTTPServerResponseSize+1);
-				HTTPIOMappingData->GetMappingData();
-				memcpy(HTTPServerResponseBuffer,HTTPIOMappingData->GetMappingData() + HTTPIOMappingData->GetMappingSize() - HTTPServerResponseSize ,HTTPServerResponseSize);
-				HTTPServerResponseBuffer[HTTPServerResponseSize]='\0';
-				BytesToBeReaded=0;
-			}
-		}
-
-		/* TRIGGER THE DOWNLOAD LIMIT TO AVOID DEAD LOCKS When Scanning*/
-		if (DownloadLimit!=0 )
-		{
-			if (response)
-			{
-				if ( (response->DataSize + response->HeaderSize) >= DownloadLimit )
-				{
-					BytesToBeReaded=0;
-					ConnectionClose=1;
-
-				}
-			} else 
-			{
-				if (BufferSize >= DownloadLimit)
-				{
-					BytesToBeReaded=0;
-					ConnectionClose=1;
+							}
+						}
+					} while (encodedlen);
 				}
 			}
-		}
+
+		} /*read size > 0*/
 
 
+	} /* While end */
 
-	}
-#ifdef _DBG_
-	printf("End of reading\n");
-	if (response)
-	{
-		printf("Headers: %s\n",response->Header);
-	}
-#endif
-
-
-	/*** END OF READ LOOP **/
 	if (!response)
 	{
-		/* Headers were not found. We can assume that no HTTP protocol data have been returned. */
-		response= new httpdata; //InitHTTPData(NULL,0,NULL,0);
-		if (lpBuffer)
+		ConnectionClose = 1;
+		printf("error de respuesta\n");
+	} else {
+		response->UpdateAndReplaceFileMappingData(HTTPIOMappingData);
+		if (ChunkEncodeSupported)
 		{
-			//free(response->Data);
-			response->Data=lpBuffer;
-			response->DataSize = BufferSize;
-		}
-	} else
-	{
-		if (HTTPIOMappingData)
-		{
-			if (BufferSize)
-			{
-				//printf("Reemplazamos filemaping\n");
-				response->UpdateAndReplaceFileMappingData(HTTPIOMappingData);
-				//printf("prueba3: %8.8X - %s\n",response->Data,response->Data);
-//				printf("Datos: %s\n",response->Data);
-                //printf("goo\n");
-				fflush(stdout);
-			} else {
-				delete HTTPIOMappingData;
-            }
-
+			char tmp[100];
+			sprintf(tmp,"Content-Length: %i",HTTPIOMappingData->GetMappingSize());
+			response->AddHeader(tmp);
 		}
 	}
 	if (TmpChunkData) free(TmpChunkData);
 
-	ExternalMutex->LockMutex();
 	if (ConnectionClose)
 	{
 		if (HTTPServerResponseBuffer)
@@ -1046,48 +938,9 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 		RemovePipeLineRequest();
 		io = 0;
 	}
-	ExternalMutex->UnLockMutex();
-	lock.UnLockMutex();
-
-	/*
-	printf("HEMOS TARDADO: %i\n",((CurrentTime.tv_usec + CurrentTime.tv_sec*1000000) - (StartTime.tv_usec + StartTime.tv_sec*1000000) ) / 1000);
-	printf("Total: %i bytes\n",TotalSize);
-	*/
-#ifdef _DBG_
-	printf("salimos de aqui..\n");
-	printf("response->header: (%i bytes) %s\n",response->HeaderSize,response->Header);
-	printf("response->Data: (%i bytes) %s\n",response->DataSize,response->Data);
-
-#endif
-/*HACK:
-  Somewhere there is an small small bug when reading chunk-encoding data. Scenario:
-  - Transfer-Encoding: chunk-encoded
-  - Connection Keeped alive (its at least the second response)
-  - One or Two extra bytes "\n" or "\r\n" are not readed before the final of a previous response chunk 0\r\n
-
-  Maybe the end chunk is signaled and the \r\n string have not been readed (because of full buffer or because the server didnt send all the data yet.
-  At this point the client wont try to re\read again so that data will be readed
-  at the second request and therefore some information extracted by HTTP headers
-  will be corrupted, like data->statuscode, as there is no status code at the first
-  line.
-
-  This small fix will remove extra CLRF at the start of the requests
-*/
- if ( (response->HeaderSize>2) && ( (*response->Header=='\r') || (*response->Header=='\n') ) )
- {
-	int n=0;
-	while ( (response->Header[n]=='\r') || (response->Header[n]=='\n') )
-	{
-		n++;
-	}
-	memcpy(response->Header,response->Header+n,response->HeaderSize-n);
-	response->HeaderSize-=n;
-	response->Header[response->HeaderSize]=0;
-	//printf("Fixed CLRF %i bytes\n",n);
- }
-
-
 	return (response);
+
+
 }
 /*******************************************************************************************/
 
@@ -1171,7 +1024,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 	char *lpBuffer=NULL;
 	unsigned long BufferSize=0;
 
-//	unsigned long	ChunkEncodeSupported=0;
+	//	unsigned long	ChunkEncodeSupported=0;
 	unsigned long	ConnectionClose=0;
 	unsigned long	ContentLength=0;
 	char *HeadersEnd=NULL;
@@ -1181,11 +1034,12 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 	int		BytesPorLeer=-1;
 	unsigned int pending = 0;
 
-	tv.tv_sec = HTTP_READ_TIMEOUT;
-	tv.tv_usec = 0;
+
 
 	while ( (BytesPorLeer!=0)  && (!ConnectionClose ) )
 	{
+			tv.tv_sec = HTTP_READ_TIMEOUT;
+	tv.tv_usec = 0;
 		if (HTTPProxyClientRequestBuffer)
 		{
 			lpBuffer =HTTPProxyClientRequestBuffer;
@@ -1225,7 +1079,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 				if (response) delete response;//FreeHTTPData(response);
 
 #ifdef _DBG_
-		
+
 				printf("DESCONEXION del Cliente... (leidos 0 bytes - SSL: %i)\n",ssl!=NULL);
 
 #endif
@@ -1286,9 +1140,37 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 					BytesPorLeer=0;
 				}				
 				BufferSize=BufferSize-response->HeaderSize;
-				memcpy(lpBuffer,lpBuffer+response->HeaderSize,BufferSize);				
-				lpBuffer=(char*)realloc(lpBuffer,BufferSize+1);
-				lpBuffer[BufferSize]='\0';
+				memcpy(lpBuffer,lpBuffer+response->HeaderSize,BufferSize);
+				if (BufferSize)
+				{
+					if (ContentLength)
+					{
+						if (BufferSize <= ContentLength)
+						{
+                        	lpBuffer=(char*)realloc(lpBuffer,BufferSize+1);
+							lpBuffer[BufferSize]='\0';
+
+						} else
+						{
+							lpBuffer=(char*)realloc(lpBuffer,ContentLength+1);
+							lpBuffer[ContentLength]='\0';
+							HTTPProxyClientRequestBuffer = (char*)malloc(ContentLength-BufferSize+1);
+							memcpy( HTTPProxyClientRequestBuffer,lpBuffer + ContentLength, ContentLength-BufferSize);
+
+							//strdup(lpBuffer + ContentLength);
+							//HTTPProxyClientRequestSize = BufferSize -ContentLength;
+                        }
+					} else
+					{
+						HTTPProxyClientRequestBuffer = lpBuffer;
+						HTTPProxyClientRequestSize = BufferSize;
+						BytesPorLeer = 0;
+					}
+				}   else {
+					free( lpBuffer);
+					lpBuffer = NULL;
+					}
+
 			}
 
 		} else
@@ -1300,12 +1182,12 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 			}
 		}
 		if (response)
-		{
+		{        /*
 			if ( (response->DataSize==0) && (BufferSize) )
 			{
 				//printf("HAY RESPONSE: %s\n",lpBuffer);
-				free(response->Data);				
-			}
+				free(response->Data);
+			}  */
 			if (BufferSize)
 			{
 				if (!ContentLength) 
@@ -1361,14 +1243,14 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 	return(response);
 }
 /*******************************************************************************************/
-	
+
 void ConnectionHandling::SetCTX(void *proxyctx)
-	{
-		BIO					*sbio;
-		ctx = (SSL_CTX*)proxyctx;
-		sbio = BIO_NEW_SOCKET(datasock,BIO_NOCLOSE);
-		ssl=SSL_NEW(ctx);
-		SSL_SET_BIO(ssl,sbio,sbio);
-	}
+{
+	BIO					*sbio;
+	ctx = (SSL_CTX*)proxyctx;
+	sbio = BIO_NEW_SOCKET(datasock,BIO_NOCLOSE);
+	ssl=SSL_NEW(ctx);
+	SSL_SET_BIO(ssl,sbio,sbio);
+}
 
 /*******************************************************************************************/

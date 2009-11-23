@@ -97,7 +97,7 @@ HTTPAPI::HTTPAPI()
 	HandleLock.InitThread((void*)ThreadFunc,(void*)this); 
 
 	HTTPCallBack.SetHTTPApiInstance((void*)this);
-	HTTPCallBack.RegisterHTTPCallBack( CBTYPE_CLIENT_RESPONSE | CBTYPE_PROXY_RESPONSE, (HTTP_IO_REQUEST_CALLBACK)CBDecodeChunk,"HTTP Chunk encoding decoder");
+	//HTTPCallBack.RegisterHTTPCallBack( CBTYPE_CLIENT_RESPONSE | CBTYPE_PROXY_RESPONSE, (HTTP_IO_REQUEST_CALLBACK)CBDecodeChunk,"HTTP Chunk encoding decoder");
 #ifdef _ZLIB_SUPPORT_
 	HTTPCallBack.RegisterHTTPCallBack( CBTYPE_CLIENT_REQUEST | CBTYPE_CLIENT_RESPONSE, (HTTP_IO_REQUEST_CALLBACK)CBDeflate,"HTTP Gzip / Deflate decoder");
 #endif
@@ -265,7 +265,7 @@ void  HTTPAPI::CleanConnectionTable(LPVOID *unused)
 #endif
 	while(1)
 	{
-		lock.LockMutex();
+		ConnectionTablelock.LockMutex();
 
 #ifdef __WIN32__RELEASE__
 		GetSystemTimeAsFileTime(&fcurrenttime);
@@ -295,7 +295,7 @@ void  HTTPAPI::CleanConnectionTable(LPVOID *unused)
 				}
 			}
 		}
-		lock.UnLockMutex();
+		ConnectionTablelock.UnLockMutex();
 		Sleep(5000);
 	}
 
@@ -304,66 +304,82 @@ void  HTTPAPI::CleanConnectionTable(LPVOID *unused)
 /*******************************************************************************************************/
 class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTPHandle, httpdata* request, unsigned long *id)
 {
-	lock.LockMutex();
+	ConnectionTablelock.LockMutex();
 
-	class ConnectionHandling *connection = (class ConnectionHandling *) HTTPHandle->GetConnection();
-
-	/* Seach if the HANDLE is already binded to a CONNECTION struct */
-	if ( (request) && (connection) && 	
-		(connection->GetTarget()==HTTPHandle->GetTarget()) && 
-		(connection->GetThreadID()==HTTPHandle->GetThreadID()) && 
-		( (connection->GetPort()==HTTPHandle->GetPort()) || ((connection->GetConnectionAgainstProxy()) && (connection->GetPort()==HTTPHandle->GetPort()) ) ) )
-	{ 
-		if  (!connection->Getio())
-		{
-#ifdef _DBG_
-			printf("[DBG]: Direct Reuse Connection %3.3i- (%3.3i requests against %s)\n",HTTPHandle->conexion->id,HTTPHandle->conexion->NumberOfRequests,HTTPHandle->targetDNS);
-#endif
-			*id=connection->AddPipeLineRequest(request);
-		} else
-		{
-			while (!connection->Getio())
+	class ConnectionHandling *connection = (class ConnectionHandling *) HTTPHandle->GetConnectionptr();
+	
+	if (connection) /* Seach if the HANDLE is already binded to a valid CONNECTION struct */
+	{
+		connection->IoOperationLock.LockMutex();
+		if ( (request) && (connection) && 	
+			(connection->GetTarget()==HTTPHandle->GetTarget()) && 
+			(connection->GetThreadID() == HTTPHandle->GetThreadID()) && 
+			( (connection->GetPort()==HTTPHandle->GetPort()) || ((connection->GetConnectionAgainstProxy()) && (connection->GetPort()==HTTPHandle->GetPort()) ) ) )
+		{ 
+			
+			if  (!connection->Getio())
 			{
-#ifdef _DBG_
-				printf("[DBG]: Thread %i Waiting for io\n",*id);
-#endif
-				Sleep(500);
+	#ifdef _DBG_
+				printf("[DBG]: Direct Reuse Connection %3.3i- (%3.3i requests against %s)\n",HTTPHandle->conexion->id,HTTPHandle->conexion->NumberOfRequests,HTTPHandle->targetDNS);
+	#endif
+				*id=connection->AddPipeLineRequest(request);
+			} else
+			{
+				while (!connection->Getio())
+				{
+	#ifdef _DBG_
+					printf("[DBG]: Thread %i Waiting for io\n",*id);
+	#endif
+					Sleep(500);
+				}
+				*id=connection->AddPipeLineRequest(request);				
 			}
-			*id=connection->AddPipeLineRequest(request);
-		}
 
-		lock.UnLockMutex();	
-		return(connection);
-	} 
+			//lock.UnLockMutex();	
+			connection->IoOperationLock.UnLockMutex();
+			ConnectionTablelock.UnLockMutex();
+			return(connection);
+		} 
+		connection->IoOperationLock.UnLockMutex();
+	}
+	
+	
 
-	/*Search For stablished connections that are not currently used. */
+	/*reause stablished connections that are not currently binded to our handle but are already stablished. */
 	int FirstIdleSlot=GetFirstIdleConnectionAgainstTarget(HTTPHandle);
 	if (FirstIdleSlot!=-1) //Idle Connection Found. Reuse connection
 	{
 #ifdef _DBG_
 		printf("[DBG]: Reuse Connection %3.3i  - %3.3i requests against %s\n",FirstIdleSlot,Connection_Table[FirstIdleSlot].NumberOfRequests,HTTPHandle->targetDNS);
-#endif
+#endif		
 		HTTPHandle->SetConnection((void*)Connection_Table[FirstIdleSlot]);
 		if (request) *id = Connection_Table[FirstIdleSlot]->AddPipeLineRequest(request);
-		lock.UnLockMutex();
+		ConnectionTablelock.UnLockMutex();
 		return(Connection_Table[FirstIdleSlot]);
 	}
 
-	/* Search for a free slot and then connect to the remote target */
+
+
+	/* There are no stablished connections against the target */
+	/* Stablish a new connection against the remote Host */
+
+	/* Search for a free slot into the connection table and store our connection */
+
 	int FirstEmptySlot=GetFirstUnUsedConnection();
-	if (FirstEmptySlot==-1) //Connection table full. Try Again Later
+	if (FirstEmptySlot==-1) /*Connection table full. Try Again Later*/
 	{
 #ifdef _DBG_
-		printf("[DBG]: Unable to get a free Socket connection against target. Maybe your application is too aggresive");
-		printf("UNABLE TO GET FREE SOCKET!!!\n");
-#endif		
-		lock.UnLockMutex();
+		printf("[DBG]: Unable to get a free Socket connection against target. Maybe your application is too aggresive\nUNABLE TO GET FREE SOCKET!!!\n");
+		
+#endif	
+		printf("[DBG]: Unable to get a free Socket connection against target. Maybe your application is too aggresive\nUNABLE TO GET FREE SOCKET!!!\n");
 		*id = 0;
+		ConnectionTablelock.UnLockMutex();
 		return(NULL);
 	}
 
-	/* Stablish a new connection against the remote HTTP Host */
-	lock.UnLockMutex();
+	Connection_Table[FirstEmptySlot]->Setio(1); /* avoid our slot to be modified by other thread when unlocking the global mutex */
+	ConnectionTablelock.UnLockMutex();
 	int ret = Connection_Table[FirstEmptySlot]->GetConnection(HTTPHandle);
 
 	if (!ret)
@@ -371,19 +387,19 @@ class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTP
 #ifdef _DBG_
 		printf("GetSocketConnection:  Connection Failed\n");
 #endif
-		lock.LockMutex();
-		Connection_Table[FirstEmptySlot]->FreeConnection();
-		lock.UnLockMutex();
 		*id = 0;
 		return(NULL);
 	}
 
-	HTTPHandle->SetConnection((void*)Connection_Table[FirstEmptySlot]);
-	lock.LockMutex();
-	if (request) *id=Connection_Table[FirstEmptySlot]->AddPipeLineRequest(request);
-	Connection_Table[FirstEmptySlot]->Setio(0);
-	lock.UnLockMutex();
+	ConnectionTablelock.LockMutex();
 
+	HTTPHandle->SetConnection((void*)Connection_Table[FirstEmptySlot]);
+	//printf("Creando nueva conexion con id: %i\n",FirstEmptySlot);
+	if (request) 
+	{
+		*id=Connection_Table[FirstEmptySlot]->AddPipeLineRequest(request);
+	}
+	ConnectionTablelock.UnLockMutex();
 	return(Connection_Table[FirstEmptySlot]);
 }
 
@@ -426,6 +442,7 @@ int HTTPAPI::GetFirstUnUsedConnection()
 	{
 		if ( (Connection_Table[i]->GetTarget()==TARGET_FREE) && (!Connection_Table[i]->Getio()) && (!Connection_Table[i]->GetPENDINGPIPELINEREQUESTS()) )
 		{
+			//printf("Devolviendo id de conexion: %i\n",i);
 			return(i);
 		}
 	}
@@ -474,7 +491,7 @@ httpdata* HTTPAPI::DispatchHTTPRequest(HTTPHANDLE HTTPHandle,httpdata* request)
 		printf("LECTURA: LEYENDO PETICION %i en conexion %i\n",RequestID,conexion->id);
 #endif
 
-		response = conexion->ReadHTTPResponseData((ConnectionHandling*) HTTPHandleTable[HTTPHandle]->GetClientConnection(),request,&lock);
+		response = conexion->ReadHTTPResponseData((ConnectionHandling*) HTTPHandleTable[HTTPHandle]->GetClientConnection(),request,NULL);
 
 		ret = HTTPCallBack.DoCallBack(CBTYPE_CLIENT_RESPONSE ,HTTPHandle,request,response);
 
@@ -526,9 +543,9 @@ httpdata* HTTPAPI::BuildHTTPRequest(
 	tmp[MAX_HEADER_SIZE-1]=0;
 
 	if ( (RealHTTPHandle->ProxyEnabled()) && (RealHTTPHandle->IsSSLNeeded()) &&
-		( (!RealHTTPHandle->GetConnection()) ||
-		( (RealHTTPHandle->GetConnection())  &&
-		(!((class ConnectionHandling*)RealHTTPHandle->GetConnection())->IsSSLInitialized())  ) ) )
+		( (!RealHTTPHandle->GetConnectionptr()) ||
+		( (RealHTTPHandle->GetConnectionptr())  &&
+		(!((class ConnectionHandling*)RealHTTPHandle->GetConnectionptr())->IsSSLInitialized())  ) ) )
 	{
 		/*
 		* We have to deal with an HTTPS request thought a proxy server 
@@ -755,9 +772,9 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 	
 
 	if ( (RealHTTPHandle->ProxyEnabled()) && (RealHTTPHandle->IsSSLNeeded()) &&
-		( (!RealHTTPHandle->GetConnection()) ||
-		( (RealHTTPHandle->GetConnection())  &&
-		(!((class ConnectionHandling*)RealHTTPHandle->GetConnection())->IsSSLInitialized())  ) ) )
+		( (!RealHTTPHandle->GetConnectionptr()) ||
+		( (RealHTTPHandle->GetConnectionptr())  &&
+		(!((class ConnectionHandling*)RealHTTPHandle->GetConnectionptr())->IsSSLInitialized())  ) ) )
 	{
 		RealHTTPHandle->SetLastRequestedUri(NULL);
 		if (( response->HeaderSize>=12) && (memcmp(response->Header+9,"200",3)==0))
@@ -767,9 +784,9 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 		} else 
 		{
 			/* Return a proxy error message */
-			if ( (RealHTTPHandle->GetConnection()) && (((class ConnectionHandling*)RealHTTPHandle->GetConnection())->IsSSLInitialized()) )
+			if ( (RealHTTPHandle->GetConnectionptr()) && (((class ConnectionHandling*)RealHTTPHandle->GetConnectionptr())->IsSSLInitialized()) )
 			{
-				((class ConnectionHandling*)RealHTTPHandle->GetConnection())->FreeConnection();
+				((class ConnectionHandling*)RealHTTPHandle->GetConnectionptr())->FreeConnection();
 				RealHTTPHandle->SetConnection(NULL);
 			}		
 			RealHTTPHandle->challenge=NO_AUTH;
@@ -995,15 +1012,15 @@ HTTP proxy server by SendRawHttpRequest()
 int HTTPAPI::CancelHttpRequest(HTTPHANDLE HTTPHandle, int what)
 {
 	int ret=0;
-	lock.LockMutex();
+	ConnectionTablelock.LockMutex();
 	class HTTPAPIHANDLE * phandle = GetHTTPAPIHANDLE(HTTPHandle);
-	class ConnectionHandling *conexion = (class ConnectionHandling *)phandle->GetConnection();
+	class ConnectionHandling *conexion = (class ConnectionHandling *)phandle->GetConnectionptr();
 	if (conexion)
 	{
-		conexion->Disconnect();
+		conexion->Disconnect(0);
 		ret=1;
 	}
-	lock.UnLockMutex();
+	ConnectionTablelock.UnLockMutex();
 	return (ret);
 }
 /*******************************************************************************************/
@@ -1124,6 +1141,7 @@ void *HTTPAPI::ListenConnection(void *foo)
 		param->ListeningConnectionptr = (void*)connection;
 #ifdef __WIN32__RELEASE__
 		CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) DispatchHTTPProxyRequestThreadFunc, (LPVOID) param, 0, &dwThread);
+		//DispatchHTTPProxyRequestThreadFunc(param);
 #else
 		void* (*foo)(void*) = (void*(*)(void*))DispatchHTTPProxyRequestThreadFunc;
 		pthread_create(&e_th, NULL,foo, (void *)param);
@@ -1222,6 +1240,13 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 	/* Read an HTTP request from the connected client */
 	while ( (!ConnectionClose) && (ProxyRequest=ClientConnection->ReadHTTPProxyRequestData()) )
 	{
+	/*
+			printf("-------------------\n");
+		printf("%6.6i Leida peticion:\n%s",GetCurrentThreadId(),ProxyRequest->Header);
+		if (ProxyRequest->Data)
+			printf("Leidos datos de peticion:\n%s\n",ProxyRequest->Data);
+		printf("-------------------\n");
+      */
 		if (connect)
 		{   /* We are intercepting an HTTPS request. Just replay the request with some minor modifications */
 			if (DisableBrowserCache)

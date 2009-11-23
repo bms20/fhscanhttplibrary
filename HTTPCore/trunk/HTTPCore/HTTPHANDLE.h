@@ -129,7 +129,7 @@ public:
 	
 
 	//Connection links
-	void *GetConnection() { return conexion; }
+	void *GetConnectionptr() { return conexion; }
 	void SetConnection(void *connection) { conexion = connection; }	
 	void *GetClientConnection() { return ClientConnection; }
 	void SetClientConnection(void *Client_Connection) { ClientConnection = Client_Connection; }

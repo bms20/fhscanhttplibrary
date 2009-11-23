@@ -307,6 +307,7 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 				response->AddHeader(tmp);
 			} else 
 			{
+            	printf("CBDeflate(): Error decoding buffer with %s\n",p);
 				#ifdef _DBG_
 					printf("CBDeflate(): Error decoding buffer with %s\n",p);
 				#endif

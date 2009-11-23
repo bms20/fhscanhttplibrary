@@ -551,6 +551,11 @@ int httpdata::GetStatus()
 			char tmp[4];
 			memcpy(tmp,Header+9,3);
 			tmp[3]=0;
+			int ret = atoi(tmp);
+			if (ret ==0)
+			{
+				printf("ERROR GORDO\n");
+			}
 			return(atoi(tmp));
 		} else {
 			return(0);

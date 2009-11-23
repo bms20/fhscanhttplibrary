@@ -104,7 +104,7 @@ class HTTPAPI : public encoders
 	class ConnectionHandling *Connection_Table[MAX_OPEN_CONNECTIONS];/*Connection table (conexiones concurrentes) */	
 	class HTTPCALLBACK HTTPCallBack;	/* CallBacks */
 	class Threading HandleLock;			/* internal Threads */
-	class Threading lock;				/* internal Threads */
+	class Threading ConnectionTablelock;/* internal Mutex for handling Connection table modifications*/
 	class Threading ProxyEngine;		/* internal Threads */
 	#ifdef __WIN32__RELEASE__
 	WSADATA ws;							/* Win32 Sockets */
