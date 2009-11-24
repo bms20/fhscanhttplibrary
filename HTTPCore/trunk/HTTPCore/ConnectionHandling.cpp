@@ -73,6 +73,9 @@ int ConnectionHandling::StablishConnection(void)
 	pending = 0;
 
 	datasock = (int) socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+#ifndef __WIN32__RELEASE__
+	if (datasock==-1) perror("socket");
+#endif
 	webserver.sin_family = AF_INET;
 	webserver.sin_addr.s_addr = target;//inet_addr(target);
 	webserver.sin_port = htons(port);

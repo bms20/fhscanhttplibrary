@@ -201,7 +201,7 @@ HTTPIOMapping *gunzip(char *in, size_t inSize, int what)
 				{
 					HTTPIoMapping = new HTTPIOMapping;
 				}
-				HTTPIoMapping->WriteMappingData(have,(char*)out)
+				HTTPIoMapping->WriteMappingData(have,(char*)out);
 			}
 	} while (strm.avail_out == 0);
 	(void)INFLATEEND(&strm);
