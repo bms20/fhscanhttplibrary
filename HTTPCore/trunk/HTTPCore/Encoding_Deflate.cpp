@@ -200,16 +200,8 @@ HTTPIOMapping *gunzip(char *in, size_t inSize, int what)
 				if (!HTTPIoMapping)
 				{
 					HTTPIoMapping = new HTTPIOMapping;
-					if (!HTTPIoMapping) return(NULL);
-					if (!HTTPIoMapping->InitializeFileMapping(have,(char*)out))
-					{
-						delete HTTPIoMapping;
-						return(NULL);
-					}					
-				} else 
-				{
-					HTTPIoMapping->WriteMappingData(have,(char*)out);
 				}
+				HTTPIoMapping->WriteMappingData(have,(char*)out)
 			}
 	} while (strm.avail_out == 0);
 	(void)INFLATEEND(&strm);
