@@ -194,16 +194,16 @@ char *HTTPIOMapping::UpdateFileMapping()
 		hMapping = CreateFileMapping (hTmpFilename,NULL,PAGE_READWRITE,0,0,NULL);
 		BufferedPtr = (char*) MapViewOfFile (hMapping , FILE_MAP_ALL_ACCESS, 0,0,0);
 	}
+	if (!BufferedPtr)
+	{
 	#else
 	fflush(hTmpFilename);
 	BufferedPtr = (char*) mmap (0, MemoryLength, PROT_READ | PROT_WRITE, MAP_SHARED, hTmpFilename, 0);
-	if (BufferedPtr == -1)
+	if (BufferedPtr == (void*)-1)
 	{
 		printf("mmap Error - Memory Length: %i\n",MemoryLength);
-	}
 	#endif
-	if (!BufferedPtr)
-	{
+
 		assigned = 0;
 		MemoryLength = 0;
 		return(NULL);

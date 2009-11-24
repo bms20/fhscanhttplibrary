@@ -415,7 +415,7 @@ int CookieStatus::ParseCookieData(char *lpCookieData, const char *lpPath, const 
 			} else if IS_MAXAGE(start)
 			{
 				time_t maxage = -1;
-				sscanf (end, "%lf", &maxage);
+				sscanf (end, "%i", &maxage);
 				if (maxage !=-1)
 				{
 					if (maxage==0)
