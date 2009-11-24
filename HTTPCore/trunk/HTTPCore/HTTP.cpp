@@ -89,6 +89,7 @@ HTTPAPI::HTTPAPI()
 	for (int i = 0;i< MAX_OPEN_CONNECTIONS; i++)
 	{
 		Connection_Table[i] = new ConnectionHandling;
+		Connection_Table[i]->Connectionid = i;
 	}
 
 	FHScanUserAgent= strdup(FHSCANUSERAGENT);
@@ -286,7 +287,7 @@ void  HTTPAPI::CleanConnectionTable(LPVOID *unused)
 				{
 
 #ifdef _DBG_
-					printf("DBG: Removing connection %3.3i against %s:%i \n",i,Connection_Table[i].targetDNS,Connection_Table[i].port);
+					printf("DBG: Removing connection %3.3i against %s:%i \n",i,Connection_Table[i]->GettargetDNS(),Connection_Table[i]->GetPort());
 #endif
 					Connection_Table[i]->FreeConnection();
 				}
@@ -302,87 +303,45 @@ void  HTTPAPI::CleanConnectionTable(LPVOID *unused)
 class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTPHandle, httpdata* request, unsigned long *id)
 {
 	ConnectionTablelock.LockMutex();
-
-	class ConnectionHandling *connection = (class ConnectionHandling *) HTTPHandle->GetConnectionptr();
-
-	if (connection) /* Seach if the HANDLE is already binded to a valid CONNECTION struct */
-	{
-		connection->IoOperationLock.LockMutex();
-		if ( (request) && (connection) && 	
-			(connection->GetTarget()==HTTPHandle->GetTarget()) && 
-			(connection->GetThreadID() == HTTPHandle->GetThreadID()) && 
-			( (connection->GetPort()==HTTPHandle->GetPort()) || ((connection->GetConnectionAgainstProxy()) && (connection->GetPort()==HTTPHandle->GetPort()) ) ) )
-		{ 
-
-			if  (!connection->Getio())
-			{
-#ifdef _DBG_
-				printf("[DBG]: Direct Reuse Connection %3.3i- (%3.3i requests against %s)\n",HTTPHandle->conexion->id,HTTPHandle->conexion->NumberOfRequests,HTTPHandle->targetDNS);
-#endif
-				*id=connection->AddPipeLineRequest(request);
-			} else
-			{
-				while (!connection->Getio())
-				{
-#ifdef _DBG_
-					printf("[DBG]: Thread %i Waiting for io\n",*id);
-#endif
-					Sleep(500);
-				}
-				*id=connection->AddPipeLineRequest(request);				
-			}
-
-			//lock.UnLockMutex();	
-			connection->IoOperationLock.UnLockMutex();
-			ConnectionTablelock.UnLockMutex();
-			return(connection);
-		} 
-		connection->IoOperationLock.UnLockMutex();
-	}
-
-
-
-	/*reause stablished connections that are not currently binded to our handle but are already stablished. */
 	int FirstIdleSlot=GetFirstIdleConnectionAgainstTarget(HTTPHandle);
+
 	if (FirstIdleSlot!=-1) //Idle Connection Found. Reuse connection
 	{
 #ifdef _DBG_
-		printf("[DBG]: Reuse Connection %3.3i  - %3.3i requests against %s\n",FirstIdleSlot,Connection_Table[FirstIdleSlot].NumberOfRequests,HTTPHandle->targetDNS);
-#endif		
+		printf("[DBG]: %i Reuse Connection %3.3i  against %s\n",HTTPHandle->GetThreadID(),FirstIdleSlot,HTTPHandle->GettargetDNS());
+#endif
 		HTTPHandle->SetConnection((void*)Connection_Table[FirstIdleSlot]);
 		if (request) *id = Connection_Table[FirstIdleSlot]->AddPipeLineRequest(request);
 		ConnectionTablelock.UnLockMutex();
 		return(Connection_Table[FirstIdleSlot]);
 	}
 
-
-
 	/* There are no stablished connections against the target */
 	/* Stablish a new connection against the remote Host */
-
 	/* Search for a free slot into the connection table and store our connection */
-
 	int FirstEmptySlot=GetFirstUnUsedConnection();
+
 	if (FirstEmptySlot==-1) /*Connection table full. Try Again Later*/
 	{
 #ifdef _DBG_
 		printf("[DBG]: Unable to get a free Socket connection against target. Maybe your application is too aggresive\nUNABLE TO GET FREE SOCKET!!!\n");
-
-#endif	
-		printf("[DBG]: Unable to get a free Socket connection against target. Maybe your application is too aggresive\nUNABLE TO GET FREE SOCKET!!!\n");
+#endif
 		*id = 0;
 		ConnectionTablelock.UnLockMutex();
 		return(NULL);
 	}
+#ifdef _DBG_
+	printf("[DBG]: %i - Using a new connection %3.3i against %s\n", HTTPHandle->GetThreadID(),FirstEmptySlot,HTTPHandle->GettargetDNS());
+#endif
 
 	Connection_Table[FirstEmptySlot]->Setio(1); /* avoid our slot to be modified by other thread when unlocking the global mutex */
 	ConnectionTablelock.UnLockMutex();
 	int ret = Connection_Table[FirstEmptySlot]->GetConnection(HTTPHandle);
 
-	if (!ret)
+	if (ret == 0)
 	{
 #ifdef _DBG_
-		printf("GetSocketConnection:  Connection Failed\n");
+		printf("[DBG]: %i - GetSocketConnection:  Connection Failed against %s\n",HTTPHandle->GetThreadID(),HTTPHandle->GettargetDNS());
 #endif
 		*id = 0;
 		return(NULL);
@@ -411,7 +370,7 @@ int HTTPAPI::GetFirstIdleConnectionAgainstTarget(class HTTPAPIHANDLE *HTTPHandle
 {
 	for(unsigned int i=0;i<MAX_OPEN_CONNECTIONS;i++)
 	{
-		if ( (Connection_Table[i]->GetThreadID()==HTTPHandle->GetThreadID()) && 
+		if ( (Connection_Table[i]->GetThreadID()==HTTPHandle->GetThreadID()) &&
 			(Connection_Table[i]->GetTarget()==HTTPHandle->GetTarget()) && 
 			(Connection_Table[i]->GetPort()==HTTPHandle->GetPort()) )
 		{
@@ -421,7 +380,7 @@ int HTTPAPI::GetFirstIdleConnectionAgainstTarget(class HTTPAPIHANDLE *HTTPHandle
 			}
 		}
 	}
-	return(-1); //Connection Not Found
+	return(-1); 
 }
 /*******************************************************************************************************/
 //! This function checks the connection table searching for the first unused connection.
@@ -437,12 +396,12 @@ int HTTPAPI::GetFirstUnUsedConnection()
 	{
 		if ( (Connection_Table[i]->GetTarget()==TARGET_FREE) && (!Connection_Table[i]->Getio()) && (!Connection_Table[i]->GetPENDINGPIPELINEREQUESTS()) )
 		{
-			//printf("Devolviendo id de conexion: %i\n",i);
 			return(i);
 		}
 	}
 	return(-1);
 }
+
 /*******************************************************************************************************/
 httpdata* HTTPAPI::DispatchHTTPRequest(HTTPHANDLE HTTPHandle,httpdata* request)
 {
@@ -452,38 +411,31 @@ httpdata* HTTPAPI::DispatchHTTPRequest(HTTPHANDLE HTTPHandle,httpdata* request)
 	unsigned long RequestID;
 
 
-	if (request)
-	{
+	ret = HTTPCallBack.DoCallBack(CBTYPE_CLIENT_REQUEST ,HTTPHandle,request,response);
 
-		ret = HTTPCallBack.DoCallBack(CBTYPE_CLIENT_REQUEST ,HTTPHandle,request,response);
-
-		if (ret & CBRET_STATUS_CANCEL_REQUEST)
-		{
-			return(response);
-		}
-		conexion=GetSocketConnection(HTTPHandleTable[HTTPHandle],request,&RequestID);
-		if (!conexion)
-		{
-			return(NULL);
-		}
-		conexion->SendHTTPRequest(request);
-	} else
+	if (ret & CBRET_STATUS_CANCEL_REQUEST)
 	{
-		conexion=GetSocketConnection(HTTPHandleTable[HTTPHandle],request,&RequestID);
+		return(response);
 	}
+	conexion=GetSocketConnection(HTTPHandleTable[HTTPHandle],request,&RequestID);
+	if (conexion == NULL)
+	{
+		return(NULL);
+	}
+	conexion->SendHTTPRequest(request);
 
 	while (RequestID != conexion->GetPIPELINERequestID()[0])
 	{
 #ifdef _DBG_
-		printf("Waiting for ReadHTTPResponseData() %d / %d\n",RequestID,conexion->PIPELINE_Request_ID[0]);
+		//printf("Waiting for ReadHTTPResponseData() %d / %d\n",RequestID,conexion->PIPELINE_Request_ID[0]);
 #endif
 		Sleep(100);
 	}
 #ifdef _DBG_
-	printf("LECTURA: LEYENDO PETICION %i en conexion %i\n",RequestID,conexion->id);
+//	printf("LECTURA: LEYENDO PETICION %i en conexion %i\n",RequestID,conexion->id);
 #endif
 
-	response = conexion->ReadHTTPResponseData((ConnectionHandling*) HTTPHandleTable[HTTPHandle]->GetClientConnection(),request,NULL);
+	response = conexion->ReadHTTPResponseData((ConnectionHandling*) HTTPHandleTable[HTTPHandle]->GetClientConnection(),request);
 
 	ret = HTTPCallBack.DoCallBack(CBTYPE_CLIENT_RESPONSE ,HTTPHandle,request,response);
 
@@ -1109,7 +1061,7 @@ void *HTTPAPI::ListenConnection(void *foo)
 		ConnectionHandling *connection = new ConnectionHandling;
 		connection->Acceptdatasock( ListenSocket );
 #ifdef _DBG_
-		printf("[%3.3i] WaitForRequests(): New Connection accepted from %s\n",connection->id,connection->targetDNS);
+		printf("WaitForRequests(): New Connection accepted from %s\n",connection->GettargetDNS());
 #endif
 		/* Waiting for incoming connections */
 		struct params *param = (struct params *)malloc (sizeof(struct params));

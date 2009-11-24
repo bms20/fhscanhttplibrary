@@ -98,7 +98,6 @@ int ConnectionHandling::StablishConnection(void)
 	FD_SET(datasock, &fderr);
 	if (select((int) datasock + 1, NULL,&fds, NULL,&tv) <= 0)
 	{
-
 #ifdef _DBG_
 		printf("StablishConnection::Unable to connect Conexion %i to  (%s):%i\n",id,inet_ntoa(webserver.sin_addr),port);
 #endif
@@ -150,7 +149,7 @@ ConnectionHandling::ConnectionHandling()
 	PIPELINE_Request_ID = 0;
 	PENDING_PIPELINE_REQUESTS = 0;
 	CurrentRequestID = 0;
-	id = 0;
+	Connectionid = 0;
 	BwLimit = 0;
 	DownloadLimit= 0;
 	ThreadID = 0;
@@ -188,33 +187,40 @@ ConnectionHandling::~ConnectionHandling()
 			PIPELINE_Request = NULL;
 		}
 		target = 0;
+		*targetDNS = 0;
+		ThreadID = 0;
 	}
 }
 
-int ConnectionHandling::GetConnection(class HTTPAPIHANDLE *HTTPHandle) 
+int ConnectionHandling::GetConnection(class HTTPAPIHANDLE *HTTPHandle)
 {
 	if (datasock==0)
 	{
 		Setio(1);
-		target=HTTPHandle->GetTarget();
-		port=HTTPHandle->GetPort();
+		target=HTTPHandle->GetTarget();		
 		NeedSSL = HTTPHandle->IsSSLNeeded();
 
 		if (HTTPHandle->ProxyEnabled())
-		{
+		{			
 			port=atoi(HTTPHandle->GetHTTPConfig(ConfigProxyPort));
 			ConnectionAgainstProxy=1;
 		} else
 		{
-			ConnectionAgainstProxy=0;
+			port=HTTPHandle->GetPort();
+			ConnectionAgainstProxy=0;			
 		}	
 
 		int ret = StablishConnection();
 		if (!ret)
 		{
+			target = TARGET_FREE;
+			datasock=0;
 			return(0);
 		}
-
+		strcpy(this->targetDNS, HTTPHandle->GettargetDNS());
+		#ifdef _DBG_
+		printf("Connection stablished against %s\n",this->targetDNS);
+		#endif
 		BwLimit=HTTPHandle->GetDownloadBwLimit();
 		DownloadLimit=HTTPHandle->GetDownloadLimit();
 		ThreadID = HTTPHandle->GetThreadID();
@@ -284,6 +290,7 @@ void ConnectionHandling::FreeConnection(void)
 		port=TARGET_FREE;
 		NeedSSL=TARGET_FREE;
 	}
+	
 }
 
 int ConnectionHandling::RemovePipeLineRequest(void)
@@ -405,8 +412,7 @@ httpdata* ConnectionHandling::SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandl
 	{
 		AddPipeLineRequest(request);
 		SendHTTPRequest(request);
-		Threading mymutex;
-		return (ReadHTTPResponseData(NULL,request,&mymutex) );
+		return (ReadHTTPResponseData(NULL,request) );
 	} else
 	{
 		return(NULL);
@@ -557,7 +563,7 @@ int ConnectionHandling::SendBufferToProxyClient(class ConnectionHandling *ProxyC
 	return(1);
 }
 /************************************************************************************************************************/
-httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request,class Threading *ExternalMutexx)// void *lock)
+httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request)
 {
 
 	/* IO VARIABLES TO HANDLE HTTP RESPONSE */
@@ -591,12 +597,17 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	/* I/O FILE MAPPING FOR THE HTTP DATA */
 	class HTTPIOMapping *HTTPIOMappingData = NULL; /*Filemapping where the returned HTTP data is stored */
 
-	tv.tv_sec = HTTP_READ_TIMEOUT;
-	tv.tv_usec = 0;
 
+	if ( (request->Headerstrstr(targetDNS)==NULL) && (request->Headerstrstr("fbi")==NULL) && (request->Headerstrstr("CONNECT")==NULL) && (request->Headerstrstr("127.0.0.1")==NULL) )
+	{
+		printf("CRitical error\n");
+
+	}
 
 	while ( BytesToBeReaded != 0 )
 	{
+    	tv.tv_sec = HTTP_READ_TIMEOUT;
+		tv.tv_usec = 0;
 		if ( (BytesToBeReaded!=-1) && (BytesToBeReaded < BUFFSIZE ))
 		{
 			read_size = ReadBytesFromConnection(buf,BytesToBeReaded,&tv);
@@ -623,7 +634,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					for (i = 0; i <= PENDING_PIPELINE_REQUESTS - 1; i++) {
 						SendHTTPRequest(PIPELINE_Request[i]);
 					}
-					return ReadHTTPResponseData(ProxyClientConnection, request, NULL);
+					return ReadHTTPResponseData(ProxyClientConnection, request);
 				} else
 				{
 					/*Maybe network error or invalid http server. who cares. closing connection */
@@ -674,11 +685,19 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 				{
 					BufferSize = BufferSize - response->HeaderSize;
 					int HTTPStatusCode = response->GetStatus();
+					if (HTTPStatusCode == 0)
+					{
+						/* Protocolo ERROR - We are reading bad stuff */
+						printf("Error at: %s\n",request->Header);
+						free(lpBuffer);
+						delete response;
+						return new httpdata;
+					}
 					if (HTTPStatusCode == HTTP_STATUS_CONTINUE)
 					{
 						free(lpBuffer);
 						delete response;
-						return ReadHTTPResponseData(ProxyClientConnection, request, NULL);
+						return ReadHTTPResponseData(ProxyClientConnection, request);
 					}
 					if (HTTPStatusCode == HTTP_STATUS_NO_CONTENT)
 					{
@@ -1200,6 +1219,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 	}
 	if (ConnectionClose)
 	{
+		printf("Cerramos la conexion\n");
 		FreeConnection();
 	} else
 	{
@@ -1227,7 +1247,7 @@ void ConnectionHandling::Acceptdatasock( SOCKET ListenSocket )
 	datasock= (int) accept(ListenSocket,(struct sockaddr *) &webserver,(socklen_t *)&clientLen);
 	target=webserver.sin_addr.s_addr;
 	strcpy(targetDNS,inet_ntoa(webserver.sin_addr));		
-	id++;
+	Connectionid++;
 }
 /*******************************************************************************************/
 void ConnectionHandling::UpdateLastConnectionActivityTime(void)

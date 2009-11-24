@@ -548,7 +548,7 @@ int httpdata::GetStatus()
 			int ret = atoi(tmp);
 			if (ret ==0)
 			{
-				printf("ERROR GORDO\n");
+				printf("HTTP Protocol Error - Invalid HTTP header data\n");
 			}
 			return(atoi(tmp));
 		} else {

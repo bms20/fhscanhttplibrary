@@ -110,7 +110,7 @@ class ConnectionHandling : public SSLModule
 	struct httpdata	**PIPELINE_Request;
 	unsigned long*	 PIPELINE_Request_ID; /* Connection identifier */
 	unsigned long	 CurrentRequestID;
-	int 			 id;
+
 	unsigned int	 BwLimit; /*Bandwith limit */
 	unsigned int	 DownloadLimit; /* Download size limit */
 #ifdef __WIN32__RELEASE__
@@ -133,6 +133,7 @@ class ConnectionHandling : public SSLModule
 public:
 	ConnectionHandling();
 	~ConnectionHandling();
+	int 			 Connectionid;
 	class Threading IoOperationLock;	//support pipelining
 	FILETIME 		LastConnectionActivity; /* Called externally by CleanConnectionTable() */
 	int             ReadBytesFromConnection(char *buf, size_t bufsize,struct timeval *tv);
@@ -147,7 +148,7 @@ public:
 	void            CloseSocket(void);
 
 	struct httpdata *ReadHTTPProxyRequestData();
-	struct httpdata *ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request,class Threading *ExternalMutex);
+	struct httpdata *ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request);
 	void            Acceptdatasock( SOCKET ListenSocket );
 	char *          GettargetDNS(void);
 	long            GetTarget(void);
