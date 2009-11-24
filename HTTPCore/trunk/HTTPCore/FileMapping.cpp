@@ -203,7 +203,7 @@ char *HTTPIOMapping::UpdateFileMapping()
 	{
 		printf("mmap Error - Memory Length: %i\n",MemoryLength);
 	#endif
-
+		BufferedPtr = NULL;
 		assigned = 0;
 		MemoryLength = 0;
 		return(NULL);
