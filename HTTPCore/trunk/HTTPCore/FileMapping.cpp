@@ -206,6 +206,7 @@ if (hTmpFilename<0)
 				if (ret==-1)
 				{
 					perror("Write failed");
+					return (MemoryLength);
 				}
 			#endif
 			MemoryLength += length;

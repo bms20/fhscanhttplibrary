@@ -512,31 +512,25 @@ void httpdata::UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping)
 				DataSize = 0;
 			}
 		   delete HTTPIOMappingData;
-		}
-		HTTPIOMappingData = newFileMapping;
-		if (newFileMapping)
-		{
-			if (Data) free(Data);
-		 	Data = newFileMapping->GetMappingData();
-			if (Data == NULL)
-			{
-				DataSize = 0;
-				delete newFileMapping;
-				HTTPIOMappingData = NULL;
-				/* avoid returning empty response Data */
-				#if 0
-				//TODO: Test if its needed.
-				Data =strdup("");
-				delete newFileMapping;
-				HTTPIOMappingData = NULL;
-				#endif
-			} else
-			{
-				DataSize = newFileMapping->GetMappingSize();
-			}
+		   HTTPIOMappingData = NULL;
 		} else {
+			if (Data) free(Data);
 			Data = NULL;
 			DataSize = 0;
+		}
+		
+		if (newFileMapping)
+		{
+			HTTPIOMappingData = newFileMapping;
+		 	Data = HTTPIOMappingData->GetMappingData();
+			if (Data == NULL)
+			{
+				delete HTTPIOMappingData;
+				HTTPIOMappingData = NULL;
+			} else
+			{
+				DataSize = HTTPIOMappingData->GetMappingSize();
+			}
 		}
 	}
 /*******************************************************************************************************/
