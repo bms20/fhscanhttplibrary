@@ -243,10 +243,10 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 		if (!INFLATE || !INFLATEINIT || !INFLATEEND || !INFLATEINIT2)
 		{
 			printf("## FATAL - ZLIB LIBRARY IMPORTS ERROR\n");
-			exit(1);
 		}
 	}
 #endif
+	if (!INFLATE) return (CBRET_STATUS_NEXT_CB_CONTINUE);
 
 	if ( (cbType == CBTYPE_CLIENT_REQUEST) || (cbType == CBTYPE_PROXY_REQUEST) )
 	{
@@ -277,35 +277,30 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 		   p = strstr(encoding,"gzip");
 		   if (p)  type= GZIP_DATA;
 		}
+		free(encoding);
 
 		if (type != NORMAL_DATA)
 		{
 			if (response->Data)
 			{
-
-
-			HTTPIOMapping *decoded = gunzip(response->Data, response->DataSize,type);
-			if (decoded)
-			{
-					#ifdef _DBG_
-						printf("CBDeflate(): uncompressed %i bytes to %i. Data: %s\n",response->DataSize,total,p);
-					#endif
-					response->UpdateAndReplaceFileMappingData(decoded);
-					response->RemoveHeader("Content-Encoding:");
-					response->RemoveHeader("Content-Length:");
-					char tmp[256];
-					sprintf(tmp,"Content-Length: %i\r\n",response->DataSize);
-					response->AddHeader(tmp);
+				HTTPIOMapping *decoded = gunzip(response->Data, response->DataSize,type);
+				#ifdef _DBG_
+				if (decoded)
+				{
+					printf("CBDeflate(): uncompressed %i bytes to %i. Data: %s\n",response->DataSize,total,p);
 				} else
 				{
 					printf("CBDeflate(): Error decoding buffer with %s\n",p);
-					#ifdef _DBG_
-						printf("CBDeflate(): Error decoding buffer with %s\n",p);
-					#endif
 				}
+				#endif
+				response->UpdateAndReplaceFileMappingData(decoded);
+				response->RemoveHeader("Content-Encoding:");
+				response->RemoveHeader("Content-Length:");
+				char tmp[256];
+				sprintf(tmp,"Content-Length: %i\r\n",response->DataSize);
+				response->AddHeader(tmp);
 			}
 		}
-		free(encoding);
 	}
 	return (CBRET_STATUS_NEXT_CB_CONTINUE);
 
