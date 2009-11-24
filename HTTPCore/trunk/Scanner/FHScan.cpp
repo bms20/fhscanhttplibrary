@@ -16,7 +16,6 @@ using namespace std;
 
 
 Threading CSip;
-Threading CSThreads;
 
 extern PTARGETS targets;
 extern unsigned int	ntargets;
@@ -36,7 +35,6 @@ int 			VulnChecks=1;
 
 int             nRouterAuth=0;
 int				csv = 0;
-int             ThreadsActivos=0;
 extern int nvlist;
 extern VLIST    vlist[200];
 int     nKnownWebservers;
@@ -45,7 +43,6 @@ char	**KnownRouters;
 int		nKnownRouters;
 char *ipfilepath=NULL;
 int TotalRequests=0;
-int nRequests=0;
 FILE *dump = NULL;
 int proxyScanOnly  = 0;
 
@@ -89,7 +86,7 @@ static long GetNextTarget(char *hostname, int dstSize, int *port, int *ssl)
 	{		
 		if (targets[currenttarget].hostname) 
 		{
-			strncpy(hostname,targets[currenttarget].hostname,dstSize-1);			
+			strncpy(hostname,targets[currenttarget].hostname,dstSize-1);
 		} else {
 			struct sockaddr_in ip;
 			ip.sin_addr.s_addr = htonl((long)targets[currenttarget].currentip);
@@ -132,9 +129,6 @@ void *ScanHosts(void *ptr) {
 			fflush(stdout);
 		}
 
-		CSip.LockMutex();
-		nRequests++;
-		CSip.UnLockMutex();
 
 		HTTPHandle=api->InitHTTPConnectionHandle(hostname,port, ssl);
 		if (HTTPHandle!=INVALID_HHTPHANDLE_VALUE)
@@ -254,10 +248,6 @@ void *ScanHosts(void *ptr) {
 		}
 
 	}
-	CSThreads.LockMutex();
-	ThreadsActivos--;
-	nRequests++;
-	CSThreads.UnLockMutex();
 #ifndef __WIN32__RELEASE__
 	pthread_exit(NULL);
 #endif
@@ -403,7 +393,7 @@ int __cdecl main(int argc, char *argv[]){
 	HANDLE *thread;
 #else
 int main(int argc, char *argv[]){
-	pthread_t e_th;
+	pthread_t *thread;
 #endif
 
 	int ret;
@@ -447,6 +437,8 @@ int main(int argc, char *argv[]){
 
 #ifdef __WIN32__RELEASE__
 	thread=(HANDLE*)malloc(sizeof(HANDLE)*nthreads);
+	#else
+	thread = (pthread_t*)malloc(sizeof(pthread_t)*nthreads);
 #endif
 
 	InitHTMLReport(ipfilepath,0,0,0,NULL,nthreads,1,FullUserList,1);
@@ -462,16 +454,13 @@ int main(int argc, char *argv[]){
 		thread[i]=CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) ScanHosts, (LPVOID) api, 0, NULL);
 		Sleep(50);
 #else
-		CSThreads.LockMutex();
-		ThreadsActivos++;
-		CSThreads.UnLockMutex();
-		pthread_create(&e_th, NULL, ScanHosts, (void *)api);
+		pthread_create(&thread[i], NULL, ScanHosts, (void *)api);
 #endif
 	}
 #ifdef __WIN32__RELEASE__
 	WaitForMultipleObjects(nthreads,thread,TRUE,INFINITE);
 #else
-	while (ThreadsActivos>0) {   Sleep(500);  }
+	for(int i=0;i<nthreads;i++) pthread_join(thread[i], NULL);
 #endif
 
 #ifdef __WIN32__RELEASE__
@@ -480,7 +469,6 @@ int main(int argc, char *argv[]){
 		CloseHandle(thread[i]);
 	}
 #endif
-
 	if (!csv)	{
 		printf("scan Finished\t\t\t\t\t\n");fflush(stdout);
 	} else fflush(stderr);
