@@ -768,7 +768,8 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 				{
 					if (!HTTPIOMappingData)
 					{
-						HTTPIOMappingData = new HTTPIOMapping(BufferSize,lpBuffer + response->HeaderSize);
+						HTTPIOMappingData = new HTTPIOMapping;
+						HTTPIOMappingData->WriteMappingData(BufferSize,lpBuffer + response->HeaderSize);
 						free(lpBuffer);
 						lpBuffer=NULL;
 					} else
@@ -795,7 +796,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					/* Decoded chunk */
 					if (!HTTPIOMappingData)
 					{
-						HTTPIOMappingData = new HTTPIOMapping(0,NULL);
+						HTTPIOMappingData = new HTTPIOMapping;
 						TmpChunkData = (char*)malloc(BufferSize + BUFFSIZE );
 						memcpy(TmpChunkData,lpBuffer + response->HeaderSize,BufferSize);
 						ChunkDataLength=BufferSize;

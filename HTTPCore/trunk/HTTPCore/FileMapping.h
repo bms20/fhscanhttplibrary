@@ -79,9 +79,8 @@ class HTTPIOMapping
    char *UpdateFileMapping(); //Mapea los datos del fichero con bufferptr
 public:
    HTTPIOMapping();
-   HTTPIOMapping(size_t, char *);   
+   //HTTPIOMapping(size_t, char *);   
    ~HTTPIOMapping();   
-   int			 InitializeFileMapping(size_t , char *); /* Initializa el filemapping */
    size_t        WriteMappingData(size_t , char *lpData); //escribe los datos y llama a updatefileMapping() si es necesario.
    size_t        GetMappingSize(void);
    char*		 GetMappingData(void);

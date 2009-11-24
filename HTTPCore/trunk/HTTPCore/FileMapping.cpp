@@ -45,31 +45,85 @@ HTTPIOMapping::HTTPIOMapping()
 	BufferedPtr = NULL;
 	MemoryLength = 0;
 	*BufferedFileName=0;
-	#ifdef __WIN32__RELEASE__
+#ifdef __WIN32__RELEASE__
 	hMapping = NULL;
 	hTmpFilename = INVALID_HANDLE_VALUE;
-	#else
+#else
 	hTmpFilename = -1;
-	#endif
+#endif
 
-	BufferedPtr = NULL;
+#ifdef __WIN32__RELEASE__
+	char szTmpFile[256];
+	GetTempPathA (256, szTmpFile);
+	GetTempFileNameA (szTmpFile, "FHScan",0,BufferedFileName);
+	hTmpFilename = CreateFileA ( BufferedFileName,
+		GENERIC_WRITE | GENERIC_READ,
+		FILE_SHARE_WRITE,
+		NULL,
+		CREATE_ALWAYS,
+		FILE_ATTRIBUTE_TEMPORARY,
+		NULL);
+	if ( hTmpFilename == INVALID_HANDLE_VALUE) 
+	{
+		MemoryLength = 0;
+		assigned= 0;				
+	}
+#else
+	strcpy(BufferedFileName,"/tmp/Fhscan.XXXXXX");
+	hTmpFilename = mkstemp(BufferedFileName);
+	if (hTmpFilename<0)
+	{
+		printf("Unable to create Filemapping\n");
+		MemoryLength = 0;
+		assigned= 0;
+	}
+#endif
 }
 /******************************************************************************/
-HTTPIOMapping::HTTPIOMapping(size_t DataSize = 0, char *lpData = NULL)
+#if 0
+HTTPIOMapping::HTTPIOMapping(size_t DataSize, char *lpData)
 {
 	assigned = 0;
 	BufferedPtr = NULL;
 	MemoryLength = 0;
-	BufferedFileName[0]='\0';
-	#ifdef __WIN32__RELEASE__
+	*BufferedFileName='\0';
+#ifdef __WIN32__RELEASE__
 	hMapping = NULL;
 	hTmpFilename = INVALID_HANDLE_VALUE;
-	#else
+#else
 	hTmpFilename = -1;
-	#endif
+#endif
 	BufferedPtr = NULL;
-	InitializeFileMapping(DataSize,lpData);
+#ifdef __WIN32__RELEASE__
+	char szTmpFile[256];
+	GetTempPathA (256, szTmpFile);
+	GetTempFileNameA (szTmpFile, "FHScan",0,BufferedFileName);
+	hTmpFilename = CreateFileA ( BufferedFileName,
+		GENERIC_WRITE | GENERIC_READ,
+		FILE_SHARE_WRITE,
+		NULL,
+		CREATE_ALWAYS,
+		FILE_ATTRIBUTE_TEMPORARY,
+		NULL);
+	if ( hTmpFilename == INVALID_HANDLE_VALUE) 
+	{
+		printf("Unable to create Filemapping file\n");
+		MemoryLength = 0;
+		assigned= 0;
+	}
+#else
+	strcpy(BufferedFileName,"/tmp/Fhscan.XXXXXX");
+	hTmpFilename = mkstemp(BufferedFileName);
+	if (hTmpFilename<0)
+	{
+		printf("Unable to create Filemapping file\n");
+		MemoryLength = 0;
+		assigned= 0;
+	}
+#endif
+	if (DataSize>0)	WriteMappingData(DataSize,lpData);
 }
+#endif
 /******************************************************************************/
 HTTPIOMapping::~HTTPIOMapping()
 {
@@ -134,51 +188,13 @@ int HTTPIOMapping::IsAssigned(void)
 	return (assigned);
 }
 /******************************************************************************/
-int HTTPIOMapping::InitializeFileMapping(size_t DataSize,char *lpData)
-{
-
-#ifdef __WIN32__RELEASE__
-			char szTmpFile[256];
-			GetTempPathA (256, szTmpFile);
-			GetTempFileNameA (szTmpFile, "FHScan",0,BufferedFileName);
-#ifdef _DBG_
-			printf("Usando fichero temporal: %s\n",BufferedFileName);
-#endif
-			hTmpFilename = CreateFileA ( BufferedFileName,
-				GENERIC_WRITE | GENERIC_READ,
-				FILE_SHARE_WRITE,
-				NULL,
-				CREATE_ALWAYS,
-				FILE_ATTRIBUTE_TEMPORARY,
-				NULL);
-			if ( hTmpFilename == INVALID_HANDLE_VALUE) 
-			{
-#ifdef _DBG_
-				printf("GetFileMapping Error: Unable to create temporary filename\n");
-#endif
-            	MemoryLength = 0;
-				assigned= 0;
-				return(0);
-			}
-#else
-			strcpy(BufferedFileName,"/tmp/Fhscan.XXXXXX");
-			hTmpFilename = mkstemp(BufferedFileName);
-			if (hTmpFilename<0)
-			{
-				printf("Unable to create Filemapping\n");
-            	MemoryLength = 0;
-				assigned= 0;
-				return(0);
-			}
-#endif
-
-			WriteMappingData(DataSize,lpData);
-			return(1);
-}
-/******************************************************************************/
 
 char *HTTPIOMapping::UpdateFileMapping()
 {
+	if (MemoryLength==0)
+	{
+		return(NULL);
+	}
 	#ifdef __WIN32__RELEASE__
 	if ( hTmpFilename == INVALID_HANDLE_VALUE)
 	#else
@@ -197,11 +213,11 @@ char *HTTPIOMapping::UpdateFileMapping()
 	if (!BufferedPtr)
 	{
 	#else
-	fflush(hTmpFilename);
 	BufferedPtr = (char*) mmap (0, MemoryLength + MemoryLength%4096, PROT_READ | PROT_WRITE, MAP_SHARED, hTmpFilename, 0);
 	if (BufferedPtr == (void*)-1)
 	{
-		printf("mmap Error - Memory Length: %i\n",MemoryLength);
+		printf("mmap Error - Memory Length: %i - File(%i) %s\n",MemoryLength,hTmpFilename,BufferedFileName);
+		perror("mmap");
 	#endif
 		BufferedPtr = NULL;
 		assigned = 0;
@@ -221,7 +237,7 @@ size_t HTTPIOMapping::WriteMappingData(size_t length, char *lpData )
 if (hTmpFilename<0)
 #endif
 	{
-		return (InitializeFileMapping(length,lpData));
+		return (0);
 	} else
 	{
 		if ((lpData) && (length))
