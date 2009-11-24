@@ -22,11 +22,12 @@ case "$1" in
   	echo starting static build...
 	g++  -DLINUX  -D_ZLIB_SUPPORT_  -lpthread -lssl -lz HTTPCore/*.cpp Scanner/*.cpp Scanner/Input/*.cpp Scanner/Reporting/*.cpp -o release/Fhscan
   ;;
-;  debug)
-;        echo starting static build...
-;        g++  -ggdb -g3 -O0 -fno-inline  -DLINUX   -lpthread  HTTPCore/*.cpp Scanner/*.cpp Scanner/Input/*.cpp Scanner/Reporting/*.cpp -o release/Fhscan
-;
-;  ;;
+  debug)
+        echo starting static build...
+        echo needed to debug fhscan with gdb: gdb --args Fhscan --hosts 19.168.0.1 --verbose		
+        g++  -ggdb -g3 -O0 -fno-inline  -DLINUX -D_ZLIB_SUPPORT_  -lpthread -lssl -lz HTTPCore/*.cpp Scanner/*.cpp Scanner/Input/*.cpp Scanner/Reporting/*.cpp -o release/Fhscan
+
+  ;;
   install)
 	# Make sure that you are root
         if [ "$(id -u)" != "0" ]; then

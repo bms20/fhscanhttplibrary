@@ -111,7 +111,6 @@ size_t HTTPIOMapping::GetMappingSize(void)
 	if ((!BufferedPtr) && (hTmpFilename>=0) )
 	#endif
 	{
-		//printf("GetMappingSize::LLamada a   UpdateFileMapping()\n");
 		UpdateFileMapping();
 	}
 	return(MemoryLength);
@@ -196,7 +195,12 @@ char *HTTPIOMapping::UpdateFileMapping()
 		BufferedPtr = (char*) MapViewOfFile (hMapping , FILE_MAP_ALL_ACCESS, 0,0,0);
 	}
 	#else
+	fflush(hTmpFilename);
 	BufferedPtr = (char*) mmap (0, MemoryLength, PROT_READ | PROT_WRITE, MAP_SHARED, hTmpFilename, 0);
+	if (BufferedPtr == -1)
+	{
+		printf("mmap Error - Memory Length: %i\n",MemoryLength);
+	}
 	#endif
 	if (!BufferedPtr)
 	{
