@@ -81,7 +81,7 @@ HTTPIOMapping::~HTTPIOMapping()
 			UnmapViewOfFile(BufferedPtr);
 			CloseHandle(hMapping);
 		#else
-			munmap(BufferedPtr,MemoryLength+1);
+			munmap(BufferedPtr,MemoryLength + MemoryLength%4096);
 		#endif
 	}
 	#ifdef __WIN32__RELEASE__
@@ -198,7 +198,7 @@ char *HTTPIOMapping::UpdateFileMapping()
 	{
 	#else
 	fflush(hTmpFilename);
-	BufferedPtr = (char*) mmap (0, MemoryLength, PROT_READ | PROT_WRITE, MAP_SHARED, hTmpFilename, 0);
+	BufferedPtr = (char*) mmap (0, MemoryLength + MemoryLength%4096, PROT_READ | PROT_WRITE, MAP_SHARED, hTmpFilename, 0);
 	if (BufferedPtr == (void*)-1)
 	{
 		printf("mmap Error - Memory Length: %i\n",MemoryLength);
