@@ -202,12 +202,17 @@ if (hTmpFilename<0)
 			#ifdef __WIN32__RELEASE__
 				WriteFile(hTmpFilename,(unsigned char*)lpData,length,&lpBufferSize,NULL);
 			#else
-				int ret = write(hTmpFilename,lpData,length);
-				if (ret==-1)
-				{
-					perror("Write failed");
-					return (MemoryLength);
-				}
+				int ret;
+				do {
+					ret = write(hTmpFilename,lpData,length);
+					if (ret==-1)
+					{
+#ifdef _DBG_
+						perror("Write failed - retry..");
+#endif
+						Sleep(50);
+					}
+				} while (ret == -1);
 			#endif
 			MemoryLength += length;
 			return(MemoryLength);
