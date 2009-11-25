@@ -106,10 +106,6 @@ class ConnectionHandling : public SSLModule
 	struct sockaddr_in webserver;
 	unsigned int	 NumberOfRequests; /* Number of HTTP requests performed since connected */
 	unsigned int	 InputOutputOperation;  /* Signals if the connection is currently trying to connect to a remote host*/
-	int				 PENDING_PIPELINE_REQUESTS;
-	struct httpdata	**PIPELINE_Request;
-	unsigned long*	 PIPELINE_Request_ID; /* Connection identifier */
-	unsigned long	 CurrentRequestID;
 
 	unsigned int	 BwLimit; /*Bandwith limit */
 	unsigned int	 DownloadLimit; /* Download size limit */
@@ -118,37 +114,37 @@ class ConnectionHandling : public SSLModule
 #else
 	pthread_t		 ThreadID;
 #endif
+	FILETIME 		LastConnectionActivity; /* Called externally by CleanConnectionTable() */
 
 	char *           HTTPServerResponseBuffer;
 	unsigned int     HTTPServerResponseSize;
 	char *           HTTPProxyClientRequestBuffer;
 	unsigned int     HTTPProxyClientRequestSize;
 	int              pending; /* Signals if there is cached data available for reading under an SSL connection*/
+	BOOL			 ConnectionClose;
 	int              LimitIOBandwidth(unsigned long ChunkSize, struct timeval LastTime, struct timeval CurrentTime, int MAX_BW_LIMIT);
 	int              StablishConnection(void);
 	int              InitSSLConnection();
+	int              ReadBytes(char *buf, size_t bufsize,struct timeval *tv);
 	double 			 ReadChunkNumber(char *encodedData, size_t encodedlen, char *chunkcode);
-	int SendBufferToProxyClient(class ConnectionHandling *ProxyClientConnection, char *buf,int read_size);
-
+	int				 SendBufferToProxyClient(class ConnectionHandling *ProxyClientConnection, char *buf,int read_size);
+	struct httpdata *ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request, int *ErrorCode);
+	void             CloseSocket(void);
 public:
 	ConnectionHandling();
 	~ConnectionHandling();
 	int 			 Connectionid;
 	class Threading IoOperationLock;	//support pipelining
-	FILETIME 		LastConnectionActivity; /* Called externally by CleanConnectionTable() */
-	int             ReadBytesFromConnection(char *buf, size_t bufsize,struct timeval *tv);
-	void			FreeConnection(void);
-	int				RemovePipeLineRequest(void);
-	unsigned long	AddPipeLineRequest(httpdata *request);
-	int				GetConnection(class HTTPAPIHANDLE *HTTPHandle);	
-	int				SendHTTPRequest(httpdata* request);
-
-	httpdata		*SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,httpdata *request);
-	void            Disconnect(BOOL reconnect);
-	void            CloseSocket(void);
-
+	
+	
+	int				InitializeConnection(class HTTPAPIHANDLE *HTTPHandle);	
+	void            Disconnect(int level);
 	struct httpdata *ReadHTTPProxyRequestData();
-	struct httpdata *ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request);
+	int				SendHTTPRequest(httpdata* request);
+	httpdata		*SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,httpdata *request);
+		
+	
+
 	void            Acceptdatasock( SOCKET ListenSocket );
 	char *          GettargetDNS(void);
 	long            GetTarget(void);
@@ -156,10 +152,9 @@ public:
 	int             GetThreadID(void);
 	unsigned int    Getio(void);
 	void            Setio(unsigned int value);
-	int             GetPENDINGPIPELINEREQUESTS(void);
-	unsigned long*  GetPIPELINERequestID(void);
 	int             GetConnectionAgainstProxy(void);
 	void            UpdateLastConnectionActivityTime(void);
+	FILETIME        GetLastConnectionActivityTime(void);
 	void *          IsSSLInitialized(void);
 	void            SetBioErr(void *bio);
 	void            SetCTX(void *proxyctx);

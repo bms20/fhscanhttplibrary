@@ -203,6 +203,7 @@ if (hTmpFilename<0)
 				WriteFile(hTmpFilename,(unsigned char*)lpData,length,&lpBufferSize,NULL);
 			#else
 				int ret;
+				int err = 0;
 				do {
 					ret = write(hTmpFilename,lpData,length);
 					if (ret==-1)
@@ -210,7 +211,12 @@ if (hTmpFilename<0)
 #ifdef _DBG_
 						perror("Write failed - retry..");
 #endif
-						Sleep(50);
+                    	err++;
+						Sleep(100);
+						if (err>20)
+						{
+                         	return(0); /* No more waiting */
+						}
 					}
 				} while (ret == -1);
 			#endif

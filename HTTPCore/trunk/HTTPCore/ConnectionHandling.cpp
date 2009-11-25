@@ -38,94 +38,8 @@ SUCH DAMAGE.
 #include <stdlib.h>
 
 
-/*******************************************************************************************************/
-int ConnectionHandling::LimitIOBandwidth(unsigned long ChunkSize, struct timeval LastTime, struct timeval CurrentTime, int MAX_BW_LIMIT)
-{
-
-	if ( ( LastTime.tv_usec || LastTime.tv_sec ) && MAX_BW_LIMIT )
-	{
-		__uint64  TotalTime = ((CurrentTime.tv_usec + CurrentTime.tv_sec*1000000) - (LastTime.tv_usec + LastTime.tv_sec*1000000) ) / 1000;
-		if (TotalTime >= MAX_CHECK_TIME_FOR_BW_UTILIZATION ) //check Bw each 200ms
-		{
-			__uint64  CurrentBW = (ChunkSize *1000 ) / (TotalTime *1024 )  ; //Obtain kbps
-			//printf("LimitIOBandwidth::DBG: Hemos tardado %I64d ms for %i bytes - Bandwidth: %I64d kbps (%i KB/s)\n",TotalTime, ChunkSize,CurrentBW,CurrentBW/8);
-			if (CurrentBW > MAX_BW_LIMIT  )
-			{
-				__uint64 WaitFor = (ChunkSize *1000 ) / (MAX_BW_LIMIT *1024) ;
-				//printf("LimitIOBandwidth::DBG: Need to wait %i ms\n",WaitFor);
-				return((int)WaitFor);
-			}
-		} else
-		{
-			return(-1);
-		}
-	}
-	return(0);
-}
-
 
 /*******************************************************************************************************/
-int ConnectionHandling::StablishConnection(void)
-{
-	fd_set fds, fderr;
-	struct timeval tv;
-	Setio(1);
-	pending = 0;
-
-	datasock = (int) socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-#ifndef __WIN32__RELEASE__
-	if (datasock==-1) perror("socket");
-#endif
-	webserver.sin_family = AF_INET;
-	webserver.sin_addr.s_addr = target;//inet_addr(target);
-	webserver.sin_port = htons(port);
-
-#ifdef __WIN32__RELEASE__
-	u_long tmp=1;
-	ioctlsocket( datasock, FIONBIO, &tmp);
-#else
-	int tmp = 1;
-	ioctl(datasock, FIONBIO, (char *) &tmp);
-#endif
-
-	NumberOfRequests = 0;
-	connect(datasock, (struct sockaddr *) &webserver, sizeof(webserver));
-	tv.tv_sec = HTTP_CONN_TIMEOUT;
-	tv.tv_usec = 0;
-	FD_ZERO(&fds);
-	FD_ZERO(&fderr);
-	FD_SET(datasock, &fds);
-	FD_SET(datasock, &fderr);
-	if (select((int) datasock + 1, NULL,&fds, NULL,&tv) <= 0)
-	{
-#ifdef _DBG_
-		printf("StablishConnection::Unable to connect Conexion %i to  (%s):%i\n",id,inet_ntoa(webserver.sin_addr),port);
-#endif
-		closesocket(datasock);
-		Setio(0);
-		return (0);
-	}
-
-#ifdef _DBG_
-	printf("StablishConnection: Socket CONNECTED Conexion %i (%s:%i)\n",id,inet_ntoa(webserver.sin_addr),port);
-
-#endif
-	UpdateLastConnectionActivityTime();
-	if (HTTPServerResponseBuffer)
-	{
-		free(HTTPServerResponseBuffer);
-		HTTPServerResponseSize = 0;
-	}
-	if (HTTPServerResponseBuffer)
-	{
-		free(HTTPProxyClientRequestBuffer);
-		HTTPProxyClientRequestSize = 0;
-	}
-	Setio(0);
-	return (1);
-}
-
-
 ConnectionHandling::ConnectionHandling()
 {
 	target = 0;
@@ -145,10 +59,6 @@ ConnectionHandling::ConnectionHandling()
 #endif
 	NumberOfRequests = 0;
 	InputOutputOperation = 0;
-	PIPELINE_Request = NULL;
-	PIPELINE_Request_ID = 0;
-	PENDING_PIPELINE_REQUESTS = 0;
-	CurrentRequestID = 0;
 	Connectionid = 0;
 	BwLimit = 0;
 	DownloadLimit= 0;
@@ -162,41 +72,60 @@ ConnectionHandling::ConnectionHandling()
 	HTTPProxyClientRequestSize = 0;
 
 }
-
-
+/*******************************************************************************************************/
 ConnectionHandling::~ConnectionHandling()
 {
-
-	if (target)
-	{
-		if (datasock)
-		{
-			shutdown(datasock,2);
-			target=0;
-			closesocket(datasock);
-		}
-
-		for (int i=0;i<PENDING_PIPELINE_REQUESTS;i++)
-		{
-			delete PIPELINE_Request[i];
-
-		}
-		if (PIPELINE_Request)
-		{
-			free(PIPELINE_Request);
-			PIPELINE_Request = NULL;
-		}
-		target = 0;
-		*targetDNS = 0;
-		ThreadID = 0;
-	}
+	Disconnect(1);
 }
+/*******************************************************************************************************/
+int ConnectionHandling::StablishConnection(void)
+{
+	fd_set fds, fderr;
+	struct timeval tv;
+	pending = 0;
+	NumberOfRequests = 0;
+	datasock = (int) socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	webserver.sin_family = AF_INET;
+	webserver.sin_addr.s_addr = target;//inet_addr(target);
+	webserver.sin_port = htons(port);
 
-int ConnectionHandling::GetConnection(class HTTPAPIHANDLE *HTTPHandle)
+#ifdef __WIN32__RELEASE__
+	u_long tmp=1;
+	ioctlsocket( datasock, FIONBIO, &tmp);
+#else
+	int tmp = 1;
+	ioctl(datasock, FIONBIO, (char *) &tmp);
+#endif	
+	connect(datasock, (struct sockaddr *) &webserver, sizeof(webserver));
+	tv.tv_sec = HTTP_CONN_TIMEOUT;
+	tv.tv_usec = 0;
+	FD_ZERO(&fds);
+	FD_ZERO(&fderr);
+	FD_SET(datasock, &fds);
+	FD_SET(datasock, &fderr);
+	if (select((int) datasock + 1, NULL,&fds, NULL,&tv) <= 0)
+	{
+#ifdef _DBG_
+		printf("StablishConnection::Unable to connect Conexion %i to  (%s):%i\n",id,inet_ntoa(webserver.sin_addr),port);
+#endif
+		closesocket(datasock);
+		datasock = 0;
+		return (0);
+	}
+
+#ifdef _DBG_
+	printf("StablishConnection: Socket CONNECTED Conexion %i (%s:%i)\n",id,inet_ntoa(webserver.sin_addr),port);
+
+#endif
+	UpdateLastConnectionActivityTime();
+
+	return (1);
+}
+/*******************************************************************************************************/
+int ConnectionHandling::InitializeConnection(class HTTPAPIHANDLE *HTTPHandle)
 {
 	if (datasock==0)
 	{
-		Setio(1);
 		target=HTTPHandle->GetTarget();		
 		NeedSSL = HTTPHandle->IsSSLNeeded();
 
@@ -214,7 +143,6 @@ int ConnectionHandling::GetConnection(class HTTPAPIHANDLE *HTTPHandle)
 		if (!ret)
 		{
 			target = TARGET_FREE;
-			datasock=0;
 			return(0);
 		}
 		strcpy(this->targetDNS, HTTPHandle->GettargetDNS());
@@ -228,11 +156,9 @@ int ConnectionHandling::GetConnection(class HTTPAPIHANDLE *HTTPHandle)
 	}
 	return(1);
 }
-
-
-void ConnectionHandling::Disconnect(BOOL reconnect)
+/*******************************************************************************************************/
+void ConnectionHandling::Disconnect(int level)
 {
-
 	if (NeedSSL)
 	{
 		if (ssl)
@@ -248,113 +174,43 @@ void ConnectionHandling::Disconnect(BOOL reconnect)
 	closesocket(datasock);
 	datasock = 0;
 	NumberOfRequests=0;
-	Setio(reconnect);
-#ifdef __WIN32__RELEASE__
-	LastConnectionActivity.dwHighDateTime=0;
-	LastConnectionActivity.dwLowDateTime=0;
-#else
-	LastConnectionActivity=0;
-#endif
-
-}
-
-void ConnectionHandling::FreeConnection(void)
-{
-	/* Remove our request header from the request pool */
-	RemovePipeLineRequest();
-
-	/* Close the socket connection. Signal (io = 0) only if there are no pending requests */
-	Disconnect(PENDING_PIPELINE_REQUESTS);
-
-	/* We need to reconnect and resend our requests */
-	if (PENDING_PIPELINE_REQUESTS)
+	if (HTTPServerResponseBuffer)
 	{
-		int i = StablishConnection();
-		if (i)
-		{
-			for (i = 0; i < PENDING_PIPELINE_REQUESTS; i++)
-			{
-				SendHTTPRequest(PIPELINE_Request[i]);
-			}
-		} else
-		{
-			datasock = 0;
-#ifdef _DBG_
-			printf("ERROR UNABLE TO RECONNECT\n");
-#endif
-
-		}
-	} else
+		free(HTTPServerResponseBuffer);
+		HTTPServerResponseSize = 0;
+	}
+	if (HTTPServerResponseBuffer)
 	{
-		target=TARGET_FREE;
-		port=TARGET_FREE;
-		NeedSSL=TARGET_FREE;
+		free(HTTPProxyClientRequestBuffer);
+		HTTPProxyClientRequestSize = 0;
 	}
 	
-}
-
-int ConnectionHandling::RemovePipeLineRequest(void)
-{
-	IoOperationLock.LockMutex();
-	if (PENDING_PIPELINE_REQUESTS) 
+	if (level == 1)
 	{
-		for (int i=0;i<PENDING_PIPELINE_REQUESTS -1;i++)
-		{
-			PIPELINE_Request[i]=PIPELINE_Request[i +1];
-			PIPELINE_Request_ID[i]=PIPELINE_Request_ID[i+1];		
-		}
-		PENDING_PIPELINE_REQUESTS--;
-		PIPELINE_Request=(httpdata**)realloc(PIPELINE_Request,sizeof(httpdata*) * (PENDING_PIPELINE_REQUESTS));
-		PIPELINE_Request_ID= (unsigned long *) realloc(PIPELINE_Request_ID,sizeof(unsigned long) * PENDING_PIPELINE_REQUESTS);		
-		if (!PENDING_PIPELINE_REQUESTS)
-		{
-			PIPELINE_Request=NULL;
-			PIPELINE_Request_ID = NULL;
-			IoOperationLock.UnLockMutex();
-			return(0);
-		} 
+		*targetDNS = 0;
+		port = 0;
+		target  = 0;
+		NeedSSL = 0;
+		BwLimit = 0;
+		DownloadLimit = 0;
+	#ifdef __WIN32__RELEASE__
+		LastConnectionActivity.dwHighDateTime=0;
+		LastConnectionActivity.dwLowDateTime=0;
+	#else
+		LastConnectionActivity=0;
+	#endif
 	}
-	IoOperationLock.UnLockMutex();
-	return(PENDING_PIPELINE_REQUESTS);
-
 }
-
-unsigned long ConnectionHandling::AddPipeLineRequest(httpdata *request)//, unsigned long RequestID)
-{	
-	IoOperationLock.LockMutex();
-#ifdef _DBG_
-	printf("*** AddPipeLineRequest: Añadiendo %i en conexion %i (%i +1)\n",CurrentRequestID,id,PENDING_PIPELINE_REQUESTS);
-#endif
-	PIPELINE_Request=(httpdata* *)realloc(PIPELINE_Request,sizeof(httpdata*) * (PENDING_PIPELINE_REQUESTS+1));
-	PIPELINE_Request[PENDING_PIPELINE_REQUESTS]=request;
-
-	PIPELINE_Request_ID= (unsigned long *) realloc(PIPELINE_Request_ID,sizeof(unsigned long) * (PENDING_PIPELINE_REQUESTS+1));	
-	PIPELINE_Request_ID[PENDING_PIPELINE_REQUESTS ]=CurrentRequestID++; //RequestID++;
-	PENDING_PIPELINE_REQUESTS++;	
-	IoOperationLock.UnLockMutex();
-	/* TODO 1 : Revisar de donde sale ese unlockmutex- Es necesario? el acceso esta restringido con el mutex global LOCK */
-	return(PIPELINE_Request_ID[PENDING_PIPELINE_REQUESTS -1]);
-}
-
-
+/*******************************************************************************************************/
+#define HTTP_CONNECTION_CLOSE			   0x01
+#define HTTP_RECV_ERROR_CODE_NO_ERROR      0x02
+#define HTTP_RECV_ERROR_CODE_NO_DATA       0x04
+#define HTTP_RECV_ERROR_CODE_INVALID_DATA  0x08
 
 
 
 int ConnectionHandling::SendHTTPRequest(httpdata* request)
 {
-
-
-#ifdef _DBG_
-	printf("\nSendHTTPRequest status:\n");
-	printf("ConnectionAgainstProxy: %i\n",ConnectionAgainstProxy);
-	printf("NeedSSL: %i\n",NeedSSL);
-	printf("port: %i\n",port);
-	printf("conexion->NumberOfRequests: %i\n",NumberOfRequests);
-	printf("ENVIANDO: %s\n",request->Header);
-#endif
-	if (!request)  return(0);
-
-
 	if ( (NeedSSL) && (!ssl) && 
 		( ((NumberOfRequests==0) && (!ConnectionAgainstProxy ) ) || //First SSL Request
 		(  (NumberOfRequests==1) && ( ConnectionAgainstProxy ) ) ) )   //Seccond HTTP Request against the HTTP Proxy Host
@@ -407,19 +263,43 @@ int ConnectionHandling::SendHTTPRequest(httpdata* request)
 /**********************************************************/
 httpdata* ConnectionHandling::SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,httpdata *request)
 {
-	int ret = GetConnection(HTTPHandle);
+	IoOperationLock.LockMutex();
+	httpdata *response = NULL;
+	int ret = InitializeConnection(HTTPHandle);
 	if (ret)
 	{
-		AddPipeLineRequest(request);
-		SendHTTPRequest(request);
-		return (ReadHTTPResponseData(NULL,request) );
-	} else
-	{
-		return(NULL);
+		ret = SendHTTPRequest(request);
+		if (ret) 
+		{
+			int ErrorCode = 0;
+			int n = NumberOfRequests;
+			response = ReadHTTPResponseData((ConnectionHandling*)HTTPHandle->GetClientConnection(),request,&ErrorCode);				
+			if (ErrorCode & HTTP_CONNECTION_CLOSE) 
+			{
+					/* The client signaled to close the connection */
+					Disconnect(0); 
+			}
+			if ( (ErrorCode & HTTP_RECV_ERROR_CODE_NO_DATA) || (ErrorCode & HTTP_RECV_ERROR_CODE_INVALID_DATA) )
+			{
+				if (n) 
+				{
+					/* Our data is corrupted/Invalid/Empty. Retry the request */
+					IoOperationLock.UnLockMutex();
+					return SendAndReadHTTPData(HTTPHandle,request);
+				}
+			}
+			if (ErrorCode & HTTP_RECV_ERROR_CODE_NO_ERROR)
+			{
+					/* Operation succed */
+					NumberOfRequests++;
+			}
+		}
 	}
+	IoOperationLock.UnLockMutex();
+	return(response);
 }
 /**********************************************************/
-int ConnectionHandling::ReadBytesFromConnection(char *buf, size_t bufSize, struct timeval *tv)
+int ConnectionHandling::ReadBytes(char *buf, size_t bufSize, struct timeval *tv)
 {
 	fd_set fdread, fds, fderr;     /* descriptors to be signaled by select events */
 	UpdateLastConnectionActivityTime();
@@ -563,7 +443,10 @@ int ConnectionHandling::SendBufferToProxyClient(class ConnectionHandling *ProxyC
 	return(1);
 }
 /************************************************************************************************************************/
-httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request)
+
+
+
+httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request, int *ErrorCode)
 {
 
 	/* IO VARIABLES TO HANDLE HTTP RESPONSE */
@@ -573,7 +456,6 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	char *lpBuffer = NULL;	       /* Pointer that stores the returned HTTP Data until its flushed to disk or splited into headers and data */
 	size_t BufferSize = 0;   /* Size of the returned HTTP Data lpBuffer */
 	int BytesToBeReaded = -1;      /* Number of bytes remaining to be readed on the HTTP Stream (-1 means that the number of bytes is still unknown, 0 that we have reached the end of the html data ) */
-	int i;                         /* Just a counter */	
 	httpdata* response = NULL;    /* Returned HTTP Information */
 
 	/* SOME CRITICAL INFORMATION THAT WE WILL GATHER FROM THE HTTP STREAM*/
@@ -597,23 +479,16 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	/* I/O FILE MAPPING FOR THE HTTP DATA */
 	class HTTPIOMapping *HTTPIOMappingData = NULL; /*Filemapping where the returned HTTP data is stored */
 
-
-	if ( (request->Headerstrstr(targetDNS)==NULL) && (request->Headerstrstr("fbi")==NULL) && (request->Headerstrstr("CONNECT")==NULL) && (request->Headerstrstr("127.0.0.1")==NULL) )
-	{
-		printf("CRitical error\n");
-
-	}
-
 	while ( BytesToBeReaded != 0 )
 	{
     	tv.tv_sec = HTTP_READ_TIMEOUT;
 		tv.tv_usec = 0;
 		if ( (BytesToBeReaded!=-1) && (BytesToBeReaded < BUFFSIZE ))
 		{
-			read_size = ReadBytesFromConnection(buf,BytesToBeReaded,&tv);
+			read_size = ReadBytes(buf,BytesToBeReaded,&tv);
 		} else
 		{
-			read_size = ReadBytesFromConnection(buf,sizeof(buf),&tv);
+			read_size = ReadBytes(buf,sizeof(buf),&tv);
 		}
 
 		if (read_size <= 0)
@@ -622,26 +497,8 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 			BytesToBeReaded = 0;  /* No more data to be readed */
 			if ( (!lpBuffer) && (!HTTPIOMappingData) )
 			{
-				/* If the socket is reused for more than one request, always try to send it again. (assume persistent connections)*/
-				if (NumberOfRequests > 0)
-				{
-                	Disconnect(1);
-					if (!StablishConnection())
-					{
-						FreeConnection();
-						return (NULL);
-					}
-					for (i = 0; i <= PENDING_PIPELINE_REQUESTS - 1; i++) {
-						SendHTTPRequest(PIPELINE_Request[i]);
-					}
-					return ReadHTTPResponseData(ProxyClientConnection, request);
-				} else
-				{
-					/*Maybe network error or invalid http server. who cares. closing connection */
-					FreeConnection();
-					if (ConnectionAgainstProxy) return (NULL);
-					return ( new httpdata);
-				}
+				*ErrorCode = HTTP_RECV_ERROR_CODE_NO_DATA | HTTP_CONNECTION_CLOSE ;
+				return (NULL);
 			}
 		} else 
 		{
@@ -688,38 +545,23 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					if (HTTPStatusCode == 0)
 					{
 						/* Protocolo ERROR - We are reading bad stuff */
-						printf("Error at: %s\n",request->Header);
-						free(lpBuffer);
-						delete response;
-						return new httpdata;
+						printf("Error: %s\n",request->Header);
+						*ErrorCode = HTTP_RECV_ERROR_CODE_INVALID_DATA | HTTP_CONNECTION_CLOSE;
+						return (NULL);
 					}
 					if (HTTPStatusCode == HTTP_STATUS_CONTINUE)
 					{
 						free(lpBuffer);
 						delete response;
-						return ReadHTTPResponseData(ProxyClientConnection, request);
+						return ReadHTTPResponseData(ProxyClientConnection, request,ErrorCode);
 					}
 					if (HTTPStatusCode == HTTP_STATUS_NO_CONTENT)
 					{
                     	BytesToBeReaded = 0;
 					}
 					if (response->Header[7] =='0') ConnectionClose = 1;
-
-					/* Check for Connection status headers */
-					char *p = response->GetHeaderValue("Connection:", 0);
-					if (p)
-					{
-						if (strnicmp(p, "close", 7) == 0)
-						{
-							ConnectionClose = 1;
-						} else if (strnicmp(p, "Keep-Alive", 10) == 0)
-						{
-							ConnectionClose = 0;
-						}
-						free(p);
-					} else
-					{
-						p = response->GetHeaderValue("Proxy-Connection:", 0);
+					
+						char *p = response->GetHeaderValue("Connection:", 0);
 						if (p)
 						{
 							if (strnicmp(p, "close", 7) == 0)
@@ -730,8 +572,22 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 								ConnectionClose = 0;
 							}
 							free(p);
+						} else
+						{
+							p = response->GetHeaderValue("Proxy-Connection:", 0);
+							if (p)
+							{
+								if (strnicmp(p, "close", 7) == 0)
+								{
+									ConnectionClose = 1;
+								} else if (strnicmp(p, "Keep-Alive", 10) == 0)
+								{
+									ConnectionClose = 0;
+								}
+								free(p);
+							}
 						}
-					}
+
 					p = response->GetHeaderValue("Content-Length:", 0);
 					if (p)
 					{
@@ -756,8 +612,10 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 						{
 							free(lpBuffer);
 							lpBuffer = NULL;
+							ContentLength = 0;
+							ConnectionClose = 1; /* We cant trust it */
 							break;
-						}
+						}						
 					}
 
 					/*HTTP 1.1 HEAD RESPONSE DOES NOT SEND BODY DATA. */
@@ -930,21 +788,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 		}
 	}
 	if (TmpChunkData) free(TmpChunkData);
-
-	if (ConnectionClose)
-	{
-		if (HTTPServerResponseBuffer)
-		{
-			free(HTTPServerResponseBuffer);
-			HTTPServerResponseBuffer=NULL;
-			HTTPServerResponseSize=0;
-		}
-		FreeConnection();
-	} else
-	{
-		NumberOfRequests++;
-		RemovePipeLineRequest();
-	}
+	*ErrorCode = HTTP_RECV_ERROR_CODE_NO_ERROR | ConnectionClose;
 	return (response);
 
 
@@ -1217,6 +1061,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 			response->DataSize = BufferSize;
 		}
 	}
+/*
 	if (ConnectionClose)
 	{
 		printf("Cerramos la conexion\n");
@@ -1226,6 +1071,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 		NumberOfRequests++;
 		RemovePipeLineRequest();
 	}
+*/
 	return(response);
 }
 /*******************************************************************************************/
@@ -1296,16 +1142,6 @@ void ConnectionHandling::Setio(unsigned int value)
 	InputOutputOperation = value; 
 }
 /*******************************************************************************************/
-int ConnectionHandling::GetPENDINGPIPELINEREQUESTS(void) 
-{ 
-	return PENDING_PIPELINE_REQUESTS; 
-}
-/*******************************************************************************************/
-unsigned long *ConnectionHandling::GetPIPELINERequestID(void) 
-{ 
-	return PIPELINE_Request_ID; 
-}
-/*******************************************************************************************/
 int ConnectionHandling::GetConnectionAgainstProxy(void) 
 { 
 	return ConnectionAgainstProxy; 
@@ -1322,3 +1158,35 @@ void ConnectionHandling::SetBioErr(void *bio)
 }
 
 /*******************************************************************************************/
+
+int ConnectionHandling::LimitIOBandwidth(unsigned long ChunkSize, struct timeval LastTime, struct timeval CurrentTime, int MAX_BW_LIMIT)
+{
+
+	if ( ( LastTime.tv_usec || LastTime.tv_sec ) && MAX_BW_LIMIT )
+	{
+		__uint64  TotalTime = ((CurrentTime.tv_usec + CurrentTime.tv_sec*1000000) - (LastTime.tv_usec + LastTime.tv_sec*1000000) ) / 1000;
+		if (TotalTime >= MAX_CHECK_TIME_FOR_BW_UTILIZATION ) //check Bw each 200ms
+		{
+			__uint64  CurrentBW = (ChunkSize *1000 ) / (TotalTime *1024 )  ; //Obtain kbps
+			//printf("LimitIOBandwidth::DBG: Hemos tardado %I64d ms for %i bytes - Bandwidth: %I64d kbps (%i KB/s)\n",TotalTime, ChunkSize,CurrentBW,CurrentBW/8);
+			if (CurrentBW > MAX_BW_LIMIT  )
+			{
+				__uint64 WaitFor = (ChunkSize *1000 ) / (MAX_BW_LIMIT *1024) ;
+				//printf("LimitIOBandwidth::DBG: Need to wait %i ms\n",WaitFor);
+				return((int)WaitFor);
+			}
+		} else
+		{
+			return(-1);
+		}
+	}
+	return(0);
+}
+
+/*******************************************************************************************************/
+FILETIME ConnectionHandling::GetLastConnectionActivityTime(void)
+{
+	return ( LastConnectionActivity);
+
+}
+/*******************************************************************************************************/

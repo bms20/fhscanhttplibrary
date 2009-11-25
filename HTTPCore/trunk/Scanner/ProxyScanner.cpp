@@ -21,6 +21,8 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 	char tmp[512];
 	PREQUEST response;
 	int ret=0;
+	
+	return(0);/*To review */
 
 	char *ProxyConfig = api->GetHTTPConfig (GLOBAL_HTTP_CONFIG,ConfigProxyHost);
 	if (!ProxyConfig)

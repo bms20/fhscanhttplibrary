@@ -131,9 +131,7 @@ class HTTPAPI : public encoders
 	
 	class HTTPAPIHANDLE *GetHTTPAPIHANDLE(HTTPHANDLE HTTPHandle);	
 	void  CleanConnectionTable(LPVOID *unused);
-	class ConnectionHandling *GetSocketConnection(class HTTPAPIHANDLE *HTTPHandle, httpdata* request, unsigned long *id);
-	int   GetFirstIdleConnectionAgainstTarget(class HTTPAPIHANDLE *HTTPHandle);
-	int   GetFirstUnUsedConnection() ;
+	class ConnectionHandling *GetSocketConnection(class HTTPAPIHANDLE *HTTPHandle, httpdata* request);
 	void  BuildBasicAuthHeader(HTTPCSTR Header,HTTPCSTR lpUsername, HTTPCSTR lpPassword,HTTPSTR destination, int dstsize);
 	httpdata* DispatchHTTPRequest(HTTPHANDLE HTTPHandle, httpdata* request);
 	httpdata* BuildHTTPProxyResponseHeader( int isSSLStablished,int closeconnection, int status, const char *protocol,const char* title, const char* extra_header, const char* mime_type, int length, time_t mod );
