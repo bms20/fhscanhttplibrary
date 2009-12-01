@@ -53,11 +53,11 @@ class TreeNode
 public:
 
 	TreeNode();
-	TreeNode(const char *lpTreeNodeName);
-	TreeNode(const char *lpTreeNodeName,TreeNode *Parent);
+	TreeNode(HTTPCSTR lpTreeNodeName);
+	TreeNode(HTTPCSTR lpTreeNodeName,TreeNode *Parent);
 	~TreeNode();
 
-	void SetTreeNodeName(const char *lpTreeNodeName);
+	void SetTreeNodeName(HTTPCSTR lpTreeNodeName);
 	char *GetTreeNodeName(void) { return (text); };
 	
 	void SetTreeNodeCount(const int n) { count=n; }
@@ -99,12 +99,12 @@ public:
 	bTree();
 	bTree(char *lpTreeName);
 	~bTree();
-	void		SetTreeName(const char *lpTreeName);
+	void		SetTreeName(HTTPCSTR lpTreeName);
 	int			GetCount() { return (count); }
-	TreeNode	*TreeExistItem(const char *lpTreeItemName);
+	TreeNode	*TreeExistItem(HTTPCSTR lpTreeItemName);
 	TreeNode	*GetTreeNodeItemID(int n);
-	TreeNode	*TreeInsert(const char *str,TreeNode *ParentItem);
-	TreeNode	*TreeInsert(const char *str);
+	TreeNode	*TreeInsert(HTTPCSTR str,TreeNode *ParentItem);
+	TreeNode	*TreeInsert(HTTPCSTR str);
 
 	void SubTreePrint(TreeNode *subtree);
 	void TreePrint();

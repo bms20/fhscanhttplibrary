@@ -42,8 +42,8 @@ SUCH DAMAGE.
 #define __CALLBACKS_H__
 
 #include "HTTPData.h"
+
 #ifdef __WIN32__RELEASE__
-#include <windows.h>
 
 #ifdef _DEBUG 
 typedef int (__stdcall *HTTP_IO_REQUEST_CALLBACK) ( //The Visual studio 200x Win32 DEBUG target requires __stdcall to work.. :?
@@ -93,7 +93,7 @@ public:
 	HTTPCALLBACK();
 	~HTTPCALLBACK();
 	void SetHTTPApiInstance(void *api) { ParentHTTPApi = api; }
-	int RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,const char *Description);
+	int RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,HTTPCSTR Description);
 	int  RemoveHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb);
 	int DoCallBack(int cbType,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response);
 };

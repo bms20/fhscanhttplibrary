@@ -19,7 +19,7 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 {
 	FILE *proxy = NULL;
 	char tmp[512];
-	PREQUEST response;
+	HTTPSession* response;
 	int ret=0;
 	
 	return(0);/*To review */
@@ -99,7 +99,7 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 					delete response;
 				}
 				//We must close the connection
-				api->CancelHttpRequest(HTTPHandle,HTTP_REQUEST_CURRENT);
+				api->CancelHTTPRequest(HTTPHandle,HTTP_REQUEST_CURRENT);
 			}
 		}
 

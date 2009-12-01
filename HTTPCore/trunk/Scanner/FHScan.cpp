@@ -113,7 +113,7 @@ static long GetNextTarget(char *hostname, int dstSize, int *port, int *ssl)
 /*******************************************************************************/
 void *ScanHosts(void *ptr) {
 	HTTPAPI *api =(class HTTPAPI*)ptr;
-	PREQUEST data;
+	HTTPSession* data;
 	HTTPHANDLE HTTPHandle;//data;
 	int ret;
 	char hostname[512];
@@ -159,12 +159,12 @@ void *ScanHosts(void *ptr) {
 						}
 						delete data;
 						data = NULL;
-						//data=(PREQUEST)FreeRequest(data);
+						//data=(HTTPSession*)FreeRequest(data);
 					}
 				}
 				delete data;
 				data = NULL;
-				//data=(PREQUEST)FreeRequest(data);
+				//data=(HTTPSession*)FreeRequest(data);
 			}
 
 			if (data)
@@ -181,7 +181,7 @@ void *ScanHosts(void *ptr) {
 					char *p=data->response->GetHeaderValue("Server:",0);
 					if (!p) 
 					{
-						PREQUEST head=api->SendHttpRequest(HTTPHandle,"HEAD","/");
+						HTTPSession* head=api->SendHttpRequest(HTTPHandle,"HEAD","/");
 						if (head)
 						{
 							if (head->server)  
@@ -210,7 +210,7 @@ void *ScanHosts(void *ptr) {
 
 
 						} else { //unknown webserver. Maybe its a router
-							PREQUEST auth=CheckRouterAuth(api,HTTPHandle,data,nRouterAuth, FakeAuth, nUsers, userpass);
+							HTTPSession* auth=CheckRouterAuth(api,HTTPHandle,data,nRouterAuth, FakeAuth, nUsers, userpass);
 							if (auth==NULL)
 							{
 								ret=CheckWebformAuth(api,HTTPHandle,data,0);
@@ -306,7 +306,7 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 	}
 
 	HTTPHANDLE HTTPHandle = api->InitHTTPConnectionHandle(host,port,SSLREQUEST);
-	PREQUEST data;
+	HTTPSession* data;
 
 	if (HTTPHandle ==INVALID_HHTPHANDLE_VALUE) 
 	{

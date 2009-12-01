@@ -7,19 +7,19 @@ class encoders : public SSLModule
 public:
 	encoders();
 	~encoders();
-	char* decodebase64(char *output, const char *input);
-	char* encodebase64(char *output, const char *input, size_t len);	
-	char *CreateDigestAuth(char *AuthenticationHeader, const char *lpUsername, const char *lpPassword, const char *method,const char *uri, int counter);
+	char* decodebase64(char *output, HTTPCSTR input);
+	char* encodebase64(char *output, HTTPCSTR input, size_t len);	
+	char *CreateDigestAuth(char *AuthenticationHeader, HTTPCSTR lpUsername, HTTPCSTR lpPassword, HTTPCSTR method,HTTPCSTR uri, int counter);
 	char *GetNTLMBase64Packet1(char*destination);
-	char *GetNTLMBase64Packet3(char*destination, const char* NTLMresponse, const char *lpUsername, const char* lpPassword);
-	unsigned char* GetMD2BinaryHash(char *output, const char *data, size_t len);
-	char* GetMD2TextHash(char *output, const char *data, size_t len);
-	unsigned char* GetMD4BinaryHash(char *output, const char *data, size_t len);
-	char* GetMD4TextHash(char *output, const char *data, size_t len);
-	unsigned char* GetMD5BinaryHash(char *output, const char *data, size_t len);
-	char* GetMD5TextHash(char *output, const char *data, size_t len);
-	unsigned char* GetSHA1BinaryHash(char *output, const char *data, size_t len);
-	char* GetSHA1TextHash(char *output, const char *data, size_t len);
+	char *GetNTLMBase64Packet3(char*destination, const char* NTLMresponse, HTTPCSTR lpUsername, const char* lpPassword);
+	unsigned char* GetMD2BinaryHash(char *output, HTTPCSTR data, size_t len);
+	char* GetMD2TextHash(char *output, HTTPCSTR data, size_t len);
+	unsigned char* GetMD4BinaryHash(char *output, HTTPCSTR data, size_t len);
+	char* GetMD4TextHash(char *output, HTTPCSTR data, size_t len);
+	unsigned char* GetMD5BinaryHash(char *output, HTTPCSTR data, size_t len);
+	char* GetMD5TextHash(char *output, HTTPCSTR data, size_t len);
+	unsigned char* GetSHA1BinaryHash(char *output, HTTPCSTR data, size_t len);
+	char* GetSHA1TextHash(char *output, HTTPCSTR data, size_t len);
 
 };
 

@@ -34,8 +34,6 @@ SUCH DAMAGE.
 */
 #include "ConnectionHandling.h"
 #include "misc.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 
 
@@ -49,7 +47,7 @@ ConnectionHandling::ConnectionHandling()
 	ctx = NULL;
 	ssl = NULL;
 	bio_err = NULL;
-	NeedSSL = 0;
+	SSLRequired = 0;
 
 #ifdef __WIN32__RELEASE__
 	LastConnectionActivity.dwHighDateTime = 0;
@@ -127,9 +125,8 @@ int ConnectionHandling::InitializeConnection(class HTTPAPIHANDLE *HTTPHandle)
 	if (datasock==0)
 	{
 		target=HTTPHandle->GetTarget();		
-		NeedSSL = HTTPHandle->IsSSLNeeded();
 
-		if (HTTPHandle->ProxyEnabled())
+		if (HTTPHandle->GetHTTPConfig(ConfigProxyHost) )
 		{			
 			port=atoi(HTTPHandle->GetHTTPConfig(ConfigProxyPort));
 			ConnectionAgainstProxy=1;
@@ -145,21 +142,32 @@ int ConnectionHandling::InitializeConnection(class HTTPAPIHANDLE *HTTPHandle)
 			target = TARGET_FREE;
 			return(0);
 		}
-		strcpy(this->targetDNS, HTTPHandle->GettargetDNS());
+		strcpy(targetDNS, HTTPHandle->GetHTTPConfig(ConfigHTTPHost));
 		#ifdef _DBG_
 		printf("Connection stablished against %s\n",this->targetDNS);
 		#endif
-		BwLimit=HTTPHandle->GetDownloadBwLimit();
-		DownloadLimit=HTTPHandle->GetDownloadLimit();
+		//BwLimit=HTTPHandle->GetDownloadBwLimit();
+		//DownloadLimit=HTTPHandle->GetDownloadLimit();
 		ThreadID = HTTPHandle->GetThreadID();
 		HTTPHandle->SetConnection((void*)this);
+	}
+	SSLRequired = (HTTPHandle->GetHTTPConfig(ConfigSSLConnection) != NULL);
+
+	if ( (SSLRequired) && (!ssl) )
+	{
+		int ret = InitSSLConnection();
+		if (!ret)
+		{
+			Disconnect(0);
+			return(0);
+		}
 	}
 	return(1);
 }
 /*******************************************************************************************************/
 void ConnectionHandling::Disconnect(int level)
 {
-	if (NeedSSL)
+	if (SSLRequired)
 	{
 		if (ssl)
 		{
@@ -169,6 +177,7 @@ void ConnectionHandling::Disconnect(int level)
 		if (ctx) SSL_CTX_FREE(ctx);
 		ctx=NULL;
 		ssl = NULL;
+		SSLRequired = 0;
 	}
 	shutdown(datasock,2);
 	closesocket(datasock);
@@ -190,7 +199,7 @@ void ConnectionHandling::Disconnect(int level)
 		*targetDNS = 0;
 		port = 0;
 		target  = 0;
-		NeedSSL = 0;
+		SSLRequired = 0;
 		BwLimit = 0;
 		DownloadLimit = 0;
 	#ifdef __WIN32__RELEASE__
@@ -209,15 +218,8 @@ void ConnectionHandling::Disconnect(int level)
 
 
 
-int ConnectionHandling::SendHTTPRequest(httpdata* request)
+int ConnectionHandling::SendHttpRequest(httpdata* request)
 {
-	if ( (NeedSSL) && (!ssl) && 
-		( ((NumberOfRequests==0) && (!ConnectionAgainstProxy ) ) || //First SSL Request
-		(  (NumberOfRequests==1) && ( ConnectionAgainstProxy ) ) ) )   //Seccond HTTP Request against the HTTP Proxy Host
-	{
-		if (! InitSSLConnection()) return(0);
-	}
-
 	if (ssl) 
 	{
 		int err=SSL_WRITE(ssl, request->Header, (int)request->HeaderSize);
@@ -268,7 +270,7 @@ httpdata* ConnectionHandling::SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandl
 	int ret = InitializeConnection(HTTPHandle);
 	if (ret)
 	{
-		ret = SendHTTPRequest(request);
+		ret = SendHttpRequest(request);
 		if (ret) 
 		{
 			int ErrorCode = 0;
@@ -797,7 +799,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 
 int ConnectionHandling::InitSSLConnection()
 {
-	if (NeedSSL)
+	if (SSLRequired)
 	{
 		int err;
 #ifdef __WIN32__RELEASE__
@@ -895,16 +897,15 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 		} else
 		{
 
-			if (!ssl)
+			if (!SSLRequired)
 			{
 				read_size=recv (datasock, buf, BytesPorLeer > sizeof(buf)-1 ? sizeof(buf)-1 :BytesPorLeer  ,0);
 
 			} else
 			{
 				/* Initializing SSL support */
-				if (!NeedSSL)
+				if (!ssl)
 				{
-					NeedSSL = 1;
 					if(SSL_ACCEPT(ssl)<=0)
 					{
 						printf("# SSL ACCEPT ERROR\n");

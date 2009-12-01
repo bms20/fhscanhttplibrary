@@ -36,30 +36,14 @@ SUCH DAMAGE.
 #ifndef __CONNECTIONHANDLING_H__
 #define __CONNECTIONHANDLING_H__
 
-#include "Build.h"
-#include "Threading.h"
+//#include "Build.h"
+//#include "Threading.h"
 #include "HTTPHANDLE.h"
 #include "HTTP.h"
 #include "FileMapping.h"
 #include "SSLModule.h"
 
-#ifdef __WIN32__RELEASE__
-#include <sys/timeb.h>
-#include <process.h>
-#include <time.h>
-#include <windows.h>
-#else
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <pthread.h>
-#include <ctype.h>
-#include <time.h>
-#include <sys/timeb.h>
+#ifndef __WIN32__RELEASE__
 #define FILETIME time_t
 #endif
 
@@ -95,7 +79,7 @@ class ConnectionHandling : public SSLModule
 	long 			 target;
 	char 			 targetDNS[256];
 	unsigned short	 port;
-	int 			 NeedSSL; /*Signals if the connection is against an SSL service */
+	int 			 SSLRequired; /*Signals if the connection is against an SSL service */
 	int				 ConnectionAgainstProxy; /* Signals if HTTP Proxy is enabled */
 
 	SSL_CTX *		 ctx;
@@ -140,7 +124,7 @@ public:
 	int				InitializeConnection(class HTTPAPIHANDLE *HTTPHandle);	
 	void            Disconnect(int level);
 	struct httpdata *ReadHTTPProxyRequestData();
-	int				SendHTTPRequest(httpdata* request);
+	int				SendHttpRequest(httpdata* request);
 	httpdata		*SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,httpdata *request);
 		
 	

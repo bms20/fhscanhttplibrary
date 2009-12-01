@@ -216,6 +216,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HTTPCore\HTTPResponse.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\HTTPCore\misc.cpp"
 				>
 			</File>
@@ -375,6 +379,10 @@
 			</File>
 			<File
 				RelativePath=".\HTTPCore\HTTPHANDLE.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HTTPCore\HTTPResponse.h"
 				>
 			</File>
 			<File

@@ -82,7 +82,7 @@ static void ValidateLine(char *source,char *dst) {
 }
 //------------------------------------------------------------------------------
 
-int LoadKnownWebservers(const char *path)
+int LoadKnownWebservers(HTTPCSTR path)
 {
 	char tmp[100];
 	int len=sizeof(tmp);
@@ -115,7 +115,7 @@ int LoadKnownWebservers(const char *path)
 
 //------------------------------------------------------------------------------
 
-int LoadKnownRouters(const char *path)
+int LoadKnownRouters(HTTPCSTR path)
 {
 	char tmp[100];
 	int len=sizeof(tmp);
@@ -152,7 +152,7 @@ int LoadKnownRouters(const char *path)
 //------------------------------------------------------------------------------
 
 
-int LoadWebForms(const char *path)
+int LoadWebForms(HTTPCSTR path)
 {
 	FILE *webforms=fopen(path,"r");
 	nWebforms=0;
@@ -236,7 +236,7 @@ int LoadWebForms(const char *path)
 }
 
 //------------------------------------------------------------------------------
-int LoadUserList(const char *path) {
+int LoadUserList(HTTPCSTR path) {
 	FILE *userlist;
 	char *p;
 	char user[200];
@@ -272,7 +272,7 @@ int LoadUserList(const char *path) {
 }
 
 /******************************************************************************/
-int LoadSingleUserList(const char *path) {
+int LoadSingleUserList(HTTPCSTR path) {
 	FILE *userlist;
 	char *p;
 	char user[200];
@@ -316,7 +316,7 @@ int LoadSingleUserList(const char *path) {
 /******************************************************************************/
 
 
-int LoadWebservers(const char *path) {
+int LoadWebservers(HTTPCSTR path) {
 
 	FILE *webservers;
 	char tmp[512];
@@ -393,7 +393,7 @@ int LoadWebservers(const char *path) {
 }
 //-----------------------------------------------------------------------------
 
-int LoadRouterAuth(const char *path) {
+int LoadRouterAuth(HTTPCSTR path) {
 	FILE *RouterAuth;
 	char line[200];
 	char *p;

@@ -1,23 +1,25 @@
 /*
-*  Fast HTTP AUTH SCANNER 
+*  Fast HTTP AUTH SCANNER
 *
 *  Router Auth Scanner Module: Scans for known authentication path
 *
 */
 
 #include "../HTTPCore/HTTP.h"
+#include "../HTTPCore/HTTPResponse.h"
 #include "estructuras.h"
 #include "FHScan.h"
 #include "Reporting/LogSettings.h"
+
 
 extern int bruteforce;
 #define MAX_TIMEOUT_RETRY 5 //Due to host timeout we will retry not more than 5 connections
 
 
-PREQUEST DuplicateData(PREQUEST data)
+HTTPSession* DuplicateData(HTTPSession* data)
 {
 
-	PREQUEST new_data= new (struct  prequest);
+	HTTPSession* new_data= new HTTPSession;
 	new_data->ip=data->ip;
 	strncpy(new_data->hostname,data->hostname,sizeof(new_data->hostname)-1);
 	new_data->port=data->port;
@@ -35,9 +37,9 @@ PREQUEST DuplicateData(PREQUEST data)
 
 /*******************************************************************************/
 #define PASSWORD_NOT_FOUND -1
-static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,struct _fakeauth *AuthData,int nUsers, USERLIST *userpass) {
+static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,struct _fakeauth *AuthData,int nUsers, USERLIST *userpass) {
 
-	PREQUEST new_response;
+	HTTPSession* new_response;
 	int CookieNeeded=0;
     char *lpcookie=NULL;
     char cookie[256]="";
@@ -65,7 +67,7 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,stru
 		{
 			if (!CookieNeeded)
 			{
-				//new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,AuthData->postdata,(unsigned int)strlen(AuthData->postdata),userpass[k].UserName,userpass[k].Password,challenge);
+				//new_response3=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,AuthData->postdata,(unsigned int)strlen(AuthData->postdata),userpass[k].UserName,userpass[k].Password,challenge);
 				new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,AuthData->postdata,strlen(AuthData->postdata),userpass[k].UserName,userpass[k].Password);
 			} else {
 				api->SetHTTPConfig(HTTPHandle,ConfigCookie,AuthData->postdata);
@@ -111,9 +113,9 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,stru
 	return(PASSWORD_NOT_FOUND);
 }
 /*******************************************************************************/
-PREQUEST CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,int nRouterAuth, struct _fakeauth *AuthData,int nUsers, USERLIST *userpass)
+HTTPSession* CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,int nRouterAuth, struct _fakeauth *AuthData,int nUsers, USERLIST *userpass)
 {
-	PREQUEST response;
+	HTTPSession* response;
 	int ret;
 	char *lpcookie=NULL;
 
@@ -201,7 +203,7 @@ PREQUEST CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,int nR
 				 }
 				 return(response);
 			 }
-			 //response=(PREQUEST)FreeRequest(response);
+			 //response=(HTTPSession*)FreeRequest(response);
 			 delete response;
 			}
 		}

@@ -9,14 +9,14 @@
 #endif
 
 int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]);
-int LoadKnownWebservers(const char *path);
-int LoadKnownRouters(const char *path);
-int LoadWebForms(const char *path);
-int LoadUserList(const char *path);
-int LoadSingleUserList(const char *path);
-int LoadIgnoreList(const char *path);
-int LoadWebservers(const char *path) ;
-int LoadRouterAuth(const char *path) ;
+int LoadKnownWebservers(HTTPCSTR path);
+int LoadKnownRouters(HTTPCSTR path);
+int LoadWebForms(HTTPCSTR path);
+int LoadUserList(HTTPCSTR path);
+int LoadSingleUserList(HTTPCSTR path);
+int LoadIgnoreList(HTTPCSTR path);
+int LoadWebservers(HTTPCSTR path) ;
+int LoadRouterAuth(HTTPCSTR path) ;
 
 
 #endif

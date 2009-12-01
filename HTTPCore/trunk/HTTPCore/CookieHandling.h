@@ -107,7 +107,7 @@ public:
 	int MatchCookie(char *lppath,char *lpdomain,char *lpCookieName, int securevalue);
 	void SetDate(time_t cExpire);
 	time_t GetDate(void) { return expire;}
-	size_t path_matches (const char *RequestedPath);
+	size_t path_matches (HTTPCSTR RequestedPath);
 	char *GetCookieName(void) { return (lpCookieName); }
 	char *GetCookieValue(void) { return (lpCookieValue); }
 	char *GetCookiePath(void)  { return (path); }
@@ -134,15 +134,15 @@ class CookieStatus
 
 	int RemoveCookieFromList(struct CookieList *List,char *path,char *name, char *lpDomain);
 	//void InsertCookieToList(struct CookieList *List,char *path, char *name, char *value, int secure, int HttpOnly);
-	int numeric_address_p (const char *addr);
-	int check_domain_match (const char *cookie_domain, const char *host);
+	int numeric_address_p (HTTPCSTR addr);
+	int check_domain_match (HTTPCSTR cookie_domain, HTTPCSTR host);
 	BOOL cookie_expired (time_t CookieExpireTime);
 
 public:
 	CookieStatus();
 	time_t ExtractDate(char *lpdate);
-	int ParseCookieData(char *lpCookieData, const char *lpPath, const char *lpDomain);
-	char *ReturnCookieHeaderFor(const char *lpDomain,const char *path,int CookieOverSSL);
+	int ParseCookieData(char *lpCookieData, HTTPCSTR lpPath, HTTPCSTR lpDomain);
+	char *ReturnCookieHeaderFor(HTTPCSTR lpDomain,HTTPCSTR path,int CookieOverSSL);
 
 	int CookieAlreadyExist(struct CookieList *List,char *path, char *domain, char *name, int secure );
 	~CookieStatus();

@@ -84,6 +84,7 @@ HTTPAPIHANDLE::HTTPAPIHANDLE(void)
 	lpProxyPort = NULL;
 	lpProxyUserName  = NULL;
 	lpProxyPassword = NULL;
+	ProxyInitialized = 0;
 	memset(lpTmpData,0,sizeof(lpTmpData));
 
 	challenge = NO_AUTH;
@@ -134,6 +135,7 @@ int HTTPAPIHANDLE::InitHandle(HTTPSTR hostname,unsigned short HTTPPort,int ssl)
 	lpProxyPort = NULL;
 	lpProxyUserName  = NULL;
 	lpProxyPassword = NULL;
+	ProxyInitialized = 0;
 	memset(lpTmpData,0,sizeof(lpTmpData));
 	challenge = NO_AUTH;
 	CookieSupported  = 1;
@@ -179,17 +181,26 @@ HTTPAPIHANDLE::~HTTPAPIHANDLE()
 		LastAuthenticationString = NULL;
 	}
 
-	if (lpProxyHost) free(lpProxyHost);
-	lpProxyHost = NULL;
+	if (lpProxyHost) {
+		free(lpProxyHost);
+		lpProxyHost = NULL;
+	}
 
-	if (lpProxyPort) free(lpProxyPort);
-	lpProxyPort = NULL;
+	if (lpProxyPort) {
+		free(lpProxyPort);
+		lpProxyPort = NULL;
+	}
 
-	if (lpProxyUserName) free(lpProxyUserName);
-	lpProxyUserName  = NULL;
+	if (lpProxyUserName) {
+		free(lpProxyUserName);
+		lpProxyUserName  = NULL;
+	}
 
-	if (lpProxyPassword) free(lpProxyPassword);
-	lpProxyPassword = NULL;
+	if (lpProxyPassword) {
+		free(lpProxyPassword);
+		lpProxyPassword = NULL;
+	}
+	ProxyInitialized = 0;
 
 	memset(lpTmpData,0,sizeof(lpTmpData));
 	challenge = NO_AUTH;
@@ -205,6 +216,13 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,int parameter)
 	sprintf(tmp,"%i",parameter);
 	switch (opt)
 	{
+		case ConfigSSLConnection:
+			NeedSSL = parameter;
+		break;
+		case ConfigProxyInitialized:
+			ProxyInitialized=parameter;
+			break;
+
 		case ConfigAsyncronousProxy:
 			AsyncHTTPRequest = parameter;
 			break;
@@ -403,7 +421,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 }
 
 /*******************************************************************************************************/
-HTTPSTR HTTPAPIHANDLE::GetHTTPConfig(int opt)
+HTTPSTR HTTPAPIHANDLE::GetHTTPConfig(enum HttpOptions opt)
 {
 
 	switch(opt)
@@ -432,20 +450,36 @@ HTTPSTR HTTPAPIHANDLE::GetHTTPConfig(int opt)
 	case ConfigProtocolversion:
 		sprintf(lpTmpData,"%i",version);
 		return (lpTmpData);
-	case ConfigSSLSupported:
-		strcpy(lpTmpData,"1");
-		return (lpTmpData);
+	case ConfigProxyInitialized:
+		if (ProxyInitialized)
+		{
+			sprintf(lpTmpData,"%i",ProxyInitialized);
+			return (lpTmpData);
+		}
+		break;
 	case ConfigSSLConnection:
-		sprintf(lpTmpData,"%i",NeedSSL);
-		return (lpTmpData);
+		if (NeedSSL)
+		{
+			sprintf(lpTmpData,"%i",NeedSSL);
+			return (lpTmpData);
+		} 
+		break;
 	case ConfigMaxDownloadSize:
 		return (DownloadLimit);
 	case ConfigCookieHandling:
-		sprintf(lpTmpData,"%i",CookieSupported);
-		return (lpTmpData);
+		if (CookieSupported)
+		{
+			sprintf(lpTmpData,"%i",CookieSupported);
+			return (lpTmpData);
+		}
+		break;
 	case ConfigAutoredirect:
-		sprintf(lpTmpData,"%i",AutoRedirect);
-		return (lpTmpData);
+		if (AutoRedirect)
+		{
+			sprintf(lpTmpData,"%i",AutoRedirect);
+			return (lpTmpData);
+		}
+		break;
 	}
 	return(NULL);
 }
@@ -453,58 +487,11 @@ HTTPSTR HTTPAPIHANDLE::GetHTTPConfig(int opt)
 
 
 
-void *HTTPAPIHANDLE::ParseReturnedBuffer(struct httpdata *request, struct httpdata *response)
-{
-	char version[4];
 
-	PREQUEST data = new prequest;
-	strncpy(data->hostname,targetDNS,sizeof(data->hostname)-1);
-	data->ip=target;
-	data->port=port;
-	data->NeedSSL = NeedSSL;
-	data->request=request;
-	data->response=response;
-	data->server=response->GetServerVersion();
-	if (response->HeaderSize>=12)
-	{
-		memcpy(version,response->Header+9,3);
-		version[3]='\0';
-		data->status=atoi(version);
-	}
-	data->ContentType = request->GetHeaderValue("Content-Type:",0);
-	//data->challenge=response->IschallengeSupported("WWW-Authenticate:");
-
-	char *line = request->GetHeaderValueByID(0);
-	if (line)
-	{
-		char *url=strchr(line,' ');
-		if (url)
-		{
-			*url=0;
-			strncpy(data->Method,line,sizeof(data->Method)-1);
-			url++;
-			char *method = strchr(url,' ');		if (method) *method = 0;
-			char *parameters= strchr(url,';');  if (parameters) *parameters = 0;
-			parameters= strchr(url,'?');   		if (!parameters) parameters= strchr(url,'&');
-			if (parameters) 
-			{
-				*parameters = 0;
-				data->Parameters= strdup(parameters+1);
-			}
-			data->url=strdup(url);
-		}
-		free(line);
-	}
-
-	
-
-	return(data);
-
-}
 
 
 /*******************************************************************************************************/
-char *HTTPAPIHANDLE::GetAdditionalHeaderValue(const char *value,int n)
+char *HTTPAPIHANDLE::GetAdditionalHeaderValue(HTTPCSTR value,int n)
 {
 	char *base,*end;
 	end=base=AdditionalHeader;
@@ -543,3 +530,28 @@ char *HTTPAPIHANDLE::GetAdditionalHeaderValue(const char *value,int n)
 	return(NULL);
 }
 /*******************************************************************************************************/
+	void HTTPAPIHANDLE::SetLastAuthenticationString(char *authstring) {
+		if (LastAuthenticationString) free(LastAuthenticationString);
+		LastAuthenticationString = authstring;
+	}
+
+/*******************************************************************************************************/
+	void HTTPAPIHANDLE::SetLastRequestedUri(HTTPCSTR url)
+	{
+		if (LastRequestedUri) free(LastRequestedUri);
+		if (url)
+		{
+			LastRequestedUri = strdup(url);
+		} else
+		{
+         	LastRequestedUri = NULL;
+        }
+
+    }
+/*******************************************************************************************************/
+	char *HTTPAPIHANDLE::GetLastRequestedUri(void) 
+	{ 
+		return LastRequestedUri; 
+	};
+/*******************************************************************************************************/
+

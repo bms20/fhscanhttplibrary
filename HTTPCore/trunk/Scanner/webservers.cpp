@@ -14,7 +14,7 @@
 VLIST vlist[200]; //Vulnerability LIST
 int nvlist = 0;
 
-PREQUEST DuplicateData(PREQUEST data);
+HTTPSession* DuplicateData(HTTPSession* data);
 /******************************************************************************/
 char *Directories[50];
 char *Files[50];
@@ -26,7 +26,7 @@ void BruteForceDirectory(HTTPAPI *api,HTTPHANDLE HTTPHandle, char *base)
 
 	char path[512];
 	char tmp[512];
-	PREQUEST response;
+	HTTPSession* response;
 
 	i = 0;
 	while (Directories[i][0])
@@ -71,7 +71,7 @@ static BOOL CheckForWrongHTTPStatusCode(HTTPAPI *api,HTTPHANDLE HTTPHandle, unsi
 {
 	char tmp[512];
 
-	PREQUEST new_response;
+	HTTPSession* new_response;
 	snprintf(tmp, sizeof(tmp) - 1, "/FastHTTPAuthScanner%itest/", status);
 	new_response = api->SendHttpRequest(HTTPHandle, NULL,"GET", tmp, NULL,0,NULL,NULL);
 	if (new_response)
@@ -92,11 +92,11 @@ static BOOL CheckForWrongHTTPStatusCode(HTTPAPI *api,HTTPHANDLE HTTPHandle, unsi
 }
 
 /******************************************************************************/
-int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST data,int nUsers, USERLIST *userpass)
+int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* data,int nUsers, USERLIST *userpass)
 {
 
-	PREQUEST response;
-	PREQUEST bruteforce;
+	HTTPSession* response;
+	HTTPSession* bruteforce;
 	unsigned int vulns = 0;
 	char tmp[512];
 	int i, j, k;

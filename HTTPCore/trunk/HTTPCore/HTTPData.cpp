@@ -34,56 +34,15 @@ SUCH DAMAGE.
 */
 #include "HTTPData.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 
 /*******************************************************************************************************/
-prequest::prequest()
-{
-	*hostname=0;
-	ip=0;
-	port = 0;
-	NeedSSL = 0;
-	url = NULL;
-	Parameters = NULL;
-	request = NULL;
-	response = NULL;
-	server = NULL;
-	*Method=0;
-	status=NO_AUTH;	
-	ContentType = NULL;
-}
-/*******************************************************************************************************/
-prequest::~prequest()
-{	
-	delete request;
-	delete response;
-	if (server)			free(server);
-	if (ContentType)	free(ContentType);
-	if (url)			free(url);
-	if (Parameters)		free(Parameters);
-}
-/*******************************************************************************************************/
-int prequest::IsValidHTTPResponse(void) 
-{ 
-	return ((response) && (response->Header) && (response->HeaderSize) && (status>100) && (status<520) ) ; 
-}
-/*******************************************************************************************************/
-int prequest::HasResponseHeader(void) 
-{ 
-	return ( (response) && (response->HeaderSize) && (response->Header) ); 
-}
-/*******************************************************************************************************/
-int prequest::HasResponseData(void) 
-{   
-	return ( (response) && (response->DataSize) && (response->Data)   ); 
-}
+
 
 /*******************************************************************************************************/
 
 /*******************************************************************************************************/
-void httpdata::InitHTTPData(const char *header,size_t headersize, const char *lpPostData,size_t PostDataSize)
+void httpdata::InitHTTPData(HTTPCSTR header,size_t headersize, HTTPCSTR lpPostData,size_t PostDataSize)
 {
 	if ( (headersize) && (header) )
 	{
@@ -129,14 +88,14 @@ httpdata::httpdata()
 	Comments = NULL;
 }
 /*******************************************************************************************************/
-httpdata::httpdata(const char *header)	 {  InitHTTPData(header,strlen(header),NULL,0); }
-httpdata::httpdata(const char *header, size_t  headersize)   {	InitHTTPData(header,headersize,NULL,0); }
-httpdata::httpdata(const char *header, const char *lpPostData) {	InitHTTPData(header,strlen(header),lpPostData,strlen(lpPostData)); }
-httpdata::httpdata(const char *header,size_t headersize, const char *lpPostData,size_t  PostDataSize) { InitHTTPData(header,headersize,lpPostData,PostDataSize); }
+httpdata::httpdata(HTTPCSTR header)	 {  InitHTTPData(header,strlen(header),NULL,0); }
+httpdata::httpdata(HTTPCSTR header, size_t  headersize)   {	InitHTTPData(header,headersize,NULL,0); }
+httpdata::httpdata(HTTPCSTR header, HTTPCSTR lpPostData) {	InitHTTPData(header,strlen(header),lpPostData,strlen(lpPostData)); }
+httpdata::httpdata(HTTPCSTR header,size_t headersize, HTTPCSTR lpPostData,size_t  PostDataSize) { InitHTTPData(header,headersize,lpPostData,PostDataSize); }
 /*******************************************************************************************************/
-void httpdata::InitHTTPData(const char *header) {	InitHTTPData(header,strlen(header),NULL,0); }
-void httpdata::InitHTTPData(const char *header, size_t headersize) {	InitHTTPData(header,headersize,NULL,0); }
-void httpdata::InitHTTPData(const char *header, const char *lpPostData) {	InitHTTPData(header,strlen(header),lpPostData,strlen(lpPostData)); }
+void httpdata::InitHTTPData(HTTPCSTR header) {	InitHTTPData(header,strlen(header),NULL,0); }
+void httpdata::InitHTTPData(HTTPCSTR header, size_t headersize) {	InitHTTPData(header,headersize,NULL,0); }
+void httpdata::InitHTTPData(HTTPCSTR header, HTTPCSTR lpPostData) {	InitHTTPData(header,strlen(header),lpPostData,strlen(lpPostData)); }
 /*******************************************************************************************************/
 char *httpdata::GetRequestedURL()
 {
@@ -200,7 +159,7 @@ char *httpdata::GetHeaderValueByID(unsigned int id)
 }
 
 /*******************************************************************************************************/
-char * httpdata::AddHeader(const char *newheader)
+char * httpdata::AddHeader(HTTPCSTR newheader)
 {
 	if (!newheader)  //safety check.
 	{
@@ -252,7 +211,7 @@ char * httpdata::AddHeader(const char *newheader)
 
 }
 /*******************************************************************************************************/
-char * httpdata::RemoveHeader(const char *oldheader)
+char * httpdata::RemoveHeader(HTTPCSTR oldheader)
 {
 	char *base,*end;
 	base = end=Header;
@@ -407,7 +366,7 @@ httpdata::~httpdata()
 		}
 }
 /*******************************************************************************************************/
-char *httpdata::GetHeaderValue(const char *value,int n)
+char *httpdata::GetHeaderValue(HTTPCSTR value,int n)
 {
 	char *base,*end;
 	end=base=Header;
@@ -579,7 +538,7 @@ char *httpdata::GetHTTPMethod()
 
 }
 /*******************************************************************************************************/
-char *httpdata::Datastrstr(const char *searchdata)
+char *httpdata::Datastrstr(HTTPCSTR searchdata)
 {
 	if ((Data) && (DataSize))
 	{
@@ -588,7 +547,7 @@ char *httpdata::Datastrstr(const char *searchdata)
 	return(NULL);
 }
 /*******************************************************************************************************/
-char *httpdata::Headerstrstr(const char *searchdata)
+char *httpdata::Headerstrstr(HTTPCSTR searchdata)
 {
 	if ((Header) && (HeaderSize))
 	{

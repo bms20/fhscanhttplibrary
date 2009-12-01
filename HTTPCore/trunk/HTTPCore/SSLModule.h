@@ -76,7 +76,7 @@ SUCH DAMAGE.
 	typedef SSL_METHOD* (*SSLV23_METHOD_FUNC)(void);
 	typedef void		(*SSL_CTX_SET_DEFAULT_PASSWD_CB_FUNC)(SSL_CTX*,pem_password_cb*);
 	typedef int			(*SSL_ACCEPT_FUNC)(SSL*);
-	typedef int			(*SSL_CTX_LOAD_VERIFY_LOCATIONS_FUNC)(SSL_CTX*,const char*, const char *);
+	typedef int			(*SSL_CTX_LOAD_VERIFY_LOCATIONS_FUNC)(SSL_CTX*,const char*, HTTPCSTR );
 	typedef BIO*		(*BIO_NEW_FILE_FUNC)(const char*, const char*);
 	typedef int			(*SSL_CTX_USE_CERTIFICATE_CHAIN_FILE_FUNC)(SSL_CTX*,const char*);
 	typedef BIO*		(*BIO_NEW_SOCKET_FUNC)(int, int);

@@ -34,8 +34,8 @@ typedef struct _UserPass{
    char Password[50];
 } USERLIST;
 //
-//char *GetHeaderValue(PREQUEST data, char  *Header) ;
-///char *GetValue(const char *lpBuffer);
+//char *GetHeaderValue(HTTPSession* data, char  *Header) ;
+///char *GetValue(HTTPCSTR lpBuffer);
 
 //información de un router que soporta auth por webform
 struct _webform {

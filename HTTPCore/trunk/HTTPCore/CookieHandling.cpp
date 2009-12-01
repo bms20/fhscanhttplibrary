@@ -80,7 +80,7 @@ void Cookie::SetDate(time_t cExpire)
 	expire = cExpire;
 }
 
-size_t Cookie::path_matches (const char *RequestedPath)
+size_t Cookie::path_matches (HTTPCSTR RequestedPath)
 {
 	size_t len = strlen (path);
 	if (strncmp (RequestedPath, path, len))
@@ -167,9 +167,9 @@ CookieStatus::~CookieStatus()
 
 
 /* Ripped from wget */
-int CookieStatus::numeric_address_p (const char *addr)
+int CookieStatus::numeric_address_p (HTTPCSTR addr)
 {
-	const char *p = addr;
+	HTTPCSTR p = addr;
 
 	REQUIRE_DIGITS (p);           /* A */
 	REQUIRE_DOT (p);              /* . */
@@ -187,10 +187,10 @@ int CookieStatus::numeric_address_p (const char *addr)
 /* Check whether COOKIE_DOMAIN is an appropriate domain for HOST.
 This check is compliant with rfc2109.  */
 
-int CookieStatus::check_domain_match (const char *cookie_domain, const char *host)
+int CookieStatus::check_domain_match (HTTPCSTR cookie_domain, HTTPCSTR host)
 {
 	size_t headlen;
-	const char *tail;
+	HTTPCSTR tail;
 	/* Numeric address requires exact match.  It also requires HOST to
 	be an IP address.  I suppose we *could* resolve HOST with
 	store_hostaddress (it would hit the hash table), but rfc2109
@@ -200,7 +200,7 @@ int CookieStatus::check_domain_match (const char *cookie_domain, const char *hos
 		return !strcmp (cookie_domain, host);
 
 	/* The domain must contain at least one embedded dot. */
-	const char *rest = cookie_domain;
+	HTTPCSTR rest = cookie_domain;
 	size_t len = strlen (rest);
 	if (*rest == '.')
 		++rest, --len;            /* ignore first dot */
@@ -278,11 +278,11 @@ int CookieStatus::CookieAlreadyExist(struct CookieList *List,char *path, char *d
 
 }
 
-char *CookieStatus::ReturnCookieHeaderFor(const char *lpDomain,const char *path,int CookieOverSSL)
+char *CookieStatus::ReturnCookieHeaderFor(HTTPCSTR lpDomain,HTTPCSTR path,int CookieOverSSL)
 {
 
 	/* Locate Which node Name should be retrieved */
-	const char *DomainNameTreeNode = NULL;
+	HTTPCSTR DomainNameTreeNode = NULL;
 	if (numeric_address_p (lpDomain))
 	{
 		DomainNameTreeNode = lpDomain;
@@ -346,7 +346,7 @@ char *CookieStatus::ReturnCookieHeaderFor(const char *lpDomain,const char *path,
 	return(NULL);
 }
 
-int CookieStatus::ParseCookieData(char *lpCookieData, const char *lpPath, const char *lpDomain)
+int CookieStatus::ParseCookieData(char *lpCookieData, HTTPCSTR lpPath, HTTPCSTR lpDomain)
 {
 	int nvalues = 0;
 	char **name = NULL;
@@ -363,7 +363,7 @@ int CookieStatus::ParseCookieData(char *lpCookieData, const char *lpPath, const 
 	char *start, *end;
 	int deletecookie = 0;
 
-	const char *DomainNameTreeNode = NULL;
+	HTTPCSTR DomainNameTreeNode = NULL;
 	//First Of all we need to extract the domain name from the audited Host:
 	if (numeric_address_p (lpDomain))
 	{

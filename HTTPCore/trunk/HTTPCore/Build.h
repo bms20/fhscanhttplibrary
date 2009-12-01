@@ -49,7 +49,7 @@ SUCH DAMAGE.
 	#define HTTPCHAR wchar_t
 #else
 	//#define _CXML(c) c
-	#define HTTPCSTR const char *
+	#define HTTPCSTR const char * 
 	#define HTTPSTR  char *
 	#define HTTPCHAR char
 #endif

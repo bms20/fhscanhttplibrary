@@ -199,7 +199,7 @@ HTTPHANDLE HTTPAPI::InitHTTPConnectionHandle(HTTPSTR lpHostName,int port,int ssl
 				HTTPHandle->SetHTTPConfig(ConfigCookieHandling,GlobalHTTPCoreApiOptions.GetHTTPConfig(ConfigCookieHandling));
 				HTTPHandle->SetHTTPConfig(ConfigAutoredirect,  GlobalHTTPCoreApiOptions.GetHTTPConfig(ConfigAutoredirect));
 
-				if (GlobalHTTPCoreApiOptions.ProxyEnabled() )
+				if (GlobalHTTPCoreApiOptions.GetHTTPConfig(ConfigProxyHost) )
 				{
 					HTTPHandle->SetHTTPConfig(ConfigProxyHost,GlobalHTTPCoreApiOptions.GetHTTPConfig(ConfigProxyHost));
 					HTTPHandle->SetHTTPConfig(ConfigProxyPort,GlobalHTTPCoreApiOptions.GetHTTPConfig(ConfigProxyPort));
@@ -381,6 +381,23 @@ httpdata* HTTPAPI::DispatchHTTPRequest(HTTPHANDLE HTTPHandle,httpdata* request)
 }
 
 /*******************************************************************************************************/
+httpdata* HTTPAPI::BuildHTTPProxyTunnelConnection( HTTPHANDLE HTTPHandle)
+{
+	HTTPCHAR	tmp[MAX_HEADER_SIZE];
+
+	snprintf(tmp,sizeof(tmp)-1,"CONNECT %s:%s HTTP/1.1\r\n\r\n",GetHTTPConfig(HTTPHandle,ConfigHTTPHost),GetHTTPConfig(HTTPHandle,ConfigHTTPPort));
+	httpdata* request = new httpdata(tmp,(int)strlen(tmp));
+
+	if ( (GetHTTPConfig(HTTPHandle,ConfigProxyUser))  && (GetHTTPConfig(HTTPHandle,ConfigProxyPass)) )
+	{
+		BuildBasicAuthHeader("Proxy-Authorization",GetHTTPConfig(HTTPHandle,ConfigProxyUser),GetHTTPConfig(HTTPHandle,ConfigProxyPass),tmp,sizeof(tmp));
+		request->AddHeader(tmp);
+	}
+	return(request);
+}
+/*******************************************************************************************************/
+
+
 httpdata* HTTPAPI::BuildHTTPRequest(
 									HTTPHANDLE HTTPHandle,
 									HTTPCSTR VHost,
@@ -394,42 +411,23 @@ httpdata* HTTPAPI::BuildHTTPRequest(
 		return ( NULL);
 	}
 
-	class HTTPAPIHANDLE *RealHTTPHandle=(class HTTPAPIHANDLE *)HTTPHandleTable[HTTPHandle];
+	//class HTTPAPIHANDLE *RealHTTPHandle=(class HTTPAPIHANDLE *)HTTPHandleTable[HTTPHandle];
 	HTTPCHAR		tmp[MAX_HEADER_SIZE];
 	tmp[MAX_HEADER_SIZE-1]=0;
 
-	if ( (RealHTTPHandle->ProxyEnabled()) && (RealHTTPHandle->IsSSLNeeded()) &&
-		( (!RealHTTPHandle->GetConnectionptr()) ||
-		( (RealHTTPHandle->GetConnectionptr())  &&
-		(!((class ConnectionHandling*)RealHTTPHandle->GetConnectionptr())->IsSSLInitialized())  ) ) )
-	{
-		/*
-		* We have to deal with an HTTPS request thought a proxy server 
-		* Under this scenario we first need to send an initial non SSL request to the proxy
-		* We need to send a "CONNECT" verb to the HTTP Proxy Server
-		*/
-		snprintf(tmp,sizeof(tmp)-1,"CONNECT %s:%i HTTP/1.1\r\n\r\n",RealHTTPHandle->GettargetDNS(),RealHTTPHandle->GetPort());
-		httpdata* request = new httpdata(tmp,(int)strlen(tmp));
+			
 
-		if ( (RealHTTPHandle->GetlpProxyUserName()) && (RealHTTPHandle->GetlpProxyPassword())  )
-		{
-			BuildBasicAuthHeader("Proxy-Authorization",RealHTTPHandle->GetlpProxyUserName(),RealHTTPHandle->GetlpProxyPassword(),tmp,sizeof(tmp));
-			request->AddHeader(tmp);
-		}
-		return(request);
-	}
-
-	if ( (RealHTTPHandle->ProxyEnabled()) && (!RealHTTPHandle->IsSSLNeeded()) )
+	if ( (GetHTTPConfig(HTTPHandle,ConfigProxyHost)) && (!GetHTTPConfig(HTTPHandle,ConfigSSLConnection)) )
 	{
-		snprintf(tmp,MAX_HEADER_SIZE-1,"%s http://%s:%i%s HTTP/1.%i\r\n",HTTPMethod,RealHTTPHandle->GettargetDNS(),RealHTTPHandle->GetPort(),url,RealHTTPHandle->GetVersion());
+		snprintf(tmp,MAX_HEADER_SIZE-1,"%s http://%s:%s%s HTTP/1.%s\r\n",HTTPMethod,GetHTTPConfig(HTTPHandle,ConfigHTTPHost),GetHTTPConfig(HTTPHandle,ConfigHTTPPort),url,GetHTTPConfig(HTTPHandle,ConfigProtocolversion));
 	} else
 	{
 		if ( (strncmp(HTTPMethod,"GET",3)!=0) || (!PostDataSize) )
 		{
-			snprintf(tmp,MAX_HEADER_SIZE-1,"%s %s HTTP/1.%i\r\n",HTTPMethod,url,RealHTTPHandle->GetVersion());
+			snprintf(tmp,MAX_HEADER_SIZE-1,"%s %s HTTP/1.%s\r\n",HTTPMethod,url,GetHTTPConfig(HTTPHandle,ConfigProtocolversion));
 		} else
 		{
-			snprintf(tmp,MAX_HEADER_SIZE-1,"GET %s?%s HTTP/1.%i\r\n",url,PostData,RealHTTPHandle->GetVersion());
+			snprintf(tmp,MAX_HEADER_SIZE-1,"GET %s?%s HTTP/1.%s\r\n",url,PostData,GetHTTPConfig(HTTPHandle,ConfigProtocolversion));
 		}
 	}
 	string rb = tmp;
@@ -440,14 +438,14 @@ httpdata* HTTPAPI::BuildHTTPRequest(
 		snprintf(tmp,MAX_HEADER_SIZE-1,"Host: %s\r\n",VHost);
 	} else
 	{
-		snprintf(tmp,MAX_HEADER_SIZE-1,"Host: %s\r\n",RealHTTPHandle->GettargetDNS());
+		snprintf(tmp,MAX_HEADER_SIZE-1,"Host: %s\r\n",GetHTTPConfig(HTTPHandle,ConfigHTTPHost));
 	}
 	rb+=tmp;
 
 	/* Append FHSCAN User Agent */
-	if (RealHTTPHandle->GetUserAgent())
+	if (GetHTTPConfig(HTTPHandle,ConfigUserAgent))
 	{
-		snprintf(tmp,MAX_HEADER_SIZE-1,"User-Agent: %s\r\n",RealHTTPHandle->GetUserAgent());		
+		snprintf(tmp,MAX_HEADER_SIZE-1,"User-Agent: %s\r\n",GetHTTPConfig(HTTPHandle,ConfigUserAgent));		
 	} else
 	{
 		snprintf(tmp,MAX_HEADER_SIZE-1,"User-Agent: %s\r\n",FHScanUserAgent);		
@@ -455,15 +453,16 @@ httpdata* HTTPAPI::BuildHTTPRequest(
 	rb += tmp;
 
 	/* Append Custom user headers */
-	if (RealHTTPHandle->GetAdditionalHeader())
+	
+	if (GetHTTPConfig(HTTPHandle,ConfigAdditionalHeader))
 	{
-		rb +=RealHTTPHandle->GetAdditionalHeader();
+		rb += GetHTTPConfig(HTTPHandle,ConfigAdditionalHeader);
 	}
 
-	if (RealHTTPHandle->IsCookieSupported())
+	if (GetHTTPConfig(HTTPHandle,ConfigCookieHandling))
 	{ /* Include Cookies stored into the internal COOKIE bTree */
 		char *lpPath = GetPathFromURL(url);
-		char *ServerCookie = BuildCookiesFromStoredData( RealHTTPHandle->GettargetDNS(),lpPath,RealHTTPHandle->IsSSLNeeded());
+		char *ServerCookie = BuildCookiesFromStoredData( GetHTTPConfig(HTTPHandle,ConfigHTTPHost),lpPath,(GetHTTPConfig(HTTPHandle,ConfigSSLConnection)!=NULL));
 		free(lpPath);
 		if (ServerCookie)
 		{
@@ -474,18 +473,18 @@ httpdata* HTTPAPI::BuildHTTPRequest(
 		}
 	}
 
-	if (RealHTTPHandle->GetCookie())
+	if (GetHTTPConfig(HTTPHandle,ConfigCookie))
 	{ /* Append additional cookies provided by the user - This code should be updated - TODO*/
-		snprintf(tmp,MAX_HEADER_SIZE-1,"%s\r\n",RealHTTPHandle->GetCookie());
+		snprintf(tmp,MAX_HEADER_SIZE-1,"%s\r\n",GetHTTPConfig(HTTPHandle,ConfigCookie));
 		rb+=tmp;
 	}
 
-	if ( (RealHTTPHandle->ProxyEnabled()) && (!RealHTTPHandle->IsSSLNeeded()) )
-	{   /* Add Keep Alive Headers */
+	if ( (GetHTTPConfig(HTTPHandle,ConfigProxyHost)) && (!GetHTTPConfig(HTTPHandle,ConfigProxyInitialized)) )
+		{   /* Add Keep Alive Headers */
 		rb+="Proxy-Connection: Keep-Alive\r\n";
-		if ( (RealHTTPHandle->GetlpProxyUserName()) && (RealHTTPHandle->GetlpProxyPassword()) )
+		if ( GetHTTPConfig(HTTPHandle,ConfigProxyUser) )
 		{   /* Add Proxy Autentication Headers */
-			BuildBasicAuthHeader("Proxy-Authorization",RealHTTPHandle->GetlpProxyUserName(),RealHTTPHandle->GetlpProxyPassword(),tmp,sizeof(tmp));
+			BuildBasicAuthHeader("Proxy-Authorization",GetHTTPConfig(HTTPHandle,ConfigProxyUser),GetHTTPConfig(HTTPHandle,ConfigProxyPass),tmp,sizeof(tmp));
 			rb+=tmp;
 		}
 	} else
@@ -493,28 +492,30 @@ httpdata* HTTPAPI::BuildHTTPRequest(
 		rb+="Connection: Keep-Alive\r\n";
 	}
 
+	rb+="\r\n";
+	httpdata *request = new httpdata(rb.c_str(),rb.length(),PostData,PostDataSize);
+
 	if  (  (strncmp(HTTPMethod,"GET",3)!=0) && ((PostDataSize) ||  (strncmp(HTTPMethod,"POST",4)==0)))
 	{   /* Set the Content-Type header and inspect if have already been added to avoid dups*/
-		HTTPSTR contenttype = RealHTTPHandle->GetAdditionalHeaderValue("Content-Type:",0);
+		HTTPSTR contenttype = request->GetHeaderValue("Content-Type:",0);
 		if (contenttype)
 		{	
 			free(contenttype);
-			snprintf(tmp,MAX_HEADER_SIZE-1,"Content-Length: %i\r\n",PostDataSize);
-
+			snprintf(tmp,MAX_HEADER_SIZE-1,"Content-Length: %i\r\n",PostDataSize);			
 		} else
 		{
 			snprintf(tmp,MAX_HEADER_SIZE-1,"Content-Type: application/x-www-form-urlencoded\r\nContent-Length: %i\r\n",PostDataSize);
 		}
-		rb+=tmp;
+		request->AddHeader(tmp);
 	}
-	rb+="\r\n";
+	
 
-	return (new httpdata(rb.c_str(),rb.length(),PostData,PostDataSize) );
+	return (request);
 }
 
 
 /**************************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
+HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
 {
 
 	httpdata* 		response=NULL;
@@ -626,38 +627,19 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 		return(NULL);
 	}
 
-#if 0
-	if ( (RealHTTPHandle->ProxyEnabled()) && (RealHTTPHandle->IsSSLNeeded()) &&
-		( (!RealHTTPHandle->GetConnectionptr()) ||
-		( (RealHTTPHandle->GetConnectionptr())  &&
-		(!((class ConnectionHandling*)RealHTTPHandle->GetConnectionptr())->IsSSLInitialized())  ) ) )
-	{
-		RealHTTPHandle->SetLastRequestedUri(NULL);
-		if (( response->HeaderSize>=12) && (memcmp(response->Header+9,"200",3)==0))
-		{
-			/* Send the real http request thought stablished proxy connection */
-			return SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword);
-		} else 
-		{
-			/* Return a proxy error message */
-			/* TODO - Revisar !! */
-			if ( (RealHTTPHandle->GetConnectionptr()) && (((class ConnectionHandling*)RealHTTPHandle->GetConnectionptr())->IsSSLInitialized()) )
-			{
-				((class ConnectionHandling*)RealHTTPHandle->GetConnectionptr())->Disconnect(0);
-				RealHTTPHandle->SetConnection(NULL);
-			}		
-			RealHTTPHandle->challenge=NO_AUTH;
-			return((PREQUEST)RealHTTPHandle->ParseReturnedBuffer(request, response));
-		} 
-	}
-#endif
 	RealHTTPHandle->SetLastRequestedUri(url);
 	RealHTTPHandle->challenge=response->GetSupportedAuthentication();
-	PREQUEST DATA=(PREQUEST)RealHTTPHandle->ParseReturnedBuffer(request, response);
+
+	//HTTPSession* DATA=(HTTPSession*)RealHTTPHandle->ParseReturnedBuffer(request, response);
+
+	HTTPSession *DATA = new HTTPSession;
+	DATA->ParseReturnedBuffer(HTTPHandle,request,response);
+	return DATA;
+
 
 	if ( (DATA) && (RealHTTPHandle->challenge) && (DATA->status==401) && (!AuthMethod) && (lpUsername) && (lpPassword)  )
 	{   /* Send Authentication request and return the "authenticated" response */
-		PREQUEST AUTHDATA=SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword);
+		HTTPSession* AUTHDATA=SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword);
 		if (AUTHDATA)
 		{
 			DATA->request = NULL; /* We are reutilizing the same request, so avoid deleting memory twice */
@@ -665,10 +647,10 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 			return(AUTHDATA);
 		}
 	}
-	if (RealHTTPHandle->IsCookieSupported())
+	if (GetHTTPConfig(HTTPHandle,ConfigCookieHandling))
 	{
 		char *lpPath =  GetPathFromURL(url);
-		ExtractCookiesFromResponseData(response, lpPath,RealHTTPHandle->GettargetDNS());
+		ExtractCookiesFromResponseData(response, lpPath,GetHTTPConfig(HTTPHandle,ConfigHTTPHost));
 		free(lpPath);
 	}
 
@@ -677,12 +659,12 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 	{
 		RealHTTPHandle->DecrementMaximumRedirectsCount();
 		char *host = request->GetHeaderValue("Host:",0);
-		char *Location = GetPathFromLocationHeader(DATA->response,RealHTTPHandle->IsSSLNeeded(),host);
+		char *Location = GetPathFromLocationHeader(DATA->response,(GetHTTPConfig(HTTPHandle,ConfigSSLConnection)!=NULL),host);
 		free(host);
 
 		if (Location)
 		{
-			PREQUEST RedirectedData = SendHttpRequest(HTTPHandle,NULL,"GET",Location,NULL,0,lpUsername,lpPassword);
+			HTTPSession* RedirectedData = SendHttpRequest(HTTPHandle,NULL,"GET",Location,NULL,0,lpUsername,lpPassword);
 			free(Location);
 			if (RedirectedData)
 			{
@@ -697,12 +679,12 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCS
 
 }
 /*******************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath)
+HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath)
 {
 	return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,NULL,0,NULL,NULL);
 }
 /*******************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData)
+HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData)
 {
 	if  (PostData)
 	{
@@ -713,19 +695,33 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTP
 	}
 }
 /*******************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
+HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
 {
 	return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,PostData,strlen(PostData),lpUsername,lpPassword);	
 }
 /*******************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,size_t PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
+HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,size_t PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
 {
+
+	if (GetHTTPConfig(HTTPHandle,ConfigProxyHost) && (GetHTTPConfig(HTTPHandle,ConfigSSLConnection)) && (!GetHTTPConfig(HTTPHandle,ConfigProxyInitialized)) )
+	{
+		httpdata* ProxyConnectRequest = BuildHTTPProxyTunnelConnection(HTTPHandle);
+		HTTPSession* ProxyDATA= SendHttpRequest(HTTPHandle,ProxyConnectRequest,NULL,NULL);
+		if (ProxyDATA)
+		{			
+			delete ProxyConnectRequest;
+			delete ProxyDATA;
+			SetHTTPConfig(HTTPHandle,ConfigProxyInitialized,1);
+		}
+	}
+
 	httpdata* request=BuildHTTPRequest(HTTPHandle,VHost,HTTPMethod,lpPath,PostData,PostDataSize);
 	if (request)
 	{
-		PREQUEST DATA = SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword);
+		HTTPSession* DATA = SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword);
 		if (DATA)
 		{
+			
 			return(DATA);
 		}
 		delete request;
@@ -733,7 +729,7 @@ PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR 
 	return(NULL);
 }
 /*******************************************************************************************/
-PREQUEST HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request)
+HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request)
 {
 	return SendHttpRequest(HTTPHandle,request,NULL,NULL);
 }
@@ -781,7 +777,7 @@ char* HTTPAPI::GetPathFromLocationHeader(httpdata* response, int ssl, const char
 }
 
 /*******************************************************************************************/
-PREQUEST	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
+HTTPSession*	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
 {
 	int SSLREQUEST = ( (Fullurl[5]=='s') || ( Fullurl[5]=='S') );
 	int port;
@@ -827,7 +823,7 @@ PREQUEST	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
 
 	if (HTTPHandle !=INVALID_HHTPHANDLE_VALUE)
 	{
-		PREQUEST data= SendHttpRequest(HTTPHandle,"GET",path);
+		HTTPSession* data= SendHttpRequest(HTTPHandle,"GET",path);
 		EndHTTPConnectionHandle(HTTPHandle);
 		free(path);
 		return(data);
@@ -840,7 +836,7 @@ PREQUEST	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
 
 
 /*******************************************************************************************/
-PREQUEST HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, size_t HeaderSize, HTTPCSTR postdata, size_t PostDataSize)
+HTTPSession* HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, size_t HeaderSize, HTTPCSTR postdata, size_t PostDataSize)
 {
 	httpdata* request= new httpdata ((HTTPSTR)headers,HeaderSize,(HTTPSTR)postdata, PostDataSize);
 
@@ -850,11 +846,10 @@ PREQUEST HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, siz
 		delete request;
 		return(NULL);
 	}
-	/*
-	//As we are dealing with raw responses, ignore the challenge part :?
-	RealHTTPHandle->challenge=response->GetSupportedAuthentication();
-	*/
-	return ( (PREQUEST) HTTPHandleTable[HTTPHandle]->ParseReturnedBuffer( request,response) );
+	HTTPSession *data = new HTTPSession;
+	data->ParseReturnedBuffer(HTTPHandle,request,response);
+	return data;
+	//return ( (HTTPSession*) HTTPHandleTable[HTTPHandle]->ParseReturnedBuffer( request,response) );
 
 }
 /*******************************************************************************************/
@@ -863,10 +858,10 @@ PREQUEST HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, siz
 \param HTTPHandle Handle of the remote connection.
 \param what Cancel only the current request HTTP_REQUEST_CURRENT or blocks all connections against the remote HTTP host with HTTP_REQUEST_ALL.
 \note This function is needed to cancel requests like example a CONNECT call sent against a remote
-HTTP proxy server by SendRawHttpRequest()
+HTTP proxy server by SendRawHTTPRequest()
 */
 /*******************************************************************************************/
-int HTTPAPI::CancelHttpRequest(HTTPHANDLE HTTPHandle, int what)
+int HTTPAPI::CancelHTTPRequest(HTTPHANDLE HTTPHandle, int what)
 {
 	int ret=0;
 	class HTTPAPIHANDLE * phandle = GetHTTPAPIHANDLE(HTTPHandle);
@@ -926,7 +921,7 @@ void HTTPAPI::SendHTTPProxyErrorMessage( ConnectionHandling* connection,int conn
 	free(request->Data);
 	request->Data = strdup(tmp);
 	request->DataSize=strlen(tmp);
-	connection->SendHTTPRequest(request);
+	connection->SendHttpRequest(request);
 	delete request;
 }
 
@@ -1120,7 +1115,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 				SendHTTPProxyErrorMessage( ClientConnection,0, 403,"HTTP/1.1", "Blocked Request", (HTTPSTR) 0, "The HTTP request was blocked before sending." );
 			} else 
 			{   /* Deliver the HTTP request to the HTTP server */
-				PREQUEST data = SendRawHTTPRequest(HTTPHandle,ProxyRequest->Header,ProxyRequest->HeaderSize,ProxyRequest->Data,ProxyRequest->DataSize);
+				HTTPSession* data = SendRawHTTPRequest(HTTPHandle,ProxyRequest->Header,ProxyRequest->HeaderSize,ProxyRequest->Data,ProxyRequest->DataSize);
 
 				if (data)
 				{
@@ -1164,7 +1159,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 							sprintf(tmp,"Content-Length: %i",data->response->DataSize);
 							data->response->AddHeader(tmp);
 						}									
-						ClientConnection->SendHTTPRequest(data->response);				
+						ClientConnection->SendHttpRequest(data->response);				
 					}
 				}
 				} else {
@@ -1254,7 +1249,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 					{  /*Initialize the SSL Tunnel and replay the client with a "Connection stablished 200 OK" message*/
 
 						httpdata*  HTTPTunnel= this->BuildHTTPProxyResponseHeader(ClientConnection->IsSSLInitialized()!=NULL,0,200,protocol,"Connection established","Proxy-connection: Keep-alive",NULL,-1,-1);
-						ClientConnection->SendHTTPRequest( HTTPTunnel);
+						ClientConnection->SendHttpRequest( HTTPTunnel);
 						delete HTTPTunnel;
 
 						ClientConnection->SetCTX(ctx);
@@ -1336,7 +1331,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 								free(ClientRequest);
 							}
 							/* Send request to the remote HTTP Server */
-							PREQUEST data = SendHttpRequest(HTTPHandle,vhost ? vhost : host,method,path,ProxyRequest->Data,ProxyRequest->DataSize,NULL,NULL);
+							HTTPSession* data = SendHttpRequest(HTTPHandle,vhost ? vhost : host,method,path,ProxyRequest->Data,ProxyRequest->DataSize,NULL,NULL);
 
 							/* Clean the HTTPHandle options */
 							SetHTTPConfig(HTTPHandle,ConfigAdditionalHeader,(const char*)NULL);
@@ -1368,7 +1363,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 										} else
 										{
 											/* Finally, deliver HTTP response */
-											ClientConnection->SendHTTPRequest( data->response);
+											ClientConnection->SendHttpRequest( data->response);
 										}
 									}
 								} else
@@ -1595,7 +1590,7 @@ void HTTPAPI::SetHTTPProxyConfig(enum HttpProxyoptions  opt,int parameter)
 	return;
 }
 /*******************************************************************************************/
-char *HTTPAPI::GetPathFromURL(const char *url)
+char *HTTPAPI::GetPathFromURL(HTTPCSTR url)
 { /* Its assumed that *url == '/' */
 
 	char *FullURL=strdup(url);
@@ -1630,13 +1625,13 @@ char *HTTPAPI::GetPathFromURL(const char *url)
 	return(FullURL);
 }
 /*******************************************************************************************/
-char *HTTPAPI::BuildCookiesFromStoredData( const char *TargetDNS, const char *path,int secure)
+char *HTTPAPI::BuildCookiesFromStoredData( HTTPCSTR TargetDNS, HTTPCSTR path,int secure)
 {
 	return (COOKIE ->ReturnCookieHeaderFor(TargetDNS,path,secure));
 
 }
 /*******************************************************************************************/
-void HTTPAPI::ExtractCookiesFromResponseData(httpdata* response, const char *lpPath, const char *TargetDNS)
+void HTTPAPI::ExtractCookiesFromResponseData(httpdata* response, HTTPCSTR lpPath, HTTPCSTR TargetDNS)
 {
 	if (response)
 	{
@@ -1656,7 +1651,7 @@ void HTTPAPI::ExtractCookiesFromResponseData(httpdata* response, const char *lpP
 	}
 }
 /*******************************************************************************************/
-httpdata* HTTPAPI::BuildHTTPProxyResponseHeader( int isSSLStablished,int closeconnection, int status, const char *protocol,const char* title, const char* extra_header, const char* mime_type, int length, time_t mod )
+httpdata* HTTPAPI::BuildHTTPProxyResponseHeader( int isSSLStablished,int closeconnection, int status, HTTPCSTR protocol,const char* title, const char* extra_header, const char* mime_type, int length, time_t mod )
 {
 	time_t now;
 	char timebuf[100];

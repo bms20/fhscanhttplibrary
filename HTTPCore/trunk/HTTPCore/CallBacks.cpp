@@ -68,7 +68,7 @@ HTTPCALLBACK::~HTTPCALLBACK()
     For more information read the plugin development documentation.
 */
 /**********************************************************************************************************************/
-int HTTPCALLBACK::RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,const char *Description)
+int HTTPCALLBACK::RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,HTTPCSTR Description)
 {
 
 	for (unsigned int i=0;i<CBItems;i++)
@@ -126,7 +126,7 @@ int  HTTPCALLBACK::RemoveHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLB
     return(ret);
 }
 /**********************************************************************************************************************/
-//! CallBack Dispatcher. This function is called from the HTTPCore module ( SendRawHttpRequest() ) and from the HTTPProxy Module DispatchHTTPProxyRequest() and will send http information against registered callbacks
+//! CallBack Dispatcher. This function is called from the HTTPCore module ( SendRawHttHTTPSession*() ) and from the HTTPProxy Module DispatchHTTPProxyRequest() and will send http information against registered callbacks
 /*!
 	\param cbType CallBack Source Type. The value specifies where the data comes from. The valid options are CBTYPE_CLIENT_REQUEST , CBTYPE_CLIENT_RESPONSE , CBTYPE_PROXY_REQUEST , CBTYPE_PROXY_RESPONSE
 	\param HTTPHandle HTTP Connection Handle with information about remote target (like ip address, port, ssl, protocol version,...)

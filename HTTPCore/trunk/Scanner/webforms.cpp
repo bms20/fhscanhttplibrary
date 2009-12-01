@@ -61,7 +61,7 @@ static int what(char *code) {
 /************************************/
 
 
-unsigned int MatchString(PREQUEST new_data, char *validauthstring)
+unsigned int MatchString(HTTPSession* new_data, char *validauthstring)
 {
 
 	if (validauthstring[0]=='\0') return(0);
@@ -113,11 +113,11 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 					strncat(output,password,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 2:
-					HTTPEncoder.encodebase64((char *)tmp,(const char *)username,strlen(username));
+					HTTPEncoder.encodebase64((char *)tmp,(HTTPCSTR )username,strlen(username));
 					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 3:
-					HTTPEncoder.encodebase64((char *)tmp,(const char *)password,strlen(password));
+					HTTPEncoder.encodebase64((char *)tmp,(HTTPCSTR )password,strlen(password));
 					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
 					break;
 				case 4:
@@ -202,7 +202,7 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 /*************************************************************************************************/
 
 
-static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST request, int webform)
+static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* request, int webform)
 {
 
 
@@ -214,7 +214,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST reque
 	char *UserName,  *Password;
 	int retry=RETRY_COUNT;
 	int RequestRetry=2;
-	PREQUEST new_data;
+	HTTPSession* new_data;
 
 	int iteractions;
 	int login;
@@ -238,7 +238,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST reque
 		if ( (WEBFORMS[webform].InitialCookieURL[0]!='\0')  )
 		{
 			/* Request an additiona URL to get a cookie */
-			PREQUEST InitialCookie=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[webform].InitialCookieURL,NULL,0,NULL,NULL);
+			HTTPSession* InitialCookie=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[webform].InitialCookieURL,NULL,0,NULL,NULL);
 			if (InitialCookie)
 			{
             	delete InitialCookie;
@@ -312,7 +312,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST reque
 						} else {
 							UpdateHTMLReport(new_data,MESSAGE_WEBFORM_PASSFOUND,UserName,"", WEBFORMS[webform].authurl,WEBFORMS[webform].model);
 						}
-						//new_data=(PREQUEST)FreeRequest(new_data);
+						//new_data=(HTTPSession*)FreeRequest(new_data);
 						delete new_data;
 						new_data = NULL;
 						return(1);
@@ -339,7 +339,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST reque
 							} else {
 								UpdateHTMLReport(new_data,MESSAGE_WEBFORM_PASSFOUND,UserName,"", WEBFORMS[webform].authurl,WEBFORMS[webform].model);
 							}
-							//new_data=(PREQUEST)FreeRequest(new_data);
+							//new_data=(HTTPSession*)FreeRequest(new_data);
 							delete new_data;
 							new_data = NULL;
 							return(1);
@@ -353,12 +353,12 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST reque
 			{
 				if (MatchString(new_data,WEBFORMS[webform].ReconnectOnMatch))
 				{
-					api->CancelHttpRequest(HTTPHandle,1);
+					api->CancelHTTPRequest(HTTPHandle,1);
 
 				}
 			}
 
-			//new_data=(PREQUEST)FreeRequest(new_data);
+			//new_data=(HTTPSession*)FreeRequest(new_data);
 			delete new_data;
 			new_data = NULL;
 			if (WEBFORMS[webform].LoadAdditionalUrl[0]!='\0')
@@ -383,7 +383,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST reque
 
 /*************************************************************************************************/
 
-int CheckWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data, int pos)
+int CheckWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data, int pos)
 {
 	//verifica en base a firmas si debemos realizar una autenticacion por webforms
 
@@ -430,9 +430,9 @@ int CheckWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data, int pos)
 					{
 						/*                  char image[200];
 						sprintf(image,"GET %s HTTP/1.0\r\nHost: %s\r\n\r\n",WEBFORMS[i].ValidateImage,data->ipaddress);
-						PREQUESTnew_data=(PREQUEST)conecta(data->ip,data->port, data->ssl,image);
+						HTTPSession*new_data=(HTTPSession*)conecta(data->ip,data->port, data->ssl,image);
 						*/
-						PREQUEST new_data=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[i].ValidateImage,NULL,0,NULL,NULL);
+						HTTPSession* new_data=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[i].ValidateImage,NULL,0,NULL,NULL);
 						if (new_data)
 						{
 							///if ( (new_data->status==200) && (strstr(new_data->resultado,"Content-Type: image/")!=NULL) ) {

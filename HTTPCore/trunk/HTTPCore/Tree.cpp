@@ -47,14 +47,14 @@ TreeNode::TreeNode()
 }
 /******************************************************************************/
 /******************************************************************************/
-TreeNode::TreeNode(const char *lpTreeNodeName)
+TreeNode::TreeNode(HTTPCSTR lpTreeNodeName)
 {
 	TreeNode(lpTreeNodeName,NULL);
 }
 /******************************************************************************/
 /******************************************************************************/
 
-TreeNode::TreeNode(const char *lpTreeNodeName,TreeNode *Parent)
+TreeNode::TreeNode(HTTPCSTR lpTreeNodeName,TreeNode *Parent)
 {
 	text = NULL;
 	count = 0;
@@ -100,7 +100,7 @@ TreeNode::~TreeNode()
 }
 /******************************************************************************/
 /******************************************************************************/
-void TreeNode::SetTreeNodeName(const char *lpTreeNodeName)
+void TreeNode::SetTreeNodeName(HTTPCSTR lpTreeNodeName)
 {
 	if (text) free(text);
 	if (lpTreeNodeName)
@@ -194,7 +194,7 @@ bTree::bTree(char *lpTreeName)
 	count = 0;
 }
 /******************************************************************************/
-void bTree::SetTreeName(const char *lpTreeName)
+void bTree::SetTreeName(HTTPCSTR lpTreeName)
 {
 	if (text)
 	{
@@ -225,7 +225,7 @@ bTree::~bTree()
 /******************************************************************************/
 
 
-TreeNode *bTree::TreeExistItem( const char *lpTreeItemName)
+TreeNode *bTree::TreeExistItem( HTTPCSTR lpTreeItemName)
 {
 	TreeNode *x;
 	if (root==NULL)
@@ -318,12 +318,12 @@ TreeNode *bTree::GetTreeNodeItemID(int value)
 /* Insert a text value into the tree - if the value doesn´t already exists, increment
 the count for parent nodes. */
 
-TreeNode* bTree::TreeInsert(const char *str)
+TreeNode* bTree::TreeInsert(HTTPCSTR str)
 {
 	return (TreeInsert(str,NULL));
 }
  /******************************************************************************/
-TreeNode* bTree::TreeInsert(const char *str,TreeNode *ParentItem)
+TreeNode* bTree::TreeInsert(HTTPCSTR str,TreeNode *ParentItem)
 {
 	if (ParentItem == NULL)
 	{

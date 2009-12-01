@@ -91,7 +91,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 
 //RCSID("$Id: strptime.c,v 1.4 2004/08/07 13:33:34 tol Exp $");
 
-static const char *abb_weekdays[] = {
+static HTTPCSTR abb_weekdays[] = {
     "Sun",
     "Mon",
     "Tue",
@@ -102,7 +102,7 @@ static const char *abb_weekdays[] = {
     NULL
 };
 
-static const char *full_weekdays[] = {
+static HTTPCSTR full_weekdays[] = {
     "Sunday",
     "Monday",
     "Tuesday",
@@ -113,7 +113,7 @@ static const char *full_weekdays[] = {
     NULL
 };
 
-static const char *abb_month[] = {
+static HTTPCSTR abb_month[] = {
     "Jan",
     "Feb",
     "Mar",
@@ -129,7 +129,7 @@ static const char *abb_month[] = {
     NULL
 };
 
-static const char *full_month[] = {
+static HTTPCSTR full_month[] = {
     "January",
     "February",
     "Mars",
@@ -145,7 +145,7 @@ static const char *full_month[] = {
     NULL,
 };
 
-static const char *ampm[] = {
+static HTTPCSTR ampm[] = {
     "am",
     "pm",
     NULL
@@ -157,7 +157,7 @@ static const char *ampm[] = {
  */
 
 static int
-match_string (const char **buf, const char **strs)
+match_string (HTTPCSTR *buf, HTTPCSTR *strs)
 {
     int i = 0;
 
@@ -257,7 +257,7 @@ set_week_number_mon4 (struct tm *timeptr, int wnum)
  *
  */
 
-char *strptime (const char *buf, const char *format, struct tm *timeptr)
+char *strptime (HTTPCSTR buf, HTTPCSTR format, struct tm *timeptr)
 {
     char c;
 

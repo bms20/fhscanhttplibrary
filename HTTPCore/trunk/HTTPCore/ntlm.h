@@ -53,7 +53,7 @@
 
    included bonus!!:
    Base64 code
-   int  from64tobits(char *out, const char *in);
+   int  from64tobits(char *out, HTTPCSTR in);
    void to64frombits(unsigned char *out, const unsigned char *in, int inlen);
 
 
@@ -126,12 +126,12 @@ void BuildAuthRequest(tSmbNtlmAuthRequest *request, long flags, char *host, char
 // host and domain are optional, they may be NULLed.
 
 
-void buildAuthResponse(tSmbNtlmAuthChallenge *challenge, tSmbNtlmAuthResponse *response, long flags, const char *user, const char *password, char *domain, char *host);
+void buildAuthResponse(tSmbNtlmAuthChallenge *challenge, tSmbNtlmAuthResponse *response, long flags, HTTPCSTR user, HTTPCSTR password, char *domain, char *host);
 //Given a challenge, generates a response for that user/passwd/host/domain.
 //flags, host, and domain superseeds given by server. Leave 0 and NULL for server authentication
 
 /* Base64 code*/
-int from64tobits(char *out, const char *in);
+int from64tobits(char *out, HTTPCSTR in);
 void to64frombits(unsigned char *out, const unsigned char *in, int inlen);
 
 // info functions

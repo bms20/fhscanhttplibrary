@@ -809,7 +809,7 @@ void SamOEMhash( unsigned char *data, unsigned char *key, int val)
  The variable n should always be one less than the available size.
 ****************************************************************************/
 
-char *StrnCpy(char *dest,const char *src, size_t n)
+char *StrnCpy(char *dest,HTTPCSTR src, size_t n)
 {
   char *d = dest;
   if (!dest) return(NULL);
@@ -833,7 +833,7 @@ safe string copy into a known length string. maxlength does not
 include the terminating zero.
 ********************************************************************/
 #define DEBUG(a,b) ;
-char *safe_strcpy(char *dest,const char *src, size_t maxlength)
+char *safe_strcpy(char *dest,HTTPCSTR src, size_t maxlength)
 {
     size_t len;
 
@@ -1049,7 +1049,7 @@ void SMBNTencrypt(uchar *passwd, uchar *c8, uchar *p24)
 
 #if 0
 
-BOOL make_oem_passwd_hash(char data[516], const char *passwd, uchar old_pw_hash[16], BOOL unicode)
+BOOL make_oem_passwd_hash(char data[516], HTTPCSTR passwd, uchar old_pw_hash[16], BOOL unicode)
 {
 	int new_pw_len = strlen(passwd) * (unicode ? 2 : 1);
 
@@ -1249,7 +1249,7 @@ void BuildAuthRequest(tSmbNtlmAuthRequest *request, long flags, char *host, char
     free(h);
   }
 
-void buildAuthResponse(tSmbNtlmAuthChallenge *challenge, tSmbNtlmAuthResponse *response, long flags, const char *user, const char *password, char *domainname, char *host)
+void buildAuthResponse(tSmbNtlmAuthChallenge *challenge, tSmbNtlmAuthResponse *response, long flags, HTTPCSTR user, HTTPCSTR password, char *domainname, char *host)
   {
     uint8 lmRespData[24];
     uint8 ntRespData[24];
@@ -1403,7 +1403,7 @@ void to64frombits(unsigned char *out, const unsigned char *in, int inlen)
     *out = '\0';
 }
 
-int from64tobits(char *out, const char *in)
+int from64tobits(char *out, HTTPCSTR in)
 /* base 64 to raw bytes in quasi-big-endian order, returning count of bytes */
 {
     int len = 0;

@@ -50,7 +50,7 @@ int IsValidHTMLTag(char *tagattribute, char *tagname)
 /******************************************************************************/
 // Stristr : Case insensitive strstr
 /******************************************************************************/
-char *stristr(const char *String, const char *Pattern)
+char *stristr(HTTPCSTR String, HTTPCSTR Pattern)
 {
       char *pptr, *sptr, *start;
 
@@ -441,7 +441,7 @@ already has room to accomodate SIZE bytes of data, this is a no-op.  */
 is done.  */
 
 #define POOL_APPEND(p, beg, end) do {                   \
-	const char *PA_beg = (beg);                           \
+	HTTPCSTR PA_beg = (beg);                           \
 	int PA_size = (end) - PA_beg;                         \
 	POOL_GROW (p, PA_size);                               \
 	memcpy ((p)->contents + (p)->tail, PA_beg, PA_size);  \
@@ -535,9 +535,9 @@ of the entity.  Otherwise, -1 is returned and *PTR left unmodified.
 The recognized entities are: &lt, &gt, &amp, &apos, and &quot.  */
 
 static int
-decode_entity (const char **ptr, const char *end)
+decode_entity (HTTPCSTR *ptr, HTTPCSTR end)
 {
-	const char *p = *ptr;
+	HTTPCSTR p = *ptr;
 	int value = -1;
 
 	if (++p == end)
@@ -614,7 +614,7 @@ the ASCII range when copying the string.
 of text, as well as embedded newlines.  */
 
 static void
-convert_and_copy (struct pool *pool, const char *beg, const char *end, int flags)
+convert_and_copy (struct pool *pool, HTTPCSTR beg, HTTPCSTR end, int flags)
 {
 	int old_tail = pool->tail;
 
@@ -638,7 +638,7 @@ convert_and_copy (struct pool *pool, const char *beg, const char *end, int flags
 		It's safe (and necessary) to grow the pool in advance because
 		processing the entities can only *shorten* the string, it can
 		never lengthen it.  */
-		const char *from = beg;
+		HTTPCSTR from = beg;
 		char *to;
 		bool squash_newlines = !!(flags & AP_TRIM_BLANKS);
 
@@ -725,10 +725,10 @@ Whitespace is allowed between and after the comments, but not
 before the first comment.  Additionally, this function attempts to
 handle double quotes in SGML declarations correctly.  */
 
-static const char *
-advance_declaration (const char *beg, const char *end)
+static HTTPCSTR 
+advance_declaration (HTTPCSTR beg, HTTPCSTR end)
 {
-	const char *p = beg;
+	HTTPCSTR p = beg;
 	char quote_char = '\0';       /* shut up, gcc! */
 	char ch;
 
@@ -897,14 +897,14 @@ free(data);
 return the pointer to the character after the substring.  If the
 substring is not found, return NULL.  */
 
-static const char *
-find_comment_end (const char *beg, const char *end)
+static HTTPCSTR 
+find_comment_end (HTTPCSTR beg, HTTPCSTR end)
 {
 	/* Open-coded Boyer-Moore search for "-->".  Examine the third char;
 	if it's not '>' or '-', advance by three characters.  Otherwise,
 	look at the preceding characters and try to find a match.  */
 
-	const char *p = beg - 1;
+	HTTPCSTR p = beg - 1;
 
 	while ((p += 3) < end)
 		switch (p[0])
@@ -945,7 +945,7 @@ at_dash_dash:
 /* Return true if the string containing of characters inside [b, e) is
 present in hash table HT.  */
 
-static bool name_allowed (const struct hash_table *ht, const char *b, const char *e)
+static bool name_allowed (const struct hash_table *ht, HTTPCSTR b, HTTPCSTR e)
 {
 	char *copy=NULL;
 	if (!ht)
@@ -997,7 +997,7 @@ just as well, but this is just an optimization designed to avoid
 unnecessary copying of tags/attributes which the caller doesn't
 care about.)  */
 
-void map_html_tags (const char *text, size_t size,
+void map_html_tags (HTTPCSTR text, size_t size,
 			   void (*mapfun) (struct taginfo *, void *,char*,char*,httpdata*), void *maparg,
 			   int flags,
 			   const struct hash_table *allowed_tags,
@@ -1008,8 +1008,8 @@ void map_html_tags (const char *text, size_t size,
 	char pool_initial_storage[256];
 	struct pool pool;
 
-	const char *p = text;
-	const char *end = text + size;
+	HTTPCSTR p = text;
+	HTTPCSTR end = text + size;
 
 	struct attr_pair attr_pair_initial_storage[8];
 	int attr_pair_size = countof (attr_pair_initial_storage);
@@ -1023,8 +1023,8 @@ void map_html_tags (const char *text, size_t size,
 
 	{
 		int nattrs, end_tag;
-		const char *tag_name_begin, *tag_name_end;
-		const char *tag_start_position;
+		HTTPCSTR tag_name_begin, *tag_name_end;
+		HTTPCSTR tag_start_position;
 		bool uninteresting_tag;
 
 look_for_tag:
@@ -1054,7 +1054,7 @@ look_for_tag:
 				terminating "-->".  Non-strict is the default because
 				it works in other browsers and most HTML writers can't
 				be bothered with getting the comments right.  */
-				const char *comment_end = find_comment_end (p + 3, end);
+				HTTPCSTR comment_end = find_comment_end (p + 3, end);
 				if (comment_end) {
 /*					int len =   comment_end -p ;
 					printf("\n** COMENTARIO de len %i: |",len);
@@ -1107,9 +1107,9 @@ look_for_tag:
 		/* Find the attributes. */
 		while (1)
 		{
-			const char *attr_name_begin, *attr_name_end;
-			const char *attr_value_begin, *attr_value_end;
-			const char *attr_raw_value_begin, *attr_raw_value_end;
+			HTTPCSTR attr_name_begin, *attr_name_end;
+			HTTPCSTR attr_value_begin, *attr_value_end;
+			HTTPCSTR attr_raw_value_begin, *attr_raw_value_end;
 			int operation = AP_DOWNCASE; /* stupid compiler. */
 
 			SKIP_WS (p);

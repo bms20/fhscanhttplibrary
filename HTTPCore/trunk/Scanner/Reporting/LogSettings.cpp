@@ -53,7 +53,7 @@ int CloseHTMLReport(void)
 	return(0);
 }
 /**************************************************************************/
-//int UpdateHTMLReport(PREQUEST data, int FROM)
+//int UpdateHTMLReport(HTTPSession* data, int FROM)
 /**************************************************************************/
 //http://www.cert.org/tech_tips/cgi_metacharacters.html
 #if 0
@@ -69,7 +69,7 @@ void FixXSS(char *data, char *dst) {
 //__inline static void FixXSS(char *data) {while (*(data++)) { char *q=strchr(ok_chars,*data); *data=(q) ? *q :'_' ; }   }
 /**************************************************************************/
 /*******************************************************************************/
-static int GetHtmlTitle(PREQUEST data, char *output, size_t dstSize) {
+static int GetHtmlTitle(HTTPSession* data, char *output, size_t dstSize) {
 
     char *p,*q;
 	char *buffer;
@@ -139,7 +139,7 @@ static int GetHtmlTitle(PREQUEST data, char *output, size_t dstSize) {
 	return(0);
 }
 /*******************************************************************************/
-int UpdateHTMLReport(PREQUEST data,int FROM, const char *UserName, const char *Password, char *url, const char *VulnDescription)
+int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR UserName, HTTPCSTR Password, char *url, HTTPCSTR VulnDescription)
 {
 //     return (0);
 

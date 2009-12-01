@@ -7,7 +7,7 @@
 	#include "zlib.h"
 	#include "zconf.h"
 	typedef int (*INFLATE_FUNC)(z_streamp ,int);
-	typedef int (*INFLATEINIT_FUNC)(z_streamp,const char *, int);
+	typedef int (*INFLATEINIT_FUNC)(z_streamp,HTTPCSTR , int);
 	typedef int (*INFLATEEND_FUNC)(z_streamp);
 	typedef int (*INFLATEINIT2_FUNC)(z_streamp,int,const char*,int);
 	extern INFLATE_FUNC				INFLATE;

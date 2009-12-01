@@ -22,7 +22,7 @@ struct timezone
 
 int gettimeofday(struct timeval *tv, struct timezone *tz);
 # if defined(_MSC_VER)
-char *strptime (const char *buf, const char *format, struct tm *timeptr);
+char *strptime (HTTPCSTR buf, HTTPCSTR format, struct tm *timeptr);
 #endif
 
 #endif

@@ -39,41 +39,7 @@ SUCH DAMAGE.
 #include "HTTPHANDLE.h"
 
 
-/*!\STRUCT PREQUEST
-  \brief This struct handles information related to and http response and includes information about client request, server response, url, server version .returned by an HTTP Server
-*/
-typedef struct  prequest {
-	HTTPCHAR hostname[256];
-   /*!< hostname of the server. This is related to the vhost parameter. If no vhost is specified, hostname contains the ip address. */
-   int ip;
-   /*!< remote HTTP ip address. */
-   int port;
-   /*!< remote HTTP port. This value is obtained from the InitHTTPConnectionHandle() */
-   int NeedSSL;
-   /*!< Boolean value. If this parameter is 1 then the connection is handled by openssl otherwise is just a tcp connection */
-   HTTPSTR url;
-   /*!< path to the file or directory requested */
-   HTTPSTR Parameters;
-   /*!< Request Parameters */
-   httpdata* request;
-   /*!< Information related to the HTTP Request. This struct contains both client headers and postdata */
-   httpdata* response;
-   /*!< Information related to the HTTP response. This struct contains both server headers and data */
-   HTTPSTR server;
-   /*!< pointer to a string that contains the server banner from the remote http server */
-   HTTPCHAR Method[20];
-   /*!< HTTP Verb used */
-   unsigned int status;
-   /*!< status code returned by the HTTP server. Example: "200", for an STATUS OK response. */
-   HTTPSTR ContentType;
-   /*!< Response Content-Type */
-public:
-   prequest();
-   ~prequest();
-   int IsValidHTTPResponse(void);
-   int HasResponseHeader(void);
-   int HasResponseData(void);
-} *PREQUEST;
+
 
 /*!\struct HTTP_DATA
   \brief An HTTP_DATA struct stores the information generated with an HTTP request or an HTTP response.\n
@@ -103,21 +69,21 @@ public:
 
 	/* Initialization */
 	httpdata();
-	httpdata(const char *header);
-	httpdata(const char *header, size_t headersize);
-	httpdata(const char *header, const char *lpPostData);
-	httpdata(const char *header,size_t headersize, const char *lpPostData,size_t  PostDataSize);	
-	void InitHTTPData(const char *header);
-	void InitHTTPData(const char *header, size_t headersize);
-	void InitHTTPData(const char *header, const char *lpPostData);
-	void InitHTTPData(const char *header,size_t  headersize, const char *lpPostData,size_t  PostDataSize);
+	httpdata(HTTPCSTR header);
+	httpdata(HTTPCSTR header, size_t headersize);
+	httpdata(HTTPCSTR header, HTTPCSTR lpPostData);
+	httpdata(HTTPCSTR header,size_t headersize, HTTPCSTR lpPostData,size_t  PostDataSize);	
+	void InitHTTPData(HTTPCSTR header);
+	void InitHTTPData(HTTPCSTR header, size_t headersize);
+	void InitHTTPData(HTTPCSTR header, HTTPCSTR lpPostData);
+	void InitHTTPData(HTTPCSTR header,size_t  headersize, HTTPCSTR lpPostData,size_t  PostDataSize);
 	~httpdata();
 
 	/* Header manipulation */
-	char *GetHeaderValue(const char *value,int n);
+	char *GetHeaderValue(HTTPCSTR value,int n);
 	char *GetHeaderValueByID(unsigned int id);
-	char *AddHeader(const char *Header);
-	char *RemoveHeader(const char *Header);	
+	char *AddHeader(HTTPCSTR Header);
+	char *RemoveHeader(HTTPCSTR Header);	
 	
 
 	/* Information gathering */
@@ -139,11 +105,11 @@ public:
 	char *GettagCrawled(int i);
 
 	/* Misc Functions */
-	char *Datastrstr  (const char *searchdata);
-	char *Headerstrstr(const char *searchdata);
+	char *Datastrstr  (HTTPCSTR searchdata);
+	char *Headerstrstr(HTTPCSTR searchdata);
 };
 
-typedef int HTTPHANDLE;
+
 
 
 #endif

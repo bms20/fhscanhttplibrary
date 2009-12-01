@@ -3,6 +3,6 @@
 
 #include "FHScan.h"
 #include "estructuras.h"
-int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, PREQUEST data,int nLogins, USERLIST *userpass);
+int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* data,int nLogins, USERLIST *userpass);
 
 #endif

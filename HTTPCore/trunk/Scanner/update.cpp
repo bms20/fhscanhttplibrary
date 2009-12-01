@@ -18,7 +18,7 @@ typedef struct update{
 	char linux_url[256];
 } UPDATE;
 
-int CheckConfigFile(const char *filename,UPDATE *local)
+int CheckConfigFile(HTTPCSTR filename,UPDATE *local)
 {
 	FILE *update=fopen(filename,"r");
 	char line[1024];
@@ -97,8 +97,8 @@ int UpdateFHScan(HTTPAPI *api)
 	HTTPHANDLE HTTPHandle;
 	HTTPHANDLE NEWHTTPHandle;
 
-	PREQUEST DATA;
-	PREQUEST DOWNLOAD;
+	HTTPSession* DATA;
+	HTTPSession* DOWNLOAD;
 	UPDATE local,remote;
 //	char *p;
 	int ret;

@@ -56,7 +56,7 @@ char *encoders::GetNTLMBase64Packet1(char* destination)
 	return ( encodebase64(destination,(char*)NTLMHeader,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMHeader)));
 }
 /*************************************************************************************/
-char *encoders::GetNTLMBase64Packet3(char*destination, const char* NTLMresponse, const char *lpUsername, const char* lpPassword)
+char *encoders::GetNTLMBase64Packet3(char*destination, const char* NTLMresponse, HTTPCSTR lpUsername, const char* lpPassword)
 {
 	char *NTLMPacket2[4096];
 	unsigned char *NTLMPacket3[4096];
@@ -74,7 +74,7 @@ char *encoders::GetNTLMBase64Packet3(char*destination, const char* NTLMresponse,
 /*************************************************************************************/
 
 
-char* encoders::decodebase64(char *lpoutput, const char *input)
+char* encoders::decodebase64(char *lpoutput, HTTPCSTR input)
 {
 	int inputlen = (int)strlen(input);
 	int outputlen = (inputlen * 3) /4 +1;    /*estimated */
@@ -102,7 +102,7 @@ char* encoders::decodebase64(char *lpoutput, const char *input)
 
 }
 
-char* encoders::encodebase64(char *lpoutput, const char *input, size_t inputlen)
+char* encoders::encodebase64(char *lpoutput, HTTPCSTR input, size_t inputlen)
 {
 	if (inputlen)
 	{
@@ -132,7 +132,7 @@ char* encoders::encodebase64(char *lpoutput, const char *input, size_t inputlen)
 	return(NULL);
 }
 
-unsigned char* encoders::GetMD2BinaryHash(char *lpoutput, const char *data, size_t len)
+unsigned char* encoders::GetMD2BinaryHash(char *lpoutput, HTTPCSTR data, size_t len)
 {
 	unsigned char *output;
 	if (lpoutput)
@@ -148,7 +148,7 @@ unsigned char* encoders::GetMD2BinaryHash(char *lpoutput, const char *data, size
 	return(output);
 }
 
-char* encoders::GetMD2TextHash(char *lpoutput, const char *data, size_t len)
+char* encoders::GetMD2TextHash(char *lpoutput, HTTPCSTR data, size_t len)
 {
 	unsigned char md2sum[16];	
 	unsigned char *result;
@@ -172,7 +172,7 @@ char* encoders::GetMD2TextHash(char *lpoutput, const char *data, size_t len)
 	return((char*)result);
 }
 
-unsigned char* encoders::GetMD4BinaryHash(char *lpoutput, const char *data, size_t len)
+unsigned char* encoders::GetMD4BinaryHash(char *lpoutput, HTTPCSTR data, size_t len)
 {
 	unsigned char *result;
 	if (lpoutput)
@@ -189,7 +189,7 @@ unsigned char* encoders::GetMD4BinaryHash(char *lpoutput, const char *data, size
 	return(result);
 }
 
-char* encoders::GetMD4TextHash(char *lpoutput, const char *data, size_t len)
+char* encoders::GetMD4TextHash(char *lpoutput, HTTPCSTR data, size_t len)
 {
 	unsigned char md4sum[16];
 	unsigned char *result;
@@ -215,7 +215,7 @@ char* encoders::GetMD4TextHash(char *lpoutput, const char *data, size_t len)
 	return((char*)result);
 }
 
-unsigned char* encoders::GetMD5BinaryHash(char *lpoutput, const char *data, size_t len)
+unsigned char* encoders::GetMD5BinaryHash(char *lpoutput, HTTPCSTR data, size_t len)
 {
 	unsigned char *result ;
 	if (lpoutput)
@@ -232,7 +232,7 @@ unsigned char* encoders::GetMD5BinaryHash(char *lpoutput, const char *data, size
 	return(result);
 }
 
-char* encoders::GetMD5TextHash(char *lpoutput, const char *data, size_t len)
+char* encoders::GetMD5TextHash(char *lpoutput, HTTPCSTR data, size_t len)
 {
 	unsigned char md5sum[16];
 	unsigned char *result;
@@ -261,7 +261,7 @@ char* encoders::GetMD5TextHash(char *lpoutput, const char *data, size_t len)
 
 /******************************************************************************/
 
-unsigned char* encoders::GetSHA1BinaryHash(char *lpoutput, const char *data, size_t len)
+unsigned char* encoders::GetSHA1BinaryHash(char *lpoutput, HTTPCSTR data, size_t len)
 {
 	unsigned char *result;
 	if (lpoutput)
@@ -277,7 +277,7 @@ unsigned char* encoders::GetSHA1BinaryHash(char *lpoutput, const char *data, siz
 	return(result);
 }
 
-char* encoders::GetSHA1TextHash(char *lpoutput, const char *data, size_t len)
+char* encoders::GetSHA1TextHash(char *lpoutput, HTTPCSTR data, size_t len)
 {
 	unsigned char sha1sum[20];
 	unsigned char *result;
@@ -304,7 +304,7 @@ char* encoders::GetSHA1TextHash(char *lpoutput, const char *data, size_t len)
 }
 
 
-char *encoders::CreateDigestAuth(char *AuthenticationHeader, const char *lpUsername, const char *lpPassword, const char *method,const char *uri, int counter)
+char *encoders::CreateDigestAuth(char *AuthenticationHeader, HTTPCSTR lpUsername, HTTPCSTR lpPassword, HTTPCSTR method,HTTPCSTR uri, int counter)
 {
 	/*
 AuthenticationHeader is supoused to be in the following format:

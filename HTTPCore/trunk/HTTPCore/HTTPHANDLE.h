@@ -42,6 +42,8 @@ SUCH DAMAGE.
 
 #define MAXIMUM_HTTP_REDIRECT_DEPTH 2
 
+typedef int HTTPHANDLE;
+
 enum AuthenticationType {
 	NO_AUTH        = 0,
 	BASIC_AUTH     = 1,
@@ -50,6 +52,38 @@ enum AuthenticationType {
 	NEGOTIATE_AUTH = 8,
 	UNKNOWN_AUTH   = 16
 };
+
+/* Options for SetHTTPConfig() and GetHTTPConfig() */
+enum HttpOptions 
+{  
+	ConfigProxyHost        = 0x00,
+	ConfigProxyPort        = 0x01,
+	ConfigProxyUser        = 0x02,
+	ConfigProxyPass        = 0x04,
+
+	ConfigAdditionalHeader = 0x08,
+	ConfigCookie           = 0x10,
+	ConfigUserAgent        = 0x20,
+	ConfigProtocolversion  = 0x40,
+	ConfigMaxDownloadSpeed = 0x80,
+	ConfigHTTPHost         = 0x100,
+	ConfigHTTPPort         = 0x200,
+	ConfigAsyncronousProxy = 0x400,
+	ConfigProxyInitialized = 0x800,
+	ConfigSSLConnection    = 0x1000,
+	ConfigMaxDownloadSize  = 0x2000,
+	ConfigCookieHandling   = 0x4000,
+	ConfigAutoredirect     = 0x8000
+};
+
+class HTTPHOST {
+	long target;
+	HTTPCHAR targetDNS[256];
+	unsigned short port;
+	int NeedSSL;
+};
+
+
 
 class HTTPAPIHANDLE {
 	long 		target;
@@ -78,77 +112,68 @@ class HTTPAPIHANDLE {
 	HTTPSTR		lpProxyPort;
 	HTTPSTR		lpProxyUserName;
 	HTTPSTR		lpProxyPassword;
+	int			ProxyInitialized;
 	HTTPCHAR	lpTmpData[256]; //not thread safe struct
 
 	int 		CookieSupported;
 	int			AutoRedirect;
 	int 		MaximumRedirects;
+
 public:
 	enum AuthenticationType challenge;
-
-//Definir como metodos restringidos a CONEXION!
-	long GetTarget() { return target; }
-	unsigned short GetPort() { return(port); }
-	int IsSSLNeeded() 
-	{ 		
-			return NeedSSL; 
-	}
-	int ProxyEnabled() { return (lpProxyHost != NULL);}
-	int GetDownloadBwLimit() { if (DownloadBwLimit) return atoi(DownloadBwLimit); else return(0); }
-	int GetDownloadLimit() { if (DownloadLimit) return (atoi(DownloadLimit)); else return(0); }
-	int GetThreadID() { return ThreadID; }
-	HTTPSTR GettargetDNS() { return targetDNS; }
-	int GetVersion() { return version; }
-	HTTPSTR GetUserAgent() { return ( UserAgent); }
-	HTTPSTR GetAdditionalHeader() { return (AdditionalHeader); }
-	HTTPSTR GetCookie() { return Cookie; }
-	HTTPSTR GetlpProxyUserName() { return (lpProxyUserName); }
-	HTTPSTR	GetlpProxyPassword() { return (lpProxyPassword); }
-	
-
-	char *GetLastRequestedUri() { return LastRequestedUri; };
-	void SetLastRequestedUri(const char *url)
-	{
-		if (LastRequestedUri) free(LastRequestedUri);
-		if (url)
-		{
-			LastRequestedUri = strdup(url);
-		} else
-		{
-         	LastRequestedUri = NULL;
-        }
-
-    }
-
-	char *GetLastAuthenticationString() { return LastAuthenticationString; }
-	void SetLastAuthenticationString(char *authstring) {
-		if (LastAuthenticationString) free(LastAuthenticationString);
-		LastAuthenticationString = authstring;
-	}
-	void *ParseReturnedBuffer(struct httpdata *request, struct httpdata *response);
-	
-
-	//Connection links
-	void *GetConnectionptr() { return conexion; }
-	void SetConnection(void *connection) { conexion = connection; }	
-	void *GetClientConnection() { return ClientConnection; }
-	void SetClientConnection(void *Client_Connection) { ClientConnection = Client_Connection; }
-
 	HTTPAPIHANDLE(void);	
 	~HTTPAPIHANDLE();
 	int InitHandle(HTTPSTR,unsigned short,int);	
 	int SetHTTPConfig(int,HTTPCSTR);
 	int SetHTTPConfig(int,int);
-	HTTPSTR GetHTTPConfig(int);
-	char *GetAdditionalHeaderValue(const char *value,int n);
-	int IsCookieSupported(void) { return CookieSupported; }
+	HTTPSTR GetHTTPConfig(enum HttpOptions);
+	char *GetLastRequestedUri(void);
+	void SetLastRequestedUri(HTTPCSTR url);
+	char *GetLastAuthenticationString() { return LastAuthenticationString; }
+	void SetLastAuthenticationString(char *authstring);
+	void *ParseReturnedBuffer(struct httpdata *request, struct httpdata *response);
+
+
+//Definir como metodos restringidos a CONEXION!
+long GetTarget() { return target; }
+unsigned short GetPort() { return(port); }
+/*	int IsSSLNeeded() 
+	{ 		
+			return NeedSSL; 
+	}
+*/	
+//	int ProxyEnabled() { return (lpProxyHost != NULL);}
+/*
+	int GetDownloadBwLimit() { if (DownloadBwLimit) return atoi(DownloadBwLimit); else return(0); }
+	int GetDownloadLimit() { if (DownloadLimit) return (atoi(DownloadLimit)); else return(0); }
+*/
+	int GetThreadID() { return ThreadID; }
+//	HTTPSTR GettargetDNS() { return targetDNS; }
+	//int GetVersion() { return version; }
+/*	HTTPSTR GetUserAgent() { return ( UserAgent); }
+	HTTPSTR GetAdditionalHeader() { return (AdditionalHeader); }
+	HTTPSTR GetCookie() { return Cookie; }
+	HTTPSTR GetlpProxyUserName() { return (lpProxyUserName); }
+	HTTPSTR	GetlpProxyPassword() { return (lpProxyPassword); }
+	*/
+
+	
+
+	//Connection links
+
+	void *GetConnectionptr() { return conexion; }
+	void SetConnection(void *connection) { conexion = connection; }	
+	void *GetClientConnection() { return ClientConnection; }
+	void SetClientConnection(void *Client_Connection) { ClientConnection = Client_Connection; }
+
+	
+	char *GetAdditionalHeaderValue(HTTPCSTR value,int n);
+//	int IsCookieSupported(void) { return CookieSupported; }
 	int IsAutoRedirectEnabled(void) { return ( AutoRedirect); }
 
 	int GetMaximumRedirects(void) { return (MaximumRedirects); }
 	void DecrementMaximumRedirectsCount(void) { MaximumRedirects--; }
 	void ResetMaximumRedirects(void) { MaximumRedirects = MAXIMUM_HTTP_REDIRECT_DEPTH; }
-
-
 
 };
 

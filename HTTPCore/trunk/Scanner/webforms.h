@@ -26,6 +26,6 @@
 #define NEEDPASS  2
 
 
-int CheckWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data, int indexpos);
+int CheckWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data, int indexpos);
 
 #endif

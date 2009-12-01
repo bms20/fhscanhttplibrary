@@ -4,6 +4,6 @@
 
 
 
-PREQUEST CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,PREQUEST data,int nRouterAuth, struct _fakeauth *AuthData,int nUsers, USERLIST *userpass);
+HTTPSession* CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,int nRouterAuth, struct _fakeauth *AuthData,int nUsers, USERLIST *userpass);
 
 #endif

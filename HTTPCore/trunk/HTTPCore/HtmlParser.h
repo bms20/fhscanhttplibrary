@@ -221,7 +221,7 @@ struct attr_pair {
 
   /* Needed for URL conversion; the places where the value begins and
      ends, including the quotes and everything. */
-  const char *value_raw_beginning;
+  HTTPCSTR value_raw_beginning;
   int value_raw_size;
 
   /* Used internally by map_html_tags. */
@@ -234,8 +234,8 @@ struct taginfo {
   int nattrs;			/* number of attributes */
   struct attr_pair *attrs;	/* attributes */
 
-  const char *start_position;	/* start position of tag */
-  const char *end_position;	/* end position of tag */
+  HTTPCSTR start_position;	/* start position of tag */
+  HTTPCSTR end_position;	/* end position of tag */
 };
 
 struct hash_table;		/* forward declaration */
@@ -245,7 +245,7 @@ struct hash_table;		/* forward declaration */
 #define MHT_TRIM_VALUES      2  /* trim attribute values, e.g. interpret
                                    <a href=" foo "> as "foo" */
 
-void map_html_tags (const char *, int,
+void map_html_tags (HTTPCSTR , int,
 		    void (*) (struct taginfo *, void *, char*, char*,struct httpdata*),
 			void *, int,
 		    const struct hash_table *, const struct hash_table *,

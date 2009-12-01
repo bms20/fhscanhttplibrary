@@ -28,8 +28,8 @@ typedef struct _report {
 
 //functions
 int CloseHTMLReport(void);
-//int UpdateHTMLReport(PREQUEST data, int FROM);
-int UpdateHTMLReport(PREQUEST data,int FROM, const char *username, const char *password, char *url, const char *VulnDescription);
+//int UpdateHTMLReport(HTTPSession* data, int FROM);
+int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR username, HTTPCSTR password, char *url, HTTPCSTR VulnDescription);
 int InitHTMLReport(
  char *path,
  unsigned long currentip,
@@ -42,8 +42,8 @@ int InitHTMLReport(
  int vulnchecks);
 
  /*
- int PrintResult(PREQUEST data, int FROM) ;
-void UpdateData(PREQUEST data, char *username, char *password, char *Vuln, char *VulnDescription);
+ int PrintResult(HTTPSession* data, int FROM) ;
+void UpdateData(HTTPSession* data, char *username, char *password, char *Vuln, char *VulnDescription);
 */
 
 #define MESSAGE_FINGERPRINT			0
