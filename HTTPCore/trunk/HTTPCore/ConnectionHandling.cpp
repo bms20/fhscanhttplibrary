@@ -122,6 +122,12 @@ int ConnectionHandling::StablishConnection(void)
 /*******************************************************************************************************/
 int ConnectionHandling::InitializeConnection(class HTTPAPIHANDLE *HTTPHandle)
 {
+	if (HTTPHandle->DisconnectSocket) 
+	{
+		if (datasock) Disconnect(0); 
+		HTTPHandle->DisconnectSocket = 0;
+	}
+	/*Not reconnect */
 	if (datasock==0)
 	{
 		target=HTTPHandle->GetTarget();		

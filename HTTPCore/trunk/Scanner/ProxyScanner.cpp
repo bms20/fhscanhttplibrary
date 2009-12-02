@@ -22,8 +22,6 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 	HTTPSession* response;
 	int ret=0;
 	
-	return(0);/*To review */
-
 	char *ProxyConfig = api->GetHTTPConfig (GLOBAL_HTTP_CONFIG,ConfigProxyHost);
 	if (!ProxyConfig)
 	{
@@ -99,7 +97,7 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 					delete response;
 				}
 				//We must close the connection
-				api->CancelHTTPRequest(HTTPHandle,HTTP_REQUEST_CURRENT);
+				api->CancelHTTPRequest(HTTPHandle);
 			}
 		}
 

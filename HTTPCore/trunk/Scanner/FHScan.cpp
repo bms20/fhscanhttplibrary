@@ -389,10 +389,10 @@ void HTTPProxy(HTTPAPI *api)
 
 /*******************************************************************************/
 #ifdef __WIN32__RELEASE__
-int __cdecl main(int argc, char *argv[]){
+int __cdecl _tmain(int argc, _TCHAR *argv[]){
 	HANDLE *thread;
 #else
-int main(int argc, char *argv[]){
+int _tmain(int argc, _TCHAR *argv[]){
 	pthread_t *thread;
 #endif
 

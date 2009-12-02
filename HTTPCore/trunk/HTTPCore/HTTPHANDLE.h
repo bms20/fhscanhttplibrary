@@ -73,7 +73,8 @@ enum HttpOptions
 	ConfigSSLConnection    = 0x1000,
 	ConfigMaxDownloadSize  = 0x2000,
 	ConfigCookieHandling   = 0x4000,
-	ConfigAutoredirect     = 0x8000
+	ConfigAutoredirect     = 0x8000,
+	ConfigDisconnectConnection = 0x10000
 };
 
 class HTTPHOST {
@@ -96,6 +97,7 @@ class HTTPAPIHANDLE {
 #endif
 	int 		NeedSSL;
 	int 		version;
+	
 	HTTPSTR		AdditionalHeader;
 	HTTPSTR		Cookie;
 	HTTPSTR		UserAgent;
@@ -121,6 +123,8 @@ class HTTPAPIHANDLE {
 
 public:
 	enum AuthenticationType challenge;
+	int			DisconnectSocket;
+
 	HTTPAPIHANDLE(void);	
 	~HTTPAPIHANDLE();
 	int InitHandle(HTTPSTR,unsigned short,int);	
@@ -137,26 +141,8 @@ public:
 //Definir como metodos restringidos a CONEXION!
 long GetTarget() { return target; }
 unsigned short GetPort() { return(port); }
-/*	int IsSSLNeeded() 
-	{ 		
-			return NeedSSL; 
-	}
-*/	
-//	int ProxyEnabled() { return (lpProxyHost != NULL);}
-/*
-	int GetDownloadBwLimit() { if (DownloadBwLimit) return atoi(DownloadBwLimit); else return(0); }
-	int GetDownloadLimit() { if (DownloadLimit) return (atoi(DownloadLimit)); else return(0); }
-*/
-	int GetThreadID() { return ThreadID; }
-//	HTTPSTR GettargetDNS() { return targetDNS; }
-	//int GetVersion() { return version; }
-/*	HTTPSTR GetUserAgent() { return ( UserAgent); }
-	HTTPSTR GetAdditionalHeader() { return (AdditionalHeader); }
-	HTTPSTR GetCookie() { return Cookie; }
-	HTTPSTR GetlpProxyUserName() { return (lpProxyUserName); }
-	HTTPSTR	GetlpProxyPassword() { return (lpProxyPassword); }
-	*/
 
+	int GetThreadID() { return ThreadID; }
 	
 
 	//Connection links

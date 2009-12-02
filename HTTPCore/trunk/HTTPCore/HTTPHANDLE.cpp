@@ -70,6 +70,7 @@ HTTPAPIHANDLE::HTTPAPIHANDLE(void)
 	ThreadID = 0;
 	NeedSSL = 0;
 	version=0;
+	DisconnectSocket = 0;
 	AdditionalHeader = NULL;
 	Cookie = NULL;
 	UserAgent= NULL;
@@ -216,6 +217,10 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,int parameter)
 	sprintf(tmp,"%i",parameter);
 	switch (opt)
 	{
+		case ConfigDisconnectConnection:
+		DisconnectSocket = parameter;
+		break;
+
 		case ConfigSSLConnection:
 			NeedSSL = parameter;
 		break;

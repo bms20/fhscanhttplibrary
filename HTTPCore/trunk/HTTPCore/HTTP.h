@@ -61,8 +61,8 @@ enum HttpProxyoptions
 };
 
 /* CancelHTTPRequest() options */
-#define HTTP_REQUEST_CURRENT 1
-#define HTTP_REQUEST_ALL	 0
+//#define HTTP_REQUEST_CURRENT 1
+//#define HTTP_REQUEST_ALL	 0
 
 /* Important Handle values */
 #define	INVALID_HHTPHANDLE_VALUE ((HTTPHANDLE)-1)
@@ -156,7 +156,7 @@ public:
 	int        StopHTTPProxy();
 
 	int        RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,HTTPCSTR Description);
-	int        CancelHTTPRequest(HTTPHANDLE HTTPHandle, int what);
+	void       CancelHTTPRequest(HTTPHANDLE HTTPHandle);
 	void       doSpider(HTTPSTR host,HTTPSTR FullPath, httpdata*  response);
 };	
 

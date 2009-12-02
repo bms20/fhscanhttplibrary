@@ -353,7 +353,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 			{
 				if (MatchString(new_data,WEBFORMS[webform].ReconnectOnMatch))
 				{
-					api->CancelHTTPRequest(HTTPHandle,1);
+					api->CancelHTTPRequest(HTTPHandle);
 
 				}
 			}

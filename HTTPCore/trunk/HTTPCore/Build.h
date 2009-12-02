@@ -37,24 +37,22 @@ SUCH DAMAGE.
 #define __BUILD_H_
 
 /****************** GLOBAL FLAGS **********************/
-#ifndef _HTTPWIDECHAR
+#undef UNICODE
+#undef _UNICODE
+
+#include <tchar.h>
+
+
+#ifdef _UNICODE 
 	#define _HTTPWIDECHAR
 #endif
-#undef  _HTTPWIDECHAR
 
-#ifdef _HTTPWIDECHAR
-	//#define _CXML(c) L ## c
-	#define HTTPCSTR const wchar_t *
-	#define HTTPSTR  wchar_t *
-	#define HTTPCHAR wchar_t
-#else
-	//#define _CXML(c) c
-	#define HTTPCSTR const char * 
-	#define HTTPSTR  char *
-	#define HTTPCHAR char
-#endif
+#define HTTPCSTR const _TCHAR * 
+#define HTTPSTR  _TCHAR *
+#define HTTPCHAR _TCHAR
 
 #ifndef LINUX
+
 
 #ifndef __WIN32__RELEASE__
 #define __WIN32__RELEASE__

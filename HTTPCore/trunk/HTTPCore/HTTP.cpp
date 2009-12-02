@@ -861,21 +861,9 @@ HTTPSession* HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers,
 HTTP proxy server by SendRawHTTPRequest()
 */
 /*******************************************************************************************/
-int HTTPAPI::CancelHTTPRequest(HTTPHANDLE HTTPHandle, int what)
+void HTTPAPI::CancelHTTPRequest(HTTPHANDLE HTTPHandle)
 {
-	int ret=0;
-	class HTTPAPIHANDLE * phandle = GetHTTPAPIHANDLE(HTTPHandle);
-	ConnectionTablelock.LockMutex();
-	class ConnectionHandling *conexion = (class ConnectionHandling *)phandle->GetConnectionptr();
-	conexion->IoOperationLock.LockMutex();
-	if ( (conexion) && (!conexion->Getio()) && (conexion->GetTarget() == phandle->GetTarget() ) ) 
-	{
-		conexion->Disconnect(0);
-		ret=1;
-	}
-	conexion->IoOperationLock.UnLockMutex();
-	ConnectionTablelock.UnLockMutex();
-	return (ret);
+	SetHTTPConfig(HTTPHandle,ConfigDisconnectConnection,0);
 }
 /*******************************************************************************************/
 int HTTPAPI::RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,HTTPCSTR Description)
