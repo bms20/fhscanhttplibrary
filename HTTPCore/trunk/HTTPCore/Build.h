@@ -91,7 +91,7 @@ typedef int64_t __int64;
 typedef uint64_t __uint64;
 #define MAXIMUM_WAIT_OBJECTS 64
 #define MAX_PATH 256
-#define _strdup strdup
+#define __tcsdup _tcsdup
 #define BOOL int
 #define closesocket close
 #define strnicmp strncasecmp

@@ -234,13 +234,13 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,int parameter)
 
 		case ConfigMaxDownloadSpeed:
 			if (DownloadBwLimit) free(DownloadBwLimit);
-			DownloadBwLimit = strdup(tmp);
+			DownloadBwLimit = _tcsdup(tmp);
 			break;
 
 		case ConfigProxyPort:
 			if (lpProxyPort) free(lpProxyPort);
 			if (parameter) {
-				lpProxyPort=strdup(tmp);
+				lpProxyPort=_tcsdup(tmp);
 			} else {
 				lpProxyPort=NULL;
 			}
@@ -251,7 +251,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,int parameter)
 		case ConfigMaxDownloadSize:
 			if (DownloadLimit) free(DownloadLimit);
 			if (parameter) {
-				DownloadLimit = strdup(tmp);
+				DownloadLimit = _tcsdup(tmp);
 			} else {
 				DownloadLimit = NULL;
 			}
@@ -284,7 +284,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 		if (DownloadBwLimit) free(DownloadBwLimit);
 		if (parameter)
 		{			 
-			DownloadBwLimit = strdup(parameter);
+			DownloadBwLimit = _tcsdup(parameter);
 		} else {
 			DownloadBwLimit = NULL;
 		}
@@ -298,7 +298,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 		if ( (parameter) && (*parameter) ){			
 			if (strnicmp(parameter,"Cookie: ",8)==0) //Validate the cookie parameter
 			{
-				Cookie=strdup(parameter);
+				Cookie=_tcsdup(parameter);
 			} else //Add Cookie Header..
 			{
 				Cookie=(char*)malloc( 8 + strlen(parameter) +1 );
@@ -321,7 +321,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 				memcpy(AdditionalHeader,parameter,len2);
 				memcpy(AdditionalHeader +len2,"\r\n\x00",3);
 			} else {
-				AdditionalHeader = strdup(parameter);
+				AdditionalHeader = _tcsdup(parameter);
 			}
 		}  else {
 			AdditionalHeader=NULL;
@@ -333,7 +333,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 			free(UserAgent);
 		}
 		if (parameter) {			
-			UserAgent= strdup(parameter);
+			UserAgent= _tcsdup(parameter);
 		} else {
 			UserAgent=NULL;
 		}
@@ -347,7 +347,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 		if (parameter)
 		{
 			struct sockaddr_in remote;
-			lpProxyHost=strdup(parameter);
+			lpProxyHost=_tcsdup(parameter);
 			remote.sin_addr.s_addr = inet_addr(lpProxyHost);
 			if (remote.sin_addr.s_addr == INADDR_NONE)
 			{
@@ -369,13 +369,13 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 			target=remote.sin_addr.s_addr;
 		}
 		conexion=NULL;
-		if (!lpProxyPort) lpProxyPort=strdup("8080");
+		if (!lpProxyPort) lpProxyPort=_tcsdup("8080");
 		break;
 
 	case ConfigProxyPort:
 		if (lpProxyPort) free(lpProxyPort);
 		if (parameter) {	
-			lpProxyPort=strdup(parameter);
+			lpProxyPort=_tcsdup(parameter);
 		} else {
 			lpProxyPort=NULL;
 		}
@@ -386,7 +386,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 			free(lpProxyUserName);
 		}
 		if (parameter) {
-			lpProxyUserName=strdup(parameter);
+			lpProxyUserName=_tcsdup(parameter);
 		} else lpProxyUserName=NULL;
 		break;
 
@@ -395,7 +395,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 			free(lpProxyPassword);
 		}
 		if (parameter) {
-			lpProxyPassword=strdup(parameter);
+			lpProxyPassword=_tcsdup(parameter);
 		} else lpProxyPassword=NULL;
 		break;
 
@@ -407,7 +407,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 	case ConfigMaxDownloadSize:
 		if (DownloadLimit) free(DownloadLimit);		
 		if (parameter) {
-			DownloadLimit = strdup(parameter);
+			DownloadLimit = _tcsdup(parameter);
 		} else {
 			DownloadLimit = NULL;
 		}
@@ -546,7 +546,7 @@ char *HTTPAPIHANDLE::GetAdditionalHeaderValue(HTTPCSTR value,int n)
 		if (LastRequestedUri) free(LastRequestedUri);
 		if (url)
 		{
-			LastRequestedUri = strdup(url);
+			LastRequestedUri = _tcsdup(url);
 		} else
 		{
          	LastRequestedUri = NULL;

@@ -105,7 +105,7 @@ void TreeNode::SetTreeNodeName(HTTPCSTR lpTreeNodeName)
 	if (text) free(text);
 	if (lpTreeNodeName)
 	{
-		text = strdup(lpTreeNodeName);
+		text = _tcsdup(lpTreeNodeName);
 	} else {
 		text = NULL;
 	}
@@ -186,7 +186,7 @@ bTree::bTree(char *lpTreeName)
 {
 	if (lpTreeName)
 	{
-		text= strdup(lpTreeName);
+		text= _tcsdup(lpTreeName);
 	} else {
 		text = NULL;
 	}
@@ -203,7 +203,7 @@ void bTree::SetTreeName(HTTPCSTR lpTreeName)
 	}
 	if (lpTreeName)
 	{
-		text = strdup(lpTreeName);
+		text = _tcsdup(lpTreeName);
 	}
 }
 /******************************************************************************/
@@ -399,7 +399,7 @@ TreeNode *TreeInsertItems(Tree *tree, TreeNode *parent, char *strpath)
 {
 
 	TreeNode *node;
-	char *str = strdup(strpath);
+	char *str = _tcsdup(strpath);
 	int IsFolder =  (str[strlen(str)-1] == '/');
 	char *path = strtok(str,"/");
 
@@ -440,7 +440,7 @@ int SubTreeToArray(char **array, TreeNode *subtree, int pos, int n) {
 		added = SubTreeToArray(array, subtree->left, pos, n);
 		if (subtree->count >= n) {
 			sprintf(line, "%s (%d)", subtree->text, subtree->count);
-			array[pos+added]=strdup(line);
+			array[pos+added]=_tcsdup(line);
 			added++;
 		}
 		added += SubTreeToArray(array, subtree->right, pos+added, n);

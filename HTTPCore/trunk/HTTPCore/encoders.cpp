@@ -351,31 +351,31 @@ if (strlen(AuthenticationHeader)>sizeof(buffer)-1) {
 	 while (trozo[0]==' ') trozo++;
 
 	 if (strnicmp(trozo,"realm=\"",7)==0) {
-		 realm=strdup(trozo+7);
+		 realm=_tcsdup(trozo+7);
 		 realm[strlen(realm)-1]='\0';
 	 }   else
 	 if (strnicmp(trozo,"nonce=\"",7)==0) {
-		 nonce=strdup(trozo+7);
+		 nonce=_tcsdup(trozo+7);
 		 nonce[strlen(nonce)-1]='\0';
 	 }   else
 	 if (strnicmp(trozo,"opaque=\"",8)==0) {
-		 opaque=strdup(trozo+8);
+		 opaque=_tcsdup(trozo+8);
 		 opaque[strlen(opaque)-1]='\0';
 	 } else
 	 if (strnicmp(trozo,"domain=\"",8)==0) {
-		 domain=strdup(trozo+8);
+		 domain=_tcsdup(trozo+8);
 		 domain[strlen(domain)-1]='\0';
 		//free(domain); //Unused :?
 	 } else
 	 if (strnicmp(trozo,"algorithm=\"",11)==0) {
-		 algorithm=strdup(trozo+11);
+		 algorithm=_tcsdup(trozo+11);
 		 algorithm[strlen(algorithm)-1]='\0';
 	 } else
 	 if (strnicmp(trozo,"algorithm=",10)==0) {
-		 algorithm=strdup(trozo+10);
+		 algorithm=_tcsdup(trozo+10);
 	 } else
 	 if (strnicmp(trozo,"qop=\"",5)==0) {
-		 qop=strdup(trozo+5);
+		 qop=_tcsdup(trozo+5);
 		 qop[strlen(qop)-1]='\0';
 	 }
 
@@ -480,7 +480,7 @@ GetMD5TextHash((char*)&HAI[0],tmp,(int) strlen(tmp));
 	strncat(data,tmp,sizeof(data)-strlen(data)-1);
 
 
-	resultado=strdup(data);
+	resultado=_tcsdup(data);
 
 	free(opaque);
 	free(nonce);

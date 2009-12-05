@@ -42,7 +42,7 @@ int HTTPSession::HasResponseData(void)
 	return ( (response) && (response->DataSize) && (response->Data)   ); 
 }
 /*******************************************************************************************************/
-void HTTPSession::ParseReturnedBuffer(HTTPHANDLE HTTPHandle,struct httpdata *HTTPrequest, struct httpdata *HTTPresponse)
+void HTTPSession::ParseReturnedBuffer(struct httpdata *HTTPrequest, struct httpdata *HTTPresponse)
 {
 	request  = HTTPrequest;
 	response = HTTPresponse;
@@ -50,14 +50,8 @@ void HTTPSession::ParseReturnedBuffer(HTTPHANDLE HTTPHandle,struct httpdata *HTT
 	{	return;
 	}
 	//char version[4];
-/*
-	strncpy(data->hostname,targetDNS,sizeof(data->hostname)-1);
-	data->ip=target;
-	data->port=port;
-	data->NeedSSL = NeedSSL;
-	data->request=request;
-	data->response=response;
-	*/
+
+
 	server=response->GetServerVersion();
 	status = response->GetStatus();
 	ContentType = request->GetHeaderValue("Content-Type:",0);
@@ -69,7 +63,7 @@ void HTTPSession::ParseReturnedBuffer(HTTPHANDLE HTTPHandle,struct httpdata *HTT
 		if (p) {
 			char *q = strchr(p+1,' ');
 			if (q) *q=0;
-			url = strdup(p+1);
+			url = _tcsdup(p+1);
 			*p=0;
 		}
 		if (url)
@@ -83,7 +77,7 @@ void HTTPSession::ParseReturnedBuffer(HTTPHANDLE HTTPHandle,struct httpdata *HTT
 
 			if (parameters)
 			{
-				Parameters= strdup(parameters+1);
+				Parameters= _tcsdup(parameters+1);
 				*parameters=0;
 			}
 		}

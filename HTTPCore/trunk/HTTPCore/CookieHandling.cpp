@@ -61,11 +61,11 @@ Cookie::Cookie()
 
 Cookie::Cookie(char *cName,char *cValue,time_t cExpire,char *cPath,char *cDomain, int cSecure, int cHttponly )
 {
-	lpCookieName  = strdup(cName);
-	lpCookieValue = strdup(cValue);
+	lpCookieName  = _tcsdup(cName);
+	lpCookieValue = _tcsdup(cValue);
 	expire =	cExpire;
-	path =		strdup(cPath);
-	domain =	strdup(cDomain);
+	path =		_tcsdup(cPath);
+	domain =	_tcsdup(cDomain);
 	secure =	cSecure;
 	httponly =	cHttponly;
 }
@@ -73,7 +73,7 @@ Cookie::Cookie(char *cName,char *cValue,time_t cExpire,char *cPath,char *cDomain
 void Cookie::SetValue(char *cValue)
 {
 	if (lpCookieValue) free(lpCookieValue);
-	lpCookieValue = strdup(cValue);
+	lpCookieValue = _tcsdup(cValue);
 }
 void Cookie::SetDate(time_t cExpire)
 {
@@ -400,13 +400,13 @@ int CookieStatus::ParseCookieData(char *lpCookieData, HTTPCSTR lpPath, HTTPCSTR 
 		{
 			if IS_PATH(start)
 			{
-				path=strdup(end);
+				path=_tcsdup(end);
 			} else if IS_DOMAIN(start)
 			{
 				int ret =check_domain_match (end, lpDomain);
 				if (ret)
 				{
-					domain = strdup(end);
+					domain = _tcsdup(end);
 				} else {
 					err = 1;
 //					printf("- Error.%s not added as cookie domain. Current Domain is %s\n",end,DomainNameTreeNode);
@@ -467,8 +467,8 @@ int CookieStatus::ParseCookieData(char *lpCookieData, HTTPCSTR lpPath, HTTPCSTR 
 					name = (char**)realloc(name,(nvalues+1)*sizeof(char*));
 					value =(char**)realloc(value,(nvalues+1)*sizeof(char*));
 				}
-				name[nvalues] = strdup(start);
-				value[nvalues]= strdup(end);
+				name[nvalues] = _tcsdup(start);
+				value[nvalues]= _tcsdup(end);
 				nvalues++;
 			}
 		} else {
@@ -500,8 +500,8 @@ int CookieStatus::ParseCookieData(char *lpCookieData, HTTPCSTR lpPath, HTTPCSTR 
 			nDomains++;
 		}
 		struct CookieList *List = (struct CookieList*)node->GetData();
-		if (!path) path = strdup(lpPath);
-		if (!domain) domain = strdup(lpDomain);
+		if (!path) path = _tcsdup(lpPath);
+		if (!domain) domain = _tcsdup(lpDomain);
 		if ( deletecookie)
 		{
 			/* Delete previous stored cookies */

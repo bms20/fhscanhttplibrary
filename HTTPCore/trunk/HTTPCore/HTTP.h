@@ -123,8 +123,10 @@ class HTTPAPI : public encoders
 	void  SendHTTPProxyErrorMessage( ConnectionHandling* connection,int connectionclose, int status,HTTPCSTR protocol, HTTPCSTR title, HTTPCSTR extra_header, HTTPCSTR text );
 	void  ExtractCookiesFromResponseData( httpdata* response, HTTPCSTR path, HTTPCSTR TargetDNS);
 	char  *BuildCookiesFromStoredData( HTTPCSTR TargetDNS, HTTPCSTR path, int secure);
+	httpdata* BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,size_t PostDataSize);
 	char  *GetPathFromURL(HTTPCSTR url);
 	char  *GetPathFromLocationHeader(httpdata* response, int ssl, const char* domain);
+	enum AuthenticationType GetSupportedAuthentication(httpdata *response);
 	
 public:
 	HTTPAPI();
@@ -146,8 +148,7 @@ public:
 	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	HTTPSession*   SendHttpRequest(HTTPCSTR Fullurl);
 	
-	HTTPSession*   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, size_t eaderSize, HTTPCSTR PostData, size_t PostDataSize);	
-	httpdata* BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,size_t PostDataSize);
+	HTTPSession*   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, size_t eaderSize, HTTPCSTR PostData, size_t PostDataSize);		
 
 	int        InitHTTPProxy(HTTPCSTR hostname, unsigned short port);
 	int        InitHTTPProxy(HTTPCSTR hostname, HTTPCSTR port);

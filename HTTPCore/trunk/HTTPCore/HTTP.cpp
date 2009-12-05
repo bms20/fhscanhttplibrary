@@ -92,7 +92,7 @@ HTTPAPI::HTTPAPI()
 		Connection_Table[i]->Connectionid = i;
 	}
 
-	FHScanUserAgent= strdup(FHSCANUSERAGENT);
+	FHScanUserAgent= _tcsdup(FHSCANUSERAGENT);
 
 	HandleLock.InitThread((void*)ThreadFunc,(void*)this); 
 
@@ -145,9 +145,10 @@ int HTTPAPI::SetHTTPConfig(HTTPHANDLE HTTPHandle,enum HttpOptions opt, HTTPCSTR 
 		return ( GlobalHTTPCoreApiOptions.SetHTTPConfig(opt,parameter) );
 	} else
 	{
-		if ((HTTPHandle>=0) && (HTTPHandle<MAXIMUM_OPENED_HANDLES) )
+		HTTPAPIHANDLE *RealHTTPHandle = GetHTTPAPIHANDLE(HTTPHandle);
+		if (RealHTTPHandle)
 		{
-			return ( HTTPHandleTable[HTTPHandle]->SetHTTPConfig(opt,parameter) );
+			return ( RealHTTPHandle->SetHTTPConfig(opt,parameter) );
 		}
 	}
 	return(0);
@@ -160,9 +161,10 @@ int HTTPAPI::SetHTTPConfig(HTTPHANDLE HTTPHandle,enum HttpOptions opt, int param
 		return ( GlobalHTTPCoreApiOptions.SetHTTPConfig(opt,parameter) );
 	} else
 	{
-		if ((HTTPHandle>=0) && (HTTPHandle<MAXIMUM_OPENED_HANDLES) )
+		HTTPAPIHANDLE *RealHTTPHandle = GetHTTPAPIHANDLE(HTTPHandle);
+		if (RealHTTPHandle)
 		{
-			return ( HTTPHandleTable[HTTPHandle]->SetHTTPConfig(opt,parameter) );
+			return ( RealHTTPHandle->SetHTTPConfig(opt,parameter) );
 		}
 	}
 	return(0);
@@ -175,9 +177,10 @@ HTTPSTR	HTTPAPI::GetHTTPConfig(HTTPHANDLE HTTPHandle,enum HttpOptions opt)
 		return ( GlobalHTTPCoreApiOptions.GetHTTPConfig(opt) );
 	} else
 	{
-		if ((HTTPHandle>=0) && (HTTPHandle<MAXIMUM_OPENED_HANDLES) )
+		HTTPAPIHANDLE *RealHTTPHandle = GetHTTPAPIHANDLE(HTTPHandle);
+		if (RealHTTPHandle)		
 		{
-			return ( HTTPHandleTable[HTTPHandle]->GetHTTPConfig(opt) );
+			return ( RealHTTPHandle->GetHTTPConfig(opt) );
 		} 
 	}
 	return(0);
@@ -302,6 +305,7 @@ void  HTTPAPI::CleanConnectionTable(LPVOID *unused)
 /*******************************************************************************************************/
 class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTPHandle, httpdata* request)
 {
+	if (!HTTPHandle) return(NULL);
 	ConnectionTablelock.LockMutex();
 	int TableIndex=-1;
 	int i;
@@ -356,8 +360,9 @@ httpdata* HTTPAPI::DispatchHTTPRequest(HTTPHANDLE HTTPHandle,httpdata* request)
 	httpdata* response = NULL;
 	class ConnectionHandling *conexion;
 	unsigned long ret = CBRET_STATUS_NEXT_CB_CONTINUE;
+	HTTPAPIHANDLE *RealHTTPApiHandle = GetHTTPAPIHANDLE(HTTPHandle);
 
-	conexion=GetSocketConnection(HTTPHandleTable[HTTPHandle],request);
+	conexion=GetSocketConnection(RealHTTPApiHandle,request);
 	if (!conexion)
 	{
 		return(NULL);
@@ -367,7 +372,7 @@ httpdata* HTTPAPI::DispatchHTTPRequest(HTTPHANDLE HTTPHandle,httpdata* request)
 	{
 		return(response);
 	}	
-	response = conexion->SendAndReadHTTPData(HTTPHandleTable[HTTPHandle],request);
+	response = conexion->SendAndReadHTTPData(RealHTTPApiHandle,request);
 	conexion->Setio(0);
 	ret = HTTPCallBack.DoCallBack(CBTYPE_CLIENT_RESPONSE ,HTTPHandle,request,response);
 
@@ -406,12 +411,11 @@ httpdata* HTTPAPI::BuildHTTPRequest(
 									HTTPCSTR PostData,
 									size_t PostDataSize)
 {
-	if ( (!url) || (*url!='/') )
+	if ( (!url) || (*url!=_T('/')) )
 	{
 		return ( NULL);
 	}
 
-	//class HTTPAPIHANDLE *RealHTTPHandle=(class HTTPAPIHANDLE *)HTTPHandleTable[HTTPHandle];
 	HTTPCHAR		tmp[MAX_HEADER_SIZE];
 	tmp[MAX_HEADER_SIZE-1]=0;
 
@@ -527,8 +531,8 @@ HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HT
 	int AuthMethod = 0;
 	HTTPSTR AuthenticationHeader;
 
-
-	class HTTPAPIHANDLE *RealHTTPHandle=(class HTTPAPIHANDLE *)HTTPHandleTable[HTTPHandle];
+	class HTTPAPIHANDLE *RealHTTPHandle=GetHTTPAPIHANDLE(HTTPHandle);
+	if (!RealHTTPHandle) return(NULL);
 	if ( (RealHTTPHandle->challenge) && (lpUsername) && (lpPassword) )/* Deal with authentication */
 	{
 		AuthMethod = 1;
@@ -539,22 +543,23 @@ HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HT
 			request->AddHeader(tmp);
 			break;
 		case DIGEST_AUTH:						
-			p=strchr(request->Header,' ');
+			p=strchr(request->Header,_T(' '));
 			if (p)
 			{
 				*p=0;
 				strncpy(HTTPMethod,request->Header,sizeof(HTTPMethod)-1);
 				HTTPMethod[sizeof(HTTPMethod)-1]=0;
-				*p=' '; p++;
-				q=strchr(p,' ');
+				*p=_T(' '); p++;
+				q=strchr(p,_T(' '));
 				if (q)
 				{
 					*q=0;
 					strncpy(url,p,sizeof(url)-1);
 					url[sizeof(url)-1]=0;
-					*q=' ';
+					*q=_T(' ');
 				}
 			}
+
 			if ( (!RealHTTPHandle->GetLastRequestedUri()) || (strcmp(RealHTTPHandle->GetLastRequestedUri(),url)!=0) && (RealHTTPHandle->GetLastAuthenticationString()==NULL) )
 			{   /*Send another request to check if authentication is required to get the www-authenticate header */
 				/* We cant reuse RealHTTPHandle->LastAuthenticationString now*/
@@ -565,12 +570,12 @@ HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HT
 				} else 
 				{
 					RealHTTPHandle->SetLastRequestedUri(url);
-					if (( response->HeaderSize>=12) && (memcmp(response->Header+9,"401",3)!=0) )
+					if (response->GetStatus()!=HTTP_STATUS_DENIED)
 					{   
 						break;
 					} else 
 					{
-						RealHTTPHandle->SetLastAuthenticationString(response->GetHeaderValue("WWW-Authenticate: Digest ",0));
+						RealHTTPHandle->SetLastAuthenticationString(response->GetHeaderValue(_T("WWW-Authenticate: Digest "),0));
 						delete response; response = NULL;
 					}
 				}
@@ -589,21 +594,21 @@ HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HT
 		case NTLM_AUTH:
 		case NEGOTIATE_AUTH:
 			unsigned char buf1[4096];
-			memset(buf1,'\0',sizeof(buf1));
-			snprintf(tmp,MAX_HEADER_SIZE-1,"Authorization: NTLM %s\r\n",GetNTLMBase64Packet1((char*)buf1));
+			memset(buf1,_T('\0'),sizeof(buf1));
+			snprintf(tmp,MAX_HEADER_SIZE-1,_T("Authorization: NTLM %s\r\n"),GetNTLMBase64Packet1((char*)buf1));
 			request->AddHeader(tmp);
 			response=DispatchHTTPRequest(HTTPHandle,request);
-			request->RemoveHeader("Authorization:");
+			request->RemoveHeader(_T("Authorization:"));
 			RealHTTPHandle->SetLastRequestedUri(url);
 			if (!response)
 			{ /* NTLM Negotiation failed */
 				return(NULL);
 			}
-			if (( response->HeaderSize>=12) &&(memcmp(response->Header+9,"401",3)==0))
+			if (response->GetStatus()==HTTP_STATUS_DENIED)
 			{   /*Parse NTLM Message Type 2 */
-				HTTPSTR NTLMresponse = response->GetHeaderValue("WWW-Authenticate: NTLM ",0);
+				HTTPSTR NTLMresponse = response->GetHeaderValue(_T("WWW-Authenticate: NTLM "),0);
 				if (!NTLMresponse)  break;  /* WWW-Authenticate: NTLM Header not Found */
-				snprintf(tmp,MAX_HEADER_SIZE-1,"Authorization: NTLM %s\r\n",GetNTLMBase64Packet3((char*)buf1,NTLMresponse,lpUsername,lpPassword));
+				snprintf(tmp,MAX_HEADER_SIZE-1,_T("Authorization: NTLM %s\r\n"),GetNTLMBase64Packet3((char*)buf1,NTLMresponse,lpUsername,lpPassword));
 				request->AddHeader(tmp);
 				free(NTLMresponse);
 				delete(response); response = NULL;
@@ -628,13 +633,20 @@ HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HT
 	}
 
 	RealHTTPHandle->SetLastRequestedUri(url);
-	RealHTTPHandle->challenge=response->GetSupportedAuthentication();
+	RealHTTPHandle->challenge=GetSupportedAuthentication(response);
+
 
 	//HTTPSession* DATA=(HTTPSession*)RealHTTPHandle->ParseReturnedBuffer(request, response);
 
 	HTTPSession *DATA = new HTTPSession;
-	DATA->ParseReturnedBuffer(HTTPHandle,request,response);
-	return DATA;
+	DATA->ParseReturnedBuffer(request,response);
+	strncpy(DATA->hostname,GetHTTPConfig(HTTPHandle,ConfigHTTPHost),sizeof(DATA->hostname)-1);
+	//printf("hostname: %s\n",DATA->hostname);
+	DATA->port = atoi ( GetHTTPConfig(HTTPHandle,ConfigHTTPPort) );
+	//DATA->ip=target;
+	DATA->NeedSSL = GetHTTPConfig(HTTPHandle,ConfigSSLConnection)!=NULL;
+
+	//return DATA;
 
 
 	if ( (DATA) && (RealHTTPHandle->challenge) && (DATA->status==401) && (!AuthMethod) && (lpUsername) && (lpPassword)  )
@@ -642,7 +654,7 @@ HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HT
 		HTTPSession* AUTHDATA=SendHttpRequest(HTTPHandle,request,lpUsername,lpPassword);
 		if (AUTHDATA)
 		{
-			DATA->request = NULL; /* We are reutilizing the same request, so avoid deleting memory twice */
+			DATA->request = NULL; /* We are reutilizing the same request, to avoid deleting memory twice */
 			delete DATA;
 			return(AUTHDATA);
 		}
@@ -654,17 +666,17 @@ HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HT
 		free(lpPath);
 	}
 
-#define ISREDIRECT(a) ((a==HTTP_STATUS_MOVED) || (a ==HTTP_STATUS_REDIRECT) || (a==HTTP_STATUS_REDIRECT_METHOD) )
+#define ISREDIRECT(a) ((a==HTTP_STATUS_MOVED) || (a ==HTTP_STATUS_REDIRECT) || (a==HTTP_STATUS_REDIRECT_METHOD)  || (a == HTTP_STATUS_REDIRECT_KEEP_VERB))
 	if ( (RealHTTPHandle->IsAutoRedirectEnabled()) && ISREDIRECT(DATA->status) && (RealHTTPHandle->GetMaximumRedirects()) )
 	{
 		RealHTTPHandle->DecrementMaximumRedirectsCount();
-		char *host = request->GetHeaderValue("Host:",0);
+		char *host = request->GetHeaderValue(_T("Host:"),0);
 		char *Location = GetPathFromLocationHeader(DATA->response,(GetHTTPConfig(HTTPHandle,ConfigSSLConnection)!=NULL),host);
 		free(host);
 
 		if (Location)
 		{
-			HTTPSession* RedirectedData = SendHttpRequest(HTTPHandle,NULL,"GET",Location,NULL,0,lpUsername,lpPassword);
+			HTTPSession* RedirectedData = SendHttpRequest(HTTPHandle,NULL,_T("GET"),Location,NULL,0,lpUsername,lpPassword);
 			free(Location);
 			if (RedirectedData)
 			{
@@ -740,25 +752,25 @@ char* HTTPAPI::GetPathFromLocationHeader(httpdata* response, int ssl, const char
 	if (!domain) {
 		return(NULL);
 	}
-	char *Location = response->GetHeaderValue("Location:",0);
+	char *Location = response->GetHeaderValue(_T("Location:"),0);
 	if (Location)
 	{
 		switch (*Location)
 		{
-		case '/': /* This does not Follows rfc however we should accept it */
+		case _T('/'): /* This does not Follows rfc however we should accept it */
 			return(Location);
-		case 'h':
-		case 'H':
+		case _T('h'):
+		case _T('H'):
 			if (strlen(Location)>=8 )
 			{
-				if (Location[4+ssl]==':')
+				if (Location[4+ssl]==_T(':'))
 				{
 					if (strncmp(Location+7+ssl,domain,strlen(domain))==0)
 					{
-						char *p=strchr(Location+7+ssl,'/');
+						char *p=strchr(Location+7+ssl,_T('/'));
 						if (p)
 						{
-							char *q = strdup(p);
+							char *q = _tcsdup(p);
 							free(Location);
 							return(q);
 						}
@@ -779,11 +791,11 @@ char* HTTPAPI::GetPathFromLocationHeader(httpdata* response, int ssl, const char
 /*******************************************************************************************/
 HTTPSession*	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
 {
-	int SSLREQUEST = ( (Fullurl[5]=='s') || ( Fullurl[5]=='S') );
+	int SSLREQUEST = ( (Fullurl[5]==_T('s')) || ( Fullurl[5]==_T('S')) );
 	int port;
 	HTTPSTR path = NULL;
 	HTTPSTR host =  (HTTPSTR)Fullurl + 7 +  SSLREQUEST;
-	HTTPSTR p = strchr(host,':');
+	HTTPSTR p = strchr(host,_T(':'));
 	if (!p)
 	{
 		if (SSLREQUEST)
@@ -793,29 +805,29 @@ HTTPSession*	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
 		{
 			port = 80;
 		}
-		HTTPSTR newpath=strchr(host,'/');
+		HTTPSTR newpath=strchr(host,_T('/'));
 		if (newpath)
 		{
-			path=strdup(newpath);
+			path=_tcsdup(newpath);
 			*newpath=0;
 		} else
 		{
-			path=strdup("/");
+			path=_tcsdup(_T("/"));
 		}
 	} else
 	{
 		*p=0;
 		p++;
-		HTTPSTR newpath=strchr(p,'/');
+		HTTPSTR newpath=strchr(p,_T('/'));
 		if (newpath)
 		{
-			path=strdup(newpath);
+			path=_tcsdup(newpath);
 			*newpath=0;
 			port = atoi(p);
 		} else
 		{
 			port = atoi(p);
-			path=strdup("/");
+			path=_tcsdup(_T("/"));
 		}
 	}
 
@@ -823,7 +835,7 @@ HTTPSession*	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
 
 	if (HTTPHandle !=INVALID_HHTPHANDLE_VALUE)
 	{
-		HTTPSession* data= SendHttpRequest(HTTPHandle,"GET",path);
+		HTTPSession* data= SendHttpRequest(HTTPHandle,_T("GET"),path);
 		EndHTTPConnectionHandle(HTTPHandle);
 		free(path);
 		return(data);
@@ -847,9 +859,13 @@ HTTPSession* HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers,
 		return(NULL);
 	}
 	HTTPSession *data = new HTTPSession;
-	data->ParseReturnedBuffer(HTTPHandle,request,response);
+	data->ParseReturnedBuffer(request,response);
+	strncpy(data->hostname,GetHTTPConfig(HTTPHandle,ConfigHTTPHost),sizeof(data->hostname)-1);
+	data->port = atoi ( GetHTTPConfig(HTTPHandle,ConfigHTTPPort) );
+	//data->ip=target;
+	data->NeedSSL = GetHTTPConfig(HTTPHandle,ConfigSSLConnection)!=NULL;
+
 	return data;
-	//return ( (HTTPSession*) HTTPHandleTable[HTTPHandle]->ParseReturnedBuffer( request,response) );
 
 }
 /*******************************************************************************************/
@@ -876,14 +892,14 @@ void HTTPAPI::BuildBasicAuthHeader(HTTPCSTR Header,HTTPCSTR lpUsername, HTTPCSTR
 	char RawUserPass[750];
 	char EncodedUserPass[1000];
 
-	RawUserPass[sizeof(RawUserPass)-1]='\0';
-	snprintf(RawUserPass,sizeof(RawUserPass)-1,"%s:%s",lpUsername,lpPassword);
+	RawUserPass[sizeof(RawUserPass)-1]=_T('\0');
+	snprintf(RawUserPass,sizeof(RawUserPass)-1,_T("%s:%s"),lpUsername,lpPassword);
 
 
 	encodebase64(EncodedUserPass,RawUserPass,(int)strlen(RawUserPass));
 	//int ret = Base64Encode((unsigned HTTPSTR )EncodedUserPass,(unsigned HTTPSTR)RawUserPass,(int)strlen(RawUserPass));	
 	//EncodedUserPass[ret]='\0';
-	snprintf(destination,dstsize-1,"%s: Basic %s\r\n",Header,EncodedUserPass);
+	snprintf(destination,dstsize-1,_T("%s: Basic %s\r\n"),Header,EncodedUserPass);
 
 }
 
@@ -907,7 +923,7 @@ void HTTPAPI::SendHTTPProxyErrorMessage( ConnectionHandling* connection,int conn
 	httpdata* request = this->BuildHTTPProxyResponseHeader( (connection->IsSSLInitialized()!=NULL),connectionclose, status,protocol, title, extra_header, "text/html", (int)strlen(tmp), -1 );
 
 	free(request->Data);
-	request->Data = strdup(tmp);
+	request->Data = _tcsdup(tmp);
 	request->DataSize=strlen(tmp);
 	connection->SendHttpRequest(request);
 	delete request;
@@ -1016,7 +1032,7 @@ int	HTTPAPI::InitHTTPProxy(HTTPCSTR hostname, unsigned short port)
 	{
 		BindPort=port;
 		strncpy(BindIpAdress,hostname,sizeof(BindIpAdress)-1);
-		BindIpAdress[sizeof(BindIpAdress)-1]='\0';
+		BindIpAdress[sizeof(BindIpAdress)-1]=_T('\0');
 		ForceDefaultHTTPPorts = 1;
 		AnonymousProxy        = 1;
 		AsyncHTTPRequest      = 0;
@@ -1174,7 +1190,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 						ret = BAD_REQUEST_CANT_PARSE_REQUEST;
 					} else
 					{
-						HTTPSTR lpPort=strchr(host,':');
+						HTTPSTR lpPort=strchr(host,_T(':'));
 						if (lpPort)
 						{
 							*lpPort=0;
@@ -1377,19 +1393,19 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 				break;
 				/* deal with some errors */
 			case BAD_REQUEST_NO_REQUEST_FOUND:
-				SendHTTPProxyErrorMessage( ClientConnection,1, 400, protocol,"Bad Request", (HTTPSTR) 0, "No request found." );
+				SendHTTPProxyErrorMessage( ClientConnection,1, 400, protocol,_T("Bad Request"), (HTTPSTR) 0, _T("No request found.") );
 				ConnectionClose = 1;
 				break;
 			case BAD_REQUEST_CANT_PARSE_REQUEST:
-				SendHTTPProxyErrorMessage(ClientConnection,1,  400, protocol,"Bad Request", (HTTPSTR) 0, "Can't parse request." );
+				SendHTTPProxyErrorMessage(ClientConnection,1,  400, protocol,_T("Bad Request"), (HTTPSTR) 0, _T("Can't parse request.") );
 				ConnectionClose = 1;
 				break;
 			case BAD_REQUEST_NULL_URL:
-				SendHTTPProxyErrorMessage( ClientConnection,1, 400,protocol, "Bad Request", (HTTPSTR) 0, "Null URL." );
+				SendHTTPProxyErrorMessage( ClientConnection,1, 400,protocol, _T("Bad Request"), (HTTPSTR) 0, _T("Null URL.") );
 				ConnectionClose = 1;
 				break;
 			default:
-				SendHTTPProxyErrorMessage( ClientConnection,1, 400, protocol,"Bad Request", (HTTPSTR) 0, "OMG! Unknown error =)" );
+				SendHTTPProxyErrorMessage( ClientConnection,1, 400, protocol,_T("Bad Request"), (HTTPSTR) 0, _T("OMG! Unknown error =)") );
 				ConnectionClose = 1;
 				break;
 			}			
@@ -1422,41 +1438,41 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 int HTTPAPI::ParseRequest(HTTPSTR line, HTTPSTR method,  HTTPSTR host, HTTPSTR path, int *port)
 {
 	int iport;
-	char protocol[10000];
-	char url[10000];
+	HTTPCHAR protocol[10000];
+	HTTPCHAR url[10000];
 
 
-	if ( (!line) || (*line=='\0')) return (BAD_REQUEST_NO_REQUEST_FOUND);
+	if ( (!line) || (*line==_T('\0'))) return (BAD_REQUEST_NO_REQUEST_FOUND);
 
-	if ( sscanf( line, "%[^ ] %[^ ] %[^ ]", method, url, protocol ) != 3 ) return(BAD_REQUEST_CANT_PARSE_REQUEST);
+	if ( sscanf( line, _T("%[^ ] %[^ ] %[^ ]"), method, url, protocol ) != 3 ) return(BAD_REQUEST_CANT_PARSE_REQUEST);
 
 	if ( url == (HTTPSTR) 0 ) return(BAD_REQUEST_NULL_URL);
 
-	if ( strnicmp( url, "http://", 7 ) == 0 )
+	if ( strnicmp( url, _T("http://"), 7 ) == 0 )
 	{
-		strncpy( url, "http", 4 );	/* make sure it's lower case */
-		if ( sscanf( url, "http://%[^:/]:%d%s", host, &iport, path ) == 3 )
+		strncpy( url, _T("http"), 4 );	/* make sure it's lower case */
+		if ( sscanf( url, _T("http://%[^:/]:%d%s"), host, &iport, path ) == 3 )
 			*port = (unsigned short) iport;
-		else if ( sscanf( url, "http://%[^/]%s", host, path ) == 2 )
+		else if ( sscanf( url, _T("http://%[^/]%s"), host, path ) == 2 )
 			*port = 80;
-		else if ( sscanf( url, "http://%[^:/]:%d", host, &iport ) == 2 )
+		else if ( sscanf( url, _T("http://%[^:/]:%d"), host, &iport ) == 2 )
 		{
 			*port = (unsigned short) iport;
-			strcpy(path,"/");
+			strcpy(path,_T("/"));
 		}
-		else if ( sscanf( url, "http://%[^/]", host ) == 1 )
+		else if ( sscanf( url, _T("http://%[^/]"), host ) == 1 )
 		{
 			*port = 80;
-			strcpy(path,"/");
+			strcpy(path,_T("/"));
 		} else
 		{
 			return (BAD_REQUEST_CANT_PARSE_REQUEST);
 		}
 	} else
 	{
-		if ( (ConnectMethodAllowed) && (strcmp(method,"CONNECT")==0) )
+		if ( (ConnectMethodAllowed) && (strcmp(method,_T("CONNECT"))==0) )
 		{
-			HTTPSTR p=strchr(url,':');
+			HTTPSTR p=strchr(url,_T(':'));
 			if (p)
 			{
 				*port = iport=atoi(p+1);
@@ -1481,16 +1497,16 @@ int HTTPAPI::SkipHeader(HTTPSTR header)
 		const char name[20];
 		int len;
 	} IgnoreHeaders[]= {
-		{ "Accept-Encoding:", 16},
+		{ _T("Accept-Encoding:"), 16},
 //		{ "Age:",              4},
 //		{ "Cache-Control:",   14},
-		{ "Connection:",      11},
-		{ "Content-Length:",  15},
-		{ "Host:",             5},
-		{ "Keep-Alive:",      11},
+		{ _T("Connection:"),      11},
+		{ _T("Content-Length:"),  15},
+		{ _T("Host:"),             5},
+		{ _T("Keep-Alive:"),      11},
 //		{ "Last-Modified:",   14},
-		{ "Proxy-Connection:",17},
-		{ "User-Agent:"      ,11}
+		{ _T("Proxy-Connection:"),17},
+		{ _T("User-Agent:")      ,11}
 	};
 	int ret;
 	unsigned int i=0;
@@ -1500,7 +1516,7 @@ int HTTPAPI::SkipHeader(HTTPSTR header)
 		i++;
 	} while ((i<sizeof(IgnoreHeaders)/sizeof(struct skipheader)) && (ret>0));
 
-	if ( (DisableBrowserCache)  && (  (strnicmp(header,"If-Modified-Since: ",19)==0) || ( strnicmp(header,"If-None-Match: ",15)==0)))
+	if ( (DisableBrowserCache)  && (  (strnicmp(header,_T("If-Modified-Since: "),19)==0) || ( strnicmp(header,_T("If-None-Match: "),15)==0)))
 	{
 		return(1);
 	}
@@ -1581,20 +1597,20 @@ void HTTPAPI::SetHTTPProxyConfig(enum HttpProxyoptions  opt,int parameter)
 char *HTTPAPI::GetPathFromURL(HTTPCSTR url)
 { /* Its assumed that *url == '/' */
 
-	char *FullURL=strdup(url);
-	char *p=FullURL;
-	char *end = NULL;
+	HTTPSTR FullURL=_tcsdup(url);
+	HTTPSTR p=FullURL;
+	HTTPSTR end = NULL;
 
 	while (*p)
 	{
 		switch (*p)
 		{
-		case '/':
+		case _T('/'):
 			end=p;
 			break;
-		case '?':
-		case '&':
-		case ';':
+		case _T('?'):
+		case _T('&'):
+		case _T(';'):
 			/* We can be sure that there is not parameters at the url so its recommended to check
 			if they exist and avoid them to give us wrong data */
 			if (end)
@@ -1628,7 +1644,7 @@ void HTTPAPI::ExtractCookiesFromResponseData(httpdata* response, HTTPCSTR lpPath
 		do
 		{
 			if (lpCookie) free(lpCookie);
-			lpCookie = response->GetHeaderValue("Set-Cookie:",n);
+			lpCookie = response->GetHeaderValue(_T("Set-Cookie:"),n);
 			if (lpCookie)
 			{
 				//printf("Extraido: %s\n",lpCookie);
@@ -1647,22 +1663,22 @@ httpdata* HTTPAPI::BuildHTTPProxyResponseHeader( int isSSLStablished,int closeco
 
 	now = time( (time_t*) 0 );
 	strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &now ) );
-	sprintf( headers,"%s %d %s\r\nServer: %s\r\nDate: %s\r\n", protocol, status, title,SERVER_NAME,timebuf );
+	sprintf( headers,_T("%s %d %s\r\nServer: %s\r\nDate: %s\r\n"), protocol, status, title,SERVER_NAME,timebuf );
 
-	if ( ( extra_header != (char*) 0 )  && (*extra_header) ) { 	sprintf(tmp, "%s\r\n", extra_header );	strcat(headers,tmp); }
-	if ( mime_type != (char*) 0 ) 	{ sprintf( tmp,"Content-Type: %s\r\n", mime_type ); strcat(headers,tmp); }
-	if ( length >= 0 ) 				{ sprintf(tmp, "Content-Length: %d\r\n", length );	strcat(headers,tmp); }
-	if ( mod != (time_t) -1 )		{ strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &mod ) );	sprintf( tmp,"Last-Modified: %s\r\n", timebuf ); strcat(headers,tmp); }
+	if ( ( extra_header != (char*) 0 )  && (*extra_header) ) { 	sprintf(tmp, _T("%s\r\n"), extra_header );	strcat(headers,tmp); }
+	if ( mime_type != (char*) 0 ) 	{ sprintf( tmp,_T("Content-Type: %s\r\n"), mime_type ); strcat(headers,tmp); }
+	if ( length >= 0 ) 				{ sprintf(tmp, _T("Content-Length: %d\r\n"), length );	strcat(headers,tmp); }
+	if ( mod != (time_t) -1 )		{ strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &mod ) );	sprintf( tmp,_T("Last-Modified: %s\r\n"), timebuf ); strcat(headers,tmp); }
 	if (closeconnection==1)
 	{
 		if (isSSLStablished)		  
-			sprintf( tmp,"Connection: close\r\n\r\n" );
+			sprintf( tmp,_T("Connection: close\r\n\r\n") );
 		else
-			sprintf( tmp,"Proxy-connection: close\r\n\r\n" ); 						  
+			sprintf( tmp,_T("Proxy-connection: close\r\n\r\n") ); 						  
 
 		strcat(headers,tmp);		
 	} else  { 
-		strcat(headers,"\r\n"); 
+		strcat(headers,_T("\r\n")); 
 	}
 	return new httpdata (headers);
 }
@@ -1727,4 +1743,48 @@ int HTTPAPI::InitProxyCTX(void)
 	}
 
 	return(1);
+}
+
+
+/*******************************************************************************************************/
+enum AuthenticationType HTTPAPI::GetSupportedAuthentication(httpdata *response)
+{
+	int ret=NO_AUTH;
+	int i=0;
+	char *auth;
+	const char AuthNeeded[] = _T("WWW-Authenticate:");
+
+	do 
+	{
+		auth=response->GetHeaderValue(AuthNeeded,i++);
+		if (auth) {
+			if (strnicmp (auth, _T("basic"),  5) == 0) {
+				if (!(ret & BASIC_AUTH)) ret+=BASIC_AUTH;
+			}  else
+				if (strnicmp (auth, _T("digest"), 6) == 0) {
+					if (!(ret & DIGEST_AUTH)) ret+=DIGEST_AUTH;
+				} else
+					if (strnicmp (auth, _T("ntlm"),   4) == 0) {
+						if (!(ret & NTLM_AUTH)) ret+=NTLM_AUTH;
+					} else
+						if (strnicmp (auth, _T("Negotiate"),   9) == 0) {
+							if (!(ret & NTLM_AUTH)) ret+=NEGOTIATE_AUTH;
+						} else {
+							if (!(ret & UNKNOWN_AUTH)) ret+=UNKNOWN_AUTH;
+						}
+						free(auth);
+		}
+	} while (auth) ;
+	
+	if (ret != NO_AUTH)
+	{
+		if (ret & BASIC_AUTH) 	return(BASIC_AUTH);
+		if (ret & DIGEST_AUTH) 	return(DIGEST_AUTH);
+		if (ret & NTLM_AUTH) 		return(NTLM_AUTH);
+		if (ret & NEGOTIATE_AUTH) return(NEGOTIATE_AUTH);
+	}
+	return(NO_AUTH);
+	
+
+
 }

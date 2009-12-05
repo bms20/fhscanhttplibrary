@@ -80,7 +80,7 @@ int HTTPCALLBACK::RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALL
     CBList[CBItems-1].cb=cb;
 	if (Description)
 	{
-		CBList[CBItems-1].lpDescription = strdup(Description);
+		CBList[CBItems-1].lpDescription = _tcsdup(Description);
 	} else {
 		CBList[CBItems-1].lpDescription = NULL;
 	}

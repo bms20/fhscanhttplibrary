@@ -7,6 +7,7 @@
   \brief This struct handles information related to and http response and includes information about client request, server response, url, server version .returned by an HTTP Server
 */
 struct HTTPSession {
+public:
 	HTTPCHAR hostname[256];
    /*!< hostname of the server. This is related to the vhost parameter. If no vhost is specified, hostname contains the ip address. */
    int ip;
@@ -31,14 +32,13 @@ struct HTTPSession {
    /*!< status code returned by the HTTP server. Example: "200", for an STATUS OK response. */
    HTTPSTR ContentType;
    /*!< Response Content-Type */
-public:
+
 	HTTPSession();
 	~HTTPSession();
    int IsValidHTTPResponse(void);
    int HasResponseHeader(void);
    int HasResponseData(void);
-   void ParseReturnedBuffer(HTTPHANDLE HTTPHandle,struct httpdata *HTTPrequest, struct httpdata *HTTPresponse);
-} ;
+   void ParseReturnedBuffer(struct httpdata *HTTPrequest, struct httpdata *HTTPresponse);} ;
 
 
 #endif

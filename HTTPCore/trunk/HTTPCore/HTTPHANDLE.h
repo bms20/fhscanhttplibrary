@@ -131,32 +131,27 @@ public:
 	int SetHTTPConfig(int,HTTPCSTR);
 	int SetHTTPConfig(int,int);
 	HTTPSTR GetHTTPConfig(enum HttpOptions);
+
+	//Authentication related
 	char *GetLastRequestedUri(void);
 	void SetLastRequestedUri(HTTPCSTR url);
 	char *GetLastAuthenticationString() { return LastAuthenticationString; }
 	void SetLastAuthenticationString(char *authstring);
-	void *ParseReturnedBuffer(struct httpdata *request, struct httpdata *response);
 
-
-//Definir como metodos restringidos a CONEXION!
-long GetTarget() { return target; }
-unsigned short GetPort() { return(port); }
-
+	//Connection related
+	long GetTarget() { return target; }
+	unsigned short GetPort() { return(port); }
 	int GetThreadID() { return ThreadID; }
 	
 
-	//Connection links
-
-	void *GetConnectionptr() { return conexion; }
+	//void *GetConnectionptr() { return conexion; }
 	void SetConnection(void *connection) { conexion = connection; }	
 	void *GetClientConnection() { return ClientConnection; }
 	void SetClientConnection(void *Client_Connection) { ClientConnection = Client_Connection; }
 
 	
 	char *GetAdditionalHeaderValue(HTTPCSTR value,int n);
-//	int IsCookieSupported(void) { return CookieSupported; }
 	int IsAutoRedirectEnabled(void) { return ( AutoRedirect); }
-
 	int GetMaximumRedirects(void) { return (MaximumRedirects); }
 	void DecrementMaximumRedirectsCount(void) { MaximumRedirects--; }
 	void ResetMaximumRedirects(void) { MaximumRedirects = MAXIMUM_HTTP_REDIRECT_DEPTH; }

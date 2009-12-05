@@ -78,20 +78,24 @@ public:
 	void InitHTTPData(HTTPCSTR header, HTTPCSTR lpPostData);
 	void InitHTTPData(HTTPCSTR header,size_t  headersize, HTTPCSTR lpPostData,size_t  PostDataSize);
 	~httpdata();
+#ifdef UNICODE
+/* Need extra methods */
+	void InitHTTPDataA(char* header,size_t headersize, char* lpPostData,size_t PostDataSize);
+	//httpdata(char* header, size_t  headersize);
+#endif
 
 	/* Header manipulation */
-	char *GetHeaderValue(HTTPCSTR value,int n);
-	char *GetHeaderValueByID(unsigned int id);
-	char *AddHeader(HTTPCSTR Header);
-	char *RemoveHeader(HTTPCSTR Header);	
+	HTTPSTR GetHeaderValue(HTTPCSTR value,int n);
+	HTTPSTR GetHeaderValueByID(unsigned int id);
+	HTTPSTR AddHeader(HTTPCSTR Header);
+	HTTPSTR RemoveHeader(HTTPCSTR Header);	
 	
 
 	/* Information gathering */
 	char			*GetServerVersion();
 	int 			 GetStatus();
 	char			*GetRequestedURL();
-	char			*GetHTTPMethod();
-	enum AuthenticationType GetSupportedAuthentication(void);
+	char			*GetHTTPMethod();	
 
 	void UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping);
 

@@ -226,9 +226,21 @@ void ConnectionHandling::Disconnect(int level)
 
 int ConnectionHandling::SendHttpRequest(httpdata* request)
 {
+
+#ifdef UNICODE
+// Convert a Unicode string to an ASCII string
+char *Header = (char*)malloc(resquest->HeaderSize+1);
+WideCharToMultiByte(CP_ACP, 0, resquest->Header, -1, Header, resquest->HeaderSize+1, NULL, NULL);
+#endif
+
 	if (ssl) 
 	{
+#ifdef UNICODE
+		int err=SSL_WRITE(ssl, Header, (int)request->HeaderSize);
+		free(Header);
+#else
 		int err=SSL_WRITE(ssl, request->Header, (int)request->HeaderSize);
+#endif
 		if (err>0)
 		{
 			if (request->DataSize)
@@ -245,8 +257,12 @@ int ConnectionHandling::SendHttpRequest(httpdata* request)
 		}
 	} else
 	{
-
+#ifdef UNICODE
+		int err = send(datasock, Header, (int)request->HeaderSize, 0);
+		free(Header);
+#else
 		int err = send(datasock, request->Header, (int)request->HeaderSize, 0);
+#endif
 		if (err > 0)
 		{
 			if (request->DataSize)
@@ -366,6 +382,7 @@ int ConnectionHandling::ReadBytes(char *buf, size_t bufSize, struct timeval *tv)
 
 double ConnectionHandling::ReadChunkNumber(char *encodedData, size_t encodedlen, char *chunkcode)
 {
+	/* No Unicode conversion needed */
 	char *p;
 	if (encodedlen<=2)
 	{
@@ -430,11 +447,19 @@ httpdata *GetHttpHeadersFromBuffer(char *lpBuffer)
 	{
 		return(NULL);
 	}
-	return ( new httpdata (lpBuffer,(HeadersEnd - lpBuffer) + offset) );
+	httpdata *response = new httpdata;
+#ifdef UNICODE	
+	response->InitHTTPDataA(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
+#else
+	response->InitHTTPData(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
+#endif
+	//return ( new httpdata (lpBuffer,(HeadersEnd - lpBuffer) + offset) );
+	return (response);
 }
 /************************************************************************************************************************/
 int ConnectionHandling::SendBufferToProxyClient(class ConnectionHandling *ProxyClientConnection, char *buf,int read_size)
 {
+	/* No Unicode conversion needed */
 	if (ProxyClientConnection)
 	{
 		int ret;
@@ -451,8 +476,6 @@ int ConnectionHandling::SendBufferToProxyClient(class ConnectionHandling *ProxyC
 	return(1);
 }
 /************************************************************************************************************************/
-
-
 
 httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request, int *ErrorCode)
 {
@@ -567,28 +590,28 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					{
                     	BytesToBeReaded = 0;
 					}
-					if (response->Header[7] =='0') ConnectionClose = 1;
+					if (response->Header[7] ==_T('0')) ConnectionClose = 1;
 					
-						char *p = response->GetHeaderValue("Connection:", 0);
+						HTTPSTR p = response->GetHeaderValue(_T("Connection:"), 0);
 						if (p)
 						{
-							if (strnicmp(p, "close", 7) == 0)
+							if (strnicmp(p, _T("close"), 7) == 0)
 							{
 								ConnectionClose = 1;
-							} else if (strnicmp(p, "Keep-Alive", 10) == 0)
+							} else if (strnicmp(p, _T("Keep-Alive"), 10) == 0)
 							{
 								ConnectionClose = 0;
 							}
 							free(p);
 						} else
 						{
-							p = response->GetHeaderValue("Proxy-Connection:", 0);
+							p = response->GetHeaderValue(_T("Proxy-Connection:"), 0);
 							if (p)
 							{
-								if (strnicmp(p, "close", 7) == 0)
+								if (strnicmp(p, _T("close"), 7) == 0)
 								{
 									ConnectionClose = 1;
-								} else if (strnicmp(p, "Keep-Alive", 10) == 0)
+								} else if (strnicmp(p, _T("Keep-Alive"), 10) == 0)
 								{
 									ConnectionClose = 0;
 								}
@@ -596,7 +619,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 							}
 						}
 
-					p = response->GetHeaderValue("Content-Length:", 0);
+					p = response->GetHeaderValue(_T("Content-Length:"), 0);
 					if (p)
 					{
 						if (*p== '-') //Negative Content Length
@@ -994,7 +1017,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 							HTTPProxyClientRequestBuffer = (char*)malloc(ContentLength-BufferSize+1);
 							memcpy( HTTPProxyClientRequestBuffer,lpBuffer + ContentLength, ContentLength-BufferSize);
 
-							//strdup(lpBuffer + ContentLength);
+							//_tcsdup(lpBuffer + ContentLength);
 							//HTTPProxyClientRequestSize = BufferSize -ContentLength;
 						}
 					} else
