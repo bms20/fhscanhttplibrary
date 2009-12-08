@@ -47,34 +47,55 @@ encoders::~encoders()
 
 
 /*************************************************************************************/
-char *encoders::GetNTLMBase64Packet1(char* destination)
+HTTPCHAR *encoders::GetNTLMBase64Packet1(HTTPCHAR* destination)
 {
 	unsigned char NTLMHeader[4096];
 	memset(NTLMHeader,'\0',sizeof(NTLMHeader));
 
 	BuildAuthRequest((tSmbNtlmAuthRequest*)NTLMHeader,0,NULL,NULL);
-	return ( encodebase64(destination,(char*)NTLMHeader,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMHeader)));
+	#ifdef UNICODE
+	char destinationAscii[4096];
+	encodebase64A(destinationAscii,(char*)NTLMHeader,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMHeader)));
+	MultiByteToWideChar(CP_ACP, 0, destinationAscii, -1, destination, 4096);
+	return(destination);
+	#else
+	return ( encodebase64A(destination,(char*)NTLMHeader,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMHeader)));
+	#endif
 }
 /*************************************************************************************/
-char *encoders::GetNTLMBase64Packet3(char*destination, const char* NTLMresponse, HTTPCSTR lpUsername, const char* lpPassword)
+HTTPCHAR *encoders::GetNTLMBase64Packet3(HTTPCHAR* destination, const HTTPCHAR* NTLMresponse, HTTPCSTR lpUsername, HTTPCSTR lpPassword)
 {
-	char *NTLMPacket2[4096];
-	unsigned char *NTLMPacket3[4096];
+	char NTLMPacket2[4096];
+	char NTLMPacket3[4096];
+
 	memset(NTLMPacket2,0,sizeof(NTLMPacket2));
 	memset(NTLMPacket3,0,sizeof(NTLMPacket3));
 
-	decodebase64((char*)NTLMPacket2,NTLMresponse);
-	//from64tobits((HTTPSTR )&buf1[0], NTLMresponse); /* Build NTLM Message Type 3 */
-	
+#ifdef UNICODE
+	char NTLMresponseAscii[4096];
+	WideCharToMultiByte(CP_ACP, 0, NTLMresponse, -1, NTLMresponseAscii, 4096, NULL, NULL);
+	decodebase64A((char*)NTLMPacket2,NTLMresponseAscii);
+	char lpUsernameAscii[256];
+	char lpPasswordAscii[256];
+	WideCharToMultiByte(CP_ACP, 0, lpUsername, -1, lpUsernameAscii, 256, NULL, NULL);
+	WideCharToMultiByte(CP_ACP, 0, lpPassword, -1, lpPasswordAscii, 256, NULL, NULL);
+	/* Our NTLM library does not support Unicode, so we must convert data to an Ascii string*/
+	buildAuthResponse((tSmbNtlmAuthChallenge*)NTLMPacket2,(tSmbNtlmAuthResponse*)NTLMPacket3,0,lpUsernameAscii,lpPasswordAscii,NULL,NULL);
+	char destinationAscii[4096];
+	encodebase64A((char*)destinationAscii,(const char*)NTLMPacket3,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMPacket3));
+	MultiByteToWideChar(CP_ACP, 0, destinationAscii, -1, destination, 4096);
+#else
+	decodebase64A((char*)NTLMPacket2,NTLMresponse);
 	buildAuthResponse((tSmbNtlmAuthChallenge*)NTLMPacket2,(tSmbNtlmAuthResponse*)NTLMPacket3,0,lpUsername,lpPassword,NULL,NULL);
-	encodebase64((char*)destination,(const char*)NTLMPacket3,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMPacket3));
+	encodebase64A((char*)destination,(const char*)NTLMPacket3,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMPacket3));
+#endif
 	return (destination);
 
 }
 /*************************************************************************************/
 
 
-char* encoders::decodebase64(char *lpoutput, HTTPCSTR input)
+char* encoders::decodebase64A(char *lpoutput, const char* input)
 {
 	int inputlen = (int)strlen(input);
 	int outputlen = (inputlen * 3) /4 +1;    /*estimated */
@@ -99,10 +120,9 @@ char* encoders::decodebase64(char *lpoutput, HTTPCSTR input)
 	}
 	free(output);
 	return(NULL);
-
 }
-
-char* encoders::encodebase64(char *lpoutput, HTTPCSTR input, size_t inputlen)
+/*************************************************************************************/
+char* encoders::encodebase64A(char *lpoutput, char* input, size_t inputlen)
 {
 	if (inputlen)
 	{
@@ -132,7 +152,81 @@ char* encoders::encodebase64(char *lpoutput, HTTPCSTR input, size_t inputlen)
 	return(NULL);
 }
 
-unsigned char* encoders::GetMD2BinaryHash(char *lpoutput, HTTPCSTR data, size_t len)
+#ifdef UNICODE
+HTTPCHAR* encoders::decodebase64W(HTTPCHAR *lpoutputW, const HTTPCHAR* inputW)
+{
+	char *input = (char*)malloc(wcslen(inputW)+1);
+	WideCharToMultiByte(CP_ACP, 0, inputW, -1, input, wcslen(inputW)+1, NULL, NULL);
+
+	int inputlen = (int)strlen(input);
+	int outputlen = (inputlen * 3) /4 +1;    /*estimated */
+	char *output = NULL;
+	output = (char*) malloc( outputlen );
+
+	BIO * b642  = BIO_NEW(BIO_F_BASE64());
+	BIO_SET_FLAGS(b642, BIO_FLAGS_BASE64_NO_NL);
+	BIO * bmem2 = BIO_NEW_MEM_BUF((void*)input,inputlen);
+	bmem2 = BIO_PUSH(b642, bmem2);
+	int olen = BIO_READ(bmem2, output, outputlen);
+	BIO_FREE_ALL(bmem2);
+	if (olen>0)
+	{
+		if (lpoutputW)
+		{
+			MultiByteToWideChar(CP_ACP, 0, output, olen, lpoutputW, olen+1);
+			free(output);
+			output[olen]=0;
+			return(output);
+		} else {
+			outputW = (HTTPCHAR*)malloc(olen * sizeof(HTTPCHAR)+1);
+			MultiByteToWideChar(CP_ACP, 0, output, olen, outputW, olen+1);
+			free(output);
+			outputW[olen]=0;
+			return(outputW);
+		}
+	}
+	free(output);
+	return(NULL);
+}
+/*************************************************************************************/
+HTTPCHAR* encoders::encodebase64W(HTTPCHAR *lpoutputW, HTTPCSTR inputW, size_t inputlen)
+{
+	if (inputlen)
+	{
+		char *input = (char*)malloc(inputlen);
+		WideCharToMultiByte(CP_ACP, 0, inputW, inputlen, input, inputlen NULL, NULL);
+
+		BIO * b642  = BIO_NEW(BIO_F_BASE64());
+		BIO * bmem2 = BIO_NEW(BIO_S_MEM());
+		b642 = BIO_PUSH(b642, bmem2);
+		BIO_WRITE(b642, input, (int)inputlen);
+		BIO_CTRL(b642,BIO_CTRL_FLUSH,0,NULL);
+		BUF_MEM *bptr = NULL;
+		BIO_GET_MEM_PTR(b642, &bptr);
+		if ( (bptr) && (bptr->length) )
+		{
+			
+			if (lpoutput)
+			{
+				MultiByteToWideChar(CP_ACP, 0, bptr->data, bptr->length, lpoutputW, bptr->length+1);
+				lpoutputW[bptr->length]=0;
+				return(lpoutputW);
+			} else {
+				HTTPCHAR* outputW=(HTTPCHAR*)malloc(bptr->length+1);
+				MultiByteToWideChar(CP_ACP, 0, bptr->data, bptr->length, outputW, bptr->length+1);
+				outputW[bptr->length]=0;
+				return(outputW);
+			}
+		}
+	}
+	return(NULL);
+}
+#endif
+
+
+
+
+unsigned char* encoders::GetMD2BinaryHash(char *lpoutput, const char* data, size_t len)
 {
 	unsigned char *output;
 	if (lpoutput)
@@ -148,7 +242,7 @@ unsigned char* encoders::GetMD2BinaryHash(char *lpoutput, HTTPCSTR data, size_t 
 	return(output);
 }
 
-char* encoders::GetMD2TextHash(char *lpoutput, HTTPCSTR data, size_t len)
+char* encoders::GetMD2TextHash(char *lpoutput, const char* data, size_t len)
 {
 	unsigned char md2sum[16];	
 	unsigned char *result;
@@ -172,7 +266,7 @@ char* encoders::GetMD2TextHash(char *lpoutput, HTTPCSTR data, size_t len)
 	return((char*)result);
 }
 
-unsigned char* encoders::GetMD4BinaryHash(char *lpoutput, HTTPCSTR data, size_t len)
+unsigned char* encoders::GetMD4BinaryHash(char *lpoutput, const char* data, size_t len)
 {
 	unsigned char *result;
 	if (lpoutput)
@@ -189,7 +283,7 @@ unsigned char* encoders::GetMD4BinaryHash(char *lpoutput, HTTPCSTR data, size_t 
 	return(result);
 }
 
-char* encoders::GetMD4TextHash(char *lpoutput, HTTPCSTR data, size_t len)
+char* encoders::GetMD4TextHash(char *lpoutput, const char* data, size_t len)
 {
 	unsigned char md4sum[16];
 	unsigned char *result;
@@ -215,7 +309,7 @@ char* encoders::GetMD4TextHash(char *lpoutput, HTTPCSTR data, size_t len)
 	return((char*)result);
 }
 
-unsigned char* encoders::GetMD5BinaryHash(char *lpoutput, HTTPCSTR data, size_t len)
+unsigned char* encoders::GetMD5BinaryHash(char *lpoutput, const char* data, size_t len)
 {
 	unsigned char *result ;
 	if (lpoutput)
@@ -232,7 +326,7 @@ unsigned char* encoders::GetMD5BinaryHash(char *lpoutput, HTTPCSTR data, size_t 
 	return(result);
 }
 
-char* encoders::GetMD5TextHash(char *lpoutput, HTTPCSTR data, size_t len)
+char* encoders::GetMD5TextHashA(char *lpoutput, const char* data, size_t len)
 {
 	unsigned char md5sum[16];
 	unsigned char *result;
@@ -260,8 +354,21 @@ char* encoders::GetMD5TextHash(char *lpoutput, HTTPCSTR data, size_t len)
 }
 
 /******************************************************************************/
-
-unsigned char* encoders::GetSHA1BinaryHash(char *lpoutput, HTTPCSTR data, size_t len)
+#ifdef UNICODE
+HTTPCHAR* encoders::GetMD5TextHashW(HTTPCHAR *lpoutputW, const HTTPCHAR* dataW, size_t len)
+{
+	
+	char *data = (char*)malloc(len+1);
+	char result[32+1];
+	WideCharToMultiByte(CP_ACP, 0, dataW, len, data, len, NULL, NULL);
+	GetMD5TextHashA(result,data,len);
+	free(data);
+	MultiByteToWideChar(CP_ACP, 0, result, 32, lpoutputW, 32);
+	return(lpoutputW);
+}
+#endif
+/******************************************************************************/
+unsigned char* encoders::GetSHA1BinaryHash(char *lpoutput, const char* data, size_t len)
 {
 	unsigned char *result;
 	if (lpoutput)
@@ -277,7 +384,7 @@ unsigned char* encoders::GetSHA1BinaryHash(char *lpoutput, HTTPCSTR data, size_t
 	return(result);
 }
 
-char* encoders::GetSHA1TextHash(char *lpoutput, HTTPCSTR data, size_t len)
+char* encoders::GetSHA1TextHash(char *lpoutput, const char* data, size_t len)
 {
 	unsigned char sha1sum[20];
 	unsigned char *result;
@@ -304,7 +411,7 @@ char* encoders::GetSHA1TextHash(char *lpoutput, HTTPCSTR data, size_t len)
 }
 
 
-char *encoders::CreateDigestAuth(char *AuthenticationHeader, HTTPCSTR lpUsername, HTTPCSTR lpPassword, HTTPCSTR method,HTTPCSTR uri, int counter)
+HTTPCHAR *encoders::CreateDigestAuth(HTTPCSTR AuthenticationHeader, HTTPCSTR lpUsername, HTTPCSTR lpPassword, HTTPCSTR method,HTTPCSTR uri, int counter)
 {
 	/*
 AuthenticationHeader is supoused to be in the following format:
@@ -312,75 +419,75 @@ realm="testrealm@host.com",qop="auth,auth-int",nonce="dcd98b7102dd2f0e8b11d0f600
 //char test[]="WWW-Authenticate: Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
 //char test[]="realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
 */
-char *realm=NULL;
-char *nonce=NULL;
-char *opaque=NULL;
-char *domain=NULL;
-char *algorithm=NULL;
-char *qop = NULL;
+HTTPCHAR *realm=NULL;
+HTTPCHAR *nonce=NULL;
+HTTPCHAR *opaque=NULL;
+HTTPCHAR *domain=NULL;
+HTTPCHAR *algorithm=NULL;
+HTTPCHAR *qop = NULL;
 
-char *trozo;
-char buffer[1024];
+HTTPCHAR *trozo;
+HTTPCHAR buffer[1024];
 
 //response data
-char HAI[32+1];
-char HAII[32+1];
-char response[32+1];
-char data[1024];
-char tmp[1024];
+HTTPCHAR HAI[32+1];
+HTTPCHAR HAII[32+1];
+HTTPCHAR response[32+1];
+HTTPCHAR data[1024];
+HTTPCHAR tmp[1024];
 unsigned int cnonceI;
 unsigned int cnonceII;
 unsigned int cnonceIII;
 unsigned int cnonceIV;
-char cnonce[32+1];
-char *resultado;
+HTTPCHAR cnonce[32+1];
+HTTPCHAR *resultado;
 int qopdefined =0;
 
 if (!AuthenticationHeader) return (NULL);
-if (strlen(AuthenticationHeader)>sizeof(buffer)-1) {
+if (_tcslen(AuthenticationHeader)>1024-1) {
 	#ifdef _DBG_
 	printf("[*] WARNING: POSSIBLE BUFFER OVERFLOW ON REMOTE AUTHENTICATON HEADER\n%s\n",AuthenticationHeader);
 	#endif
  	return(NULL);
 }
- strncpy(buffer,AuthenticationHeader,sizeof(buffer)-1);
+ _tcsncpy(buffer,AuthenticationHeader,1024-1);
 
- trozo=strtok(buffer,",");
+ trozo=strtok(buffer,_T(","));
  while (trozo !=NULL)
  {
 	 while (trozo[0]==' ') trozo++;
 
-	 if (strnicmp(trozo,"realm=\"",7)==0) {
+	 if (strnicmp(trozo,_T("realm=\""),7)==0) {
 		 realm=_tcsdup(trozo+7);
-		 realm[strlen(realm)-1]='\0';
+		 realm[strlen(realm)-1]=0;
 	 }   else
-	 if (strnicmp(trozo,"nonce=\"",7)==0) {
+	 if (strnicmp(trozo,_T("nonce=\""),7)==0) {
 		 nonce=_tcsdup(trozo+7);
-		 nonce[strlen(nonce)-1]='\0';
+		 nonce[strlen(nonce)-1]=0;
 	 }   else
-	 if (strnicmp(trozo,"opaque=\"",8)==0) {
+	 if (strnicmp(trozo,_T("opaque=\""),8)==0) {
 		 opaque=_tcsdup(trozo+8);
-		 opaque[strlen(opaque)-1]='\0';
+		 opaque[strlen(opaque)-1]=0;
 	 } else
-	 if (strnicmp(trozo,"domain=\"",8)==0) {
+	 if (strnicmp(trozo,_T("domain=\""),8)==0) {
 		 domain=_tcsdup(trozo+8);
-		 domain[strlen(domain)-1]='\0';
+		 domain[strlen(domain)-1]=0;
 		//free(domain); //Unused :?
 	 } else
-	 if (strnicmp(trozo,"algorithm=\"",11)==0) {
+	 if (strnicmp(trozo,_T("algorithm=\""),11)==0) {
 		 algorithm=_tcsdup(trozo+11);
-		 algorithm[strlen(algorithm)-1]='\0';
+		 algorithm[strlen(algorithm)-1]=0;
 	 } else
 	 if (strnicmp(trozo,"algorithm=",10)==0) {
 		 algorithm=_tcsdup(trozo+10);
 	 } else
-	 if (strnicmp(trozo,"qop=\"",5)==0) {
+	 if (strnicmp(trozo,_T("qop=\""),5)==0) {
 		 qop=_tcsdup(trozo+5);
-		 qop[strlen(qop)-1]='\0';
+		 qop[strlen(qop)-1]=0;
 	 }
 
 
-	 trozo=strtok(NULL,",");
+	 trozo=strtok(NULL,_T(","));
  }
  if ( (!realm) || (!nonce)  )
  {
@@ -400,43 +507,43 @@ cnonceI=rand()*rand();
 cnonceII=rand()*rand();
 cnonceIII=rand()*rand();
 cnonceIV=rand()*rand();
-memset(data,'\0',sizeof(data));
+memset(data,0,sizeof(data));
 sprintf(cnonce,"%8.8X%8.8X%8.8X%8.8X",cnonceI,cnonceII,cnonceIII,cnonceIV);
 
-snprintf(tmp,sizeof(tmp),"Authorization: Digest username=\"%s\", ",lpUsername);
+snprintf(tmp,sizeof(tmp),_T("Authorization: Digest username=\"%s\", "),lpUsername);
 strncpy(data,tmp,sizeof(data)-1);
 
-snprintf(tmp,sizeof(tmp),"realm=\"%s\", ",realm);
-strncat(data,tmp,sizeof(data)-strlen(data)-1);
+snprintf(tmp,sizeof(tmp),_T("realm=\"%s\", "),realm);
+_tcsncat(data,tmp,sizeof(data)-strlen(data)-1);
 
-snprintf(tmp,sizeof(tmp),"nonce=\"%s\", ",nonce);
-strncat(data,tmp,sizeof(data)-strlen(data)-1);
+snprintf(tmp,sizeof(tmp),_T("nonce=\"%s\", "),nonce);
+_tcsncat(data,tmp,sizeof(data)-strlen(data)-1);
 
-snprintf(tmp,sizeof(tmp),"uri=\"%s\", ",uri);
-strncat(data,tmp,sizeof(data)-strlen(data)-1);
+snprintf(tmp,sizeof(tmp),_T("uri=\"%s\", "),uri);
+_tcsncat(data,tmp,sizeof(data)/sizeof(HTTPCHAR)-strlen(data)-1);
 
-if (algorithm) strncat(data,"algorithm=MD5, ",sizeof(data)-strlen(data)-1);
+if (algorithm) _tcsncat(data,_T("algorithm=MD5, ")/sizeof(HTTPCHAR),sizeof(data)-strlen(data)-1);
 
-snprintf(tmp,sizeof(tmp),"%s:%s:%s",lpUsername,realm,lpPassword);
+snprintf(tmp,sizeof(tmp),_T("%s:%s:%s"),lpUsername,realm,lpPassword);
 //Getmd5Hash(tmp,(int) strlen(tmp),(unsigned char*)&HAI[0]);
-GetMD5TextHash((char*)&HAI[0],tmp,(int) strlen(tmp));
+GetMD5TextHash((HTTPCHAR*)&HAI[0],tmp,(int) strlen(tmp));
 //printf("HA1: %s - %s\n",tmp,HAI);
 
 	if (qop)
 	{
-		if ( (strcmp(qop,"auth")==0) || (strncmp(qop,"auth,",5)==0))
+		if ( (strcmp(qop,_T("auth"))==0) || (_tcsnccmp(qop,_T("auth,"),5)==0))
 			qopdefined =1;
-		else if (strcmp(qop,"auth-int")==0)
+		else if (strcmp(qop,_T("auth-int"))==0)
 			qopdefined = 2;
 	}
 
 	if (qopdefined==2) { //TODO: FIX
-		char entityBody[]="";
-		snprintf(tmp,sizeof(tmp),"%s:%s:%s",method,uri,entityBody);
+		HTTPCHAR entityBody[]=_T("");
+		snprintf(tmp,sizeof(tmp),_T("%s:%s:%s"),method,uri,entityBody);
 	} else
-		snprintf(tmp,sizeof(tmp),"%s:%s",method,uri);
+		snprintf(tmp,sizeof(tmp),_T("%s:%s"),method,uri);
 		//Getmd5Hash(tmp,(int) strlen(tmp),(unsigned char*)&HAII);
-		GetMD5TextHash((char*)&HAII,tmp,(int) strlen(tmp));
+		GetMD5TextHash((HTTPCHAR*)&HAII,tmp,(int) _tcslen(tmp));
 //	printf("HA2: %s - %s\n",tmp,HAII);
 
 
@@ -444,40 +551,40 @@ GetMD5TextHash((char*)&HAI[0],tmp,(int) strlen(tmp));
 	{
 		if (qopdefined==2)
 		{
-			snprintf(tmp,sizeof(tmp),"%s:%s:%8.8x:%s:%s:%s",HAI,nonce,counter+1,cnonce,"auth-int",HAII);
+			snprintf(tmp,sizeof(tmp),_T("%s:%s:%8.8x:%s:%s:%s"),HAI,nonce,counter+1,cnonce,_T("auth-int"),HAII);
 		} else
 		{
-			snprintf(tmp,sizeof(tmp),"%s:%s:%8.8x:%s:%s:%s",HAI,nonce,counter+1,cnonce,"auth",HAII);
+			snprintf(tmp,sizeof(tmp),_T("%s:%s:%8.8x:%s:%s:%s"),HAI,nonce,counter+1,cnonce,_T("auth"),HAII);
 		}
 	} else
 	{
-		snprintf(tmp,sizeof(tmp),"%s:%s:%s",HAI,nonce,HAII);
+		snprintf(tmp,sizeof(tmp),_T("%s:%s:%s"),HAI,nonce,HAII);
 	}
 	//Getmd5Hash(tmp,(int) strlen(tmp),(unsigned char*)&response);
-	GetMD5TextHash(&response[0],tmp,(int) strlen(tmp));
+	GetMD5TextHash(&response[0],tmp,(int) _tcslen(tmp));
 
 //	printf("Calculado3: %s - %s\n",tmp,response);
 
 
-	snprintf(tmp,sizeof(tmp),"response=\"%s\", ",response);
-	strncat(data,tmp,sizeof(data)-strlen(data)-1);
+	snprintf(tmp,sizeof(tmp),_T("response=\"%s\", "),response);
+	_tcsncat(data,tmp,sizeof(data)/sizeof(HTTPCHAR)-_tcslen(data)-1);
 
 	if (opaque) {
-		snprintf(tmp,sizeof(tmp),"opaque=\"%s\", ",opaque);
-		strncat(data,tmp,sizeof(data)-strlen(data)-1);
+		snprintf(tmp,sizeof(tmp),_T("opaque=\"%s\", "),opaque);
+		_tcsncat(data,tmp,sizeof(data)/sizeof(HTTPCHAR)-_tcslen(data)-1);
 	}
 
 	if (qopdefined==1) {
-		strncat(data,"qop=\"auth\", ",sizeof(data)-strlen(data)-1);
+		_tcsncat(data,_T("qop=\"auth\", "),sizeof(data)/sizeof(HTTPCHAR)-_tcslen(data)-1);
 	} else if (qopdefined==2) {
-		strncat(data,"qop=\"auth-int\", ",sizeof(data)-strlen(data)-1);
+		_tcsncat(data,_T("qop=\"auth-int\", "),sizeof(data)/sizeof(HTTPCHAR)-_tcslen(data)-1);
 	}
 
-	snprintf(tmp,sizeof(tmp),"nc=%8.8x, ",counter+1);
-	strncat(data,tmp,sizeof(data)-strlen(data)-1);
+	snprintf(tmp,sizeof(tmp),_T("nc=%8.8x, "),counter+1);
+	_tcsncat(data,tmp,sizeof(data)/sizeof(HTTPCHAR)-_tcslen(data)-1);
 
-	snprintf(tmp,sizeof(tmp),"cnonce=\"%s\"\r\n",cnonce);
-	strncat(data,tmp,sizeof(data)-strlen(data)-1);
+	snprintf(tmp,sizeof(tmp)/sizeof(HTTPCHAR),_T("cnonce=\"%s\"\r\n"),cnonce);
+	_tcsncat(data,tmp,sizeof(data)/sizeof(HTTPCHAR)-_tcslen(data)-1);
 
 
 	resultado=_tcsdup(data);

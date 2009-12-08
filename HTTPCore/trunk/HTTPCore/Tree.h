@@ -39,7 +39,7 @@ SUCH DAMAGE.
 class TreeNode 
 {
 
-	char		   *text;
+	HTTPCHAR		   *text;
 	int				count;
 	class TreeNode *left;
 	class TreeNode *right;
@@ -58,7 +58,7 @@ public:
 	~TreeNode();
 
 	void SetTreeNodeName(HTTPCSTR lpTreeNodeName);
-	char *GetTreeNodeName(void) { return (text); };
+	HTTPCHAR *GetTreeNodeName(void) { return (text); };
 	
 	void SetTreeNodeCount(const int n) { count=n; }
 	int GetTreeNodeCount(void) { return (count); }
@@ -84,7 +84,7 @@ public:
 
 	
 	class bTree* GetNewTreeNodeSubTree(void);
-	class bTree* GetNewTreeNodeSubTree(char *lpSubTree);
+	class bTree* GetNewTreeNodeSubTree(HTTPCHAR *lpSubTree);
 	class TreeNode	*GetTreeNodeItemID(int n);
 
 };
@@ -92,12 +92,12 @@ public:
 
 class bTree {
 private:
-	char *text;
+	HTTPCHAR *text;
 	TreeNode *root;
 	int count;
 public:
 	bTree();
-	bTree(char *lpTreeName);
+	bTree(HTTPCHAR *lpTreeName);
 	~bTree();
 	void		SetTreeName(HTTPCSTR lpTreeName);
 	int			GetCount() { return (count); }

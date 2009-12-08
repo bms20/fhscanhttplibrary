@@ -809,7 +809,7 @@ void SamOEMhash( unsigned char *data, unsigned char *key, int val)
  The variable n should always be one less than the available size.
 ****************************************************************************/
 
-char *StrnCpy(char *dest,HTTPCSTR src, size_t n)
+char *StrnCpy(char *dest,const char* src, size_t n)
 {
   char *d = dest;
   if (!dest) return(NULL);
@@ -833,7 +833,7 @@ safe string copy into a known length string. maxlength does not
 include the terminating zero.
 ********************************************************************/
 #define DEBUG(a,b) ;
-char *safe_strcpy(char *dest,HTTPCSTR src, size_t maxlength)
+char *safe_strcpy(char *dest,const char* src, size_t maxlength)
 {
     size_t len;
 
@@ -1249,7 +1249,7 @@ void BuildAuthRequest(tSmbNtlmAuthRequest *request, long flags, char *host, char
     free(h);
   }
 
-void buildAuthResponse(tSmbNtlmAuthChallenge *challenge, tSmbNtlmAuthResponse *response, long flags, HTTPCSTR user, HTTPCSTR password, char *domainname, char *host)
+void buildAuthResponse(tSmbNtlmAuthChallenge *challenge, tSmbNtlmAuthResponse *response, long flags, const char* user, const char* password, const char *domainname, const char *host)
   {
     uint8 lmRespData[24];
     uint8 ntRespData[24];

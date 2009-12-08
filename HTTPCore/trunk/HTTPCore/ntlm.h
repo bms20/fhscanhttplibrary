@@ -126,7 +126,7 @@ void BuildAuthRequest(tSmbNtlmAuthRequest *request, long flags, char *host, char
 // host and domain are optional, they may be NULLed.
 
 
-void buildAuthResponse(tSmbNtlmAuthChallenge *challenge, tSmbNtlmAuthResponse *response, long flags, HTTPCSTR user, HTTPCSTR password, char *domain, char *host);
+void buildAuthResponse(tSmbNtlmAuthChallenge *challenge, tSmbNtlmAuthResponse *response, long flags, const char* user, const char* password, const char *domain, const char *host);
 //Given a challenge, generates a response for that user/passwd/host/domain.
 //flags, host, and domain superseeds given by server. Leave 0 and NULL for server authentication
 

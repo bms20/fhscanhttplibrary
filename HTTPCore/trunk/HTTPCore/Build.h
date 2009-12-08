@@ -40,20 +40,17 @@ SUCH DAMAGE.
 #undef UNICODE
 #undef _UNICODE
 
-#include <tchar.h>
+
 
 
 #ifdef _UNICODE 
 	#define _HTTPWIDECHAR
 #endif
 
-#define HTTPCSTR const _TCHAR * 
-#define HTTPSTR  _TCHAR *
-#define HTTPCHAR _TCHAR
+
 
 #ifndef LINUX
-
-
+#include <tchar.h>
 #ifndef __WIN32__RELEASE__
 #define __WIN32__RELEASE__
 #endif
@@ -74,6 +71,37 @@ SUCH DAMAGE.
 
 #else
 
+#ifdef _UNICODE
+#include <wchar.h>
+typedef wchar_t         _TCHAR;
+#define _T(x)           L ## x
+#define _tcsdup         _wcsdup
+#define _tmain          wmain
+#define _tcsstr         wcsstr
+#define _tcscmp         wcscmp
+#define _tcsnccmp       wcsncmp
+#define _tcslen         wcslen
+#define _tcsncpy        wcsncpy
+#define _tcsncat        wcsncat
+#else
+typedef char            _TCHAR;
+#define _T(x)           x
+#define _tcsdup         strdup
+#define _tmain          main
+#define _tcsstr         strstr
+#define _tcscmp         strcmp
+#define _tcsnccmp       strncmp
+#define _tcslen         strlen
+#define _tcsncpy        strncpy
+#define _tcsncat        strncat
+
+#endif
+
+
+#define HTTPCSTR const _TCHAR * 
+#define HTTPSTR  _TCHAR *
+#define HTTPCHAR _TCHAR
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -91,7 +119,7 @@ typedef int64_t __int64;
 typedef uint64_t __uint64;
 #define MAXIMUM_WAIT_OBJECTS 64
 #define MAX_PATH 256
-#define __tcsdup _tcsdup
+//#define __tcsdup strdup
 #define BOOL int
 #define closesocket close
 #define strnicmp strncasecmp
@@ -109,6 +137,11 @@ typedef uint64_t __uint64;
 #endif
 #endif
 /****************** GLOBAL FLAGS **********************/
+
+
+#define HTTPCSTR const _TCHAR * 
+#define HTTPSTR  _TCHAR *
+#define HTTPCHAR _TCHAR
 
 #endif
 

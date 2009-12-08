@@ -154,7 +154,7 @@ class bTree* TreeNode::GetNewTreeNodeSubTree()
 }
 /******************************************************************************/
 /******************************************************************************/
-class bTree* TreeNode::GetNewTreeNodeSubTree(char *lpSubTree)
+class bTree* TreeNode::GetNewTreeNodeSubTree(HTTPCHAR *lpSubTree)
 {
 	ChildTree = new bTree(lpSubTree);
 	return(ChildTree);
@@ -182,7 +182,7 @@ bTree::bTree()
 	count = 0;	
 }
 /******************************************************************************/
-bTree::bTree(char *lpTreeName)
+bTree::bTree(HTTPCHAR *lpTreeName)
 {
 	if (lpTreeName)
 	{
@@ -236,7 +236,7 @@ TreeNode *bTree::TreeExistItem( HTTPCSTR lpTreeItemName)
 	x=root;
 	while (x != NULL) 
 	{
-		int ret = strcmp(x->GetTreeNodeName(),lpTreeItemName);
+		int ret = _tcscmp(x->GetTreeNodeName(),lpTreeItemName);
 
 		if (ret==0)
 		{
@@ -340,13 +340,13 @@ TreeNode* bTree::TreeInsert(HTTPCSTR str,TreeNode *ParentItem)
 			TreeNode *x=root;
 
 			while (x != NULL) {
-				if (strcmp(x->GetTreeNodeName(), str)==0) 
+				if (_tcscmp(x->GetTreeNodeName(), str)==0) 
 				{
 					/* already Exists */
 					return (x);
 				}
 				y=x;
-				if (strcmp(str,x->GetTreeNodeName())<0)
+				if (_tcscmp(str,x->GetTreeNodeName())<0)
 					x = x->GetTreeNodeLeft();
 				else
 					x = x->GetTreeNodeRight();
@@ -355,7 +355,7 @@ TreeNode* bTree::TreeInsert(HTTPCSTR str,TreeNode *ParentItem)
 
 			TreeNode *newnode=new TreeNode (str,y);
 			newnode->SetTreeNodeParentTree(this);
-			if (strcmp(str, y->GetTreeNodeName())<0)
+			if (_tcscmp(str, y->GetTreeNodeName())<0)
 			{
 				y->SetTreeNodeLeft(newnode);
 			}
@@ -395,13 +395,13 @@ void bTree::TreePrint() {
 /******************************************************************************/
 /******************************************************************************/
 //Insert a Full path of Items and creates all new nodes
-TreeNode *TreeInsertItems(Tree *tree, TreeNode *parent, char *strpath)
+TreeNode *TreeInsertItems(Tree *tree, TreeNode *parent, HTTPCHAR *strpath)
 {
 
 	TreeNode *node;
-	char *str = _tcsdup(strpath);
+	HTTPCHAR *str = _tcsdup(strpath);
 	int IsFolder =  (str[strlen(str)-1] == '/');
-	char *path = strtok(str,"/");
+	HTTPCHAR *path = strtok(str,"/");
 
 	if (!path) {
 		node = TreeInsert(tree,parent,"");
@@ -432,8 +432,8 @@ TreeNode *TreeInsertItems(Tree *tree, TreeNode *parent, char *strpath)
 
 
 
-int SubTreeToArray(char **array, TreeNode *subtree, int pos, int n) {
-	char line [ MXLINELEN ] ;
+int SubTreeToArray(HTTPCHAR **array, TreeNode *subtree, int pos, int n) {
+	HTTPCHAR line [ MXLINELEN ] ;
 	int added=0;
 
 	if (subtree!=NULL) {
@@ -455,12 +455,12 @@ text items in the tree which have a count of 'n' or greater.
 It is the responsibility of the calling application to free the allocated
 memory. */
 
-char** TreeToArray(Tree *tree, int n) {
-	char **array;
+HTTPCHAR** TreeToArray(Tree *tree, int n) {
+	HTTPCHAR **array;
 	int size;
 
 	size = TreeCount(tree->root, n);
-	array = (char**)malloc (sizeof(char*) * (size+1));
+	array = (HTTPCHAR**)malloc (sizeof(HTTPCHAR*) * (size+1));
 	SubTreeToArray(array, tree->root, 0, n);
 	array[size] = NULL;
 	return array;
