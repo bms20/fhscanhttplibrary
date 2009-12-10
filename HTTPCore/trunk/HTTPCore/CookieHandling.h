@@ -53,7 +53,7 @@ SUCH DAMAGE.
 #define COOKIETIMEFORMAT2 "%a, %d-%b-%y %H:%M:%S GMT" /* some idiotic websites send the year without the century */
 #define GetDataWithoutSpaces(data) \
 	while (*data==' ') data++;     \
-	while (data[strlen(data)-1]==' ') data[strlen(data)-1]='\0'
+	while (data[_tcslen(data)-1]==_T(' ')) data[_tcslen(data)-1]=0
 
 #define IS_PATH(a)		(strcmp(a,"path")==0)
 #define IS_EXPIRES(a)	(strcmp(a,"expires")==0)
@@ -93,27 +93,27 @@ well-defined.  */
 
 class Cookie
 {
-	char *lpCookieName;
-	char *lpCookieValue;
+	HTTPCHAR *lpCookieName;
+	HTTPCHAR *lpCookieValue;
 	time_t expire;
-	char *path;
-	char *domain;
+	HTTPCHAR *path;
+	HTTPCHAR *domain;
 	BOOL secure;
 	BOOL httponly;
 public:
 	Cookie();
-	Cookie(char *cName,char *cValue,time_t cExpire,char *cPath,char *cDomain, int cSecure, int cHttponly );
+	Cookie(HTTPCHAR *cName,HTTPCHAR *cValue,time_t cExpire,HTTPCHAR *cPath,HTTPCHAR *cDomain, int cSecure, int cHttponly );
 	~Cookie();
-	int MatchCookie(char *lppath,char *lpdomain,char *lpCookieName, int securevalue);
+	int MatchCookie(HTTPCHAR *lppath,HTTPCHAR *lpdomain,HTTPCHAR *lpCookieName, int securevalue);
 	void SetDate(time_t cExpire);
 	time_t GetDate(void) { return expire;}
 	size_t path_matches (HTTPCSTR RequestedPath);
-	char *GetCookieName(void) { return (lpCookieName); }
-	char *GetCookieValue(void) { return (lpCookieValue); }
-	char *GetCookiePath(void)  { return (path); }
-	char *GetCookieDomain(void) { return domain; }
+	HTTPCHAR *GetCookieName(void) { return (lpCookieName); }
+	HTTPCHAR *GetCookieValue(void) { return (lpCookieValue); }
+	HTTPCHAR *GetCookiePath(void)  { return (path); }
+	HTTPCHAR *GetCookieDomain(void) { return domain; }
 	BOOL IsSecure(void) { return secure; }
-	void SetValue(char *cValue);
+	void SetValue(HTTPCHAR *cValue);
 };
 
 /***********************************************************************/
@@ -132,7 +132,7 @@ class CookieStatus
 	int nDomains;
 	class Threading lock;
 
-	int RemoveCookieFromList(struct CookieList *List,char *path,char *name, char *lpDomain);
+	int RemoveCookieFromList(struct CookieList *List,HTTPCHAR *path,HTTPCHAR *name, HTTPCHAR *lpDomain);
 	//void InsertCookieToList(struct CookieList *List,char *path, char *name, char *value, int secure, int HttpOnly);
 	int numeric_address_p (HTTPCSTR addr);
 	int check_domain_match (HTTPCSTR cookie_domain, HTTPCSTR host);
@@ -140,11 +140,11 @@ class CookieStatus
 
 public:
 	CookieStatus();
-	time_t ExtractDate(char *lpdate);
-	int ParseCookieData(char *lpCookieData, HTTPCSTR lpPath, HTTPCSTR lpDomain);
+	time_t ExtractDate(HTTPCHAR *lpdate);
+	int ParseCookieData(HTTPCHAR *lpCookieData, HTTPCSTR lpPath, HTTPCSTR lpDomain);
 	char *ReturnCookieHeaderFor(HTTPCSTR lpDomain,HTTPCSTR path,int CookieOverSSL);
 
-	int CookieAlreadyExist(struct CookieList *List,char *path, char *domain, char *name, int secure );
+	int CookieAlreadyExist(struct CookieList *List,HTTPCHAR *path, HTTPCHAR *domain, HTTPCHAR *name, int secure );
 	~CookieStatus();
 
 };

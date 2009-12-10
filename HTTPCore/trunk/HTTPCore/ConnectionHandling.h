@@ -36,7 +36,7 @@ SUCH DAMAGE.
 #ifndef __CONNECTIONHANDLING_H__
 #define __CONNECTIONHANDLING_H__
 
-//#include "Build.h"
+#include "Build.h"
 //#include "Threading.h"
 #include "HTTPHANDLE.h"
 #include "HTTP.h"
@@ -77,7 +77,7 @@ SUCH DAMAGE.
 class ConnectionHandling : public SSLModule 
 {
 	long 			 target;
-	char 			 targetDNS[256];
+	HTTPCHAR		 targetDNS[256];
 	unsigned short	 port;
 	int 			 SSLRequired; /*Signals if the connection is against an SSL service */
 	int				 ConnectionAgainstProxy; /* Signals if HTTP Proxy is enabled */
@@ -130,7 +130,7 @@ public:
 	
 
 	void            Acceptdatasock( SOCKET ListenSocket );
-	char *          GettargetDNS(void);
+	HTTPCHAR*       GettargetDNS(void);
 	long            GetTarget(void);
 	int             GetPort(void);
 	int             GetThreadID(void);

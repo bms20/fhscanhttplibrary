@@ -109,8 +109,8 @@ public:
 	char *GettagCrawled(int i);
 
 	/* Misc Functions */
-	char *Datastrstr  (HTTPCSTR searchdata);
-	char *Headerstrstr(HTTPCSTR searchdata);
+	HTTPSTR Datastrstr  (HTTPCSTR searchdata);
+	HTTPSTR Headerstrstr(HTTPCSTR searchdata);
 };
 
 

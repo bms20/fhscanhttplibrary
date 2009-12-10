@@ -135,7 +135,7 @@ public:
 	//Authentication related
 	char *GetLastRequestedUri(void);
 	void SetLastRequestedUri(HTTPCSTR url);
-	char *GetLastAuthenticationString() { return LastAuthenticationString; }
+	HTTPCHAR *GetLastAuthenticationString() { return LastAuthenticationString; }
 	void SetLastAuthenticationString(char *authstring);
 
 	//Connection related

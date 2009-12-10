@@ -93,36 +93,36 @@ char *stristr(HTTPCSTR String, HTTPCSTR Pattern)
 6)  /test/../test.html -> /test.html
 7)  ../test.html       -> ../test.html
 */
-char *FixUrlTransversal(char *path) {
+HTTPCHAR *FixUrlTransversal(HTTPCHAR *path) {
 
-	char *p = path;
-	char *last = p;
+	HTTPCHAR *p = path;
+	HTTPCHAR *last = p;
 	int fix = 0;
 
 	while (*p)
 	{
-		if (*p=='/')
+		if (*p==_T('/'))
 		{
-			if (p[1]=='/') {
-				size_t n= strlen(p+1);
+			if (p[1]==_T('/')) {
+				size_t n= _tcslen(p+1);
 				memcpy(p,p+1,n);
 				p[n]=0;
-			} else if (p[1]=='.')
+			} else if (p[1]==_T('.'))
 			{
-				if (memcmp(p+1,"./",2)==0) {
-					size_t n=strlen(p+2);
+				if (memcmp(p+1,_T("./"),2)==0) {
+					size_t n=_tcslen(p+2);
 					memcpy(p,p+2,n);
 					p[n]=0;
 					fix=1;
-				} else if (memcmp(p+1,".../",4)==0)
+				} else if (memcmp(p+1,_T(".../"),4)==0)
 				{
-					size_t n=strlen(p+4);
+					size_t n=_tcslen(p+4);
 					memcpy(p,p+4,n);
 					p[n]=0;
-				} else if (memcmp(p+1,"../",3)==0)
+				} else if (memcmp(p+1,_T("../"),3)==0)
 				{
-					size_t n=strlen(p+3);
-					if (*last=='/') {
+					size_t n=_tcslen(p+3);
+					if (*last==_T('/')) {
 						memcpy(last,p+3,n);
 					} else {
 						memcpy(last,p+4,n);
@@ -139,15 +139,15 @@ char *FixUrlTransversal(char *path) {
 				last=p;
 				p++;
 		 }
-		} else if ((last==p) && (p[0]=='.') )
+		} else if ((last==p) && (p[0]==_T('.')) )
 		{
-			if (memcmp(p,"./",2)==0) {
-				size_t n=strlen(p+2);
+			if (memcmp(p,_T("./"),2)==0) {
+				size_t n=_tcslen(p+2);
 				memcpy(p,p+2,n);
 				p[n]=0;
-			} else if (memcmp(p,".../",4)==0)
+			} else if (memcmp(p,_T(".../"),4)==0)
 			{
-				size_t n=strlen(p+4);
+				size_t n=_tcslen(p+4);
 				memcpy(p,p+4,n);
 				p[n]=0;
 			} else 	p++;
@@ -231,7 +231,7 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 			salir=0;
 			while ((*p) && (!salir) && (n>0))
 			{
-				size_t l =strlen(p)-1;
+				size_t l =_tcslen(p)-1;
 				if ( (p[l]=='\\') || (p[l]=='\"') ||  (p[l]=='+') ||  (p[l]=='\'')  ||  (p[l]=='(')  ||  (p[l]==')') ||  (p[l]=='\r') ||  (p[l]=='\n')   )
 				{
 					p[l]=0;
@@ -243,33 +243,33 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 			//char *parameters =
 			RemoveParameters(p);
 
-			char tmp[2048];
-			/*
+			HTTPCHAR tmp[2048];
+			/*3
 			 Se trata de una URL completa...
 			 */
-			if ( (strncmp(p,"http",4)==0 ) && ( (strncmp(p+4,"://",3)==0 ) || (strncmp(p+4,"s://",4)==0 ) ) )
+			if ( (_tcsnccmp(p,_T("http"),4)==0 ) && ( (_tcsnccmp(p+4,_T("://"),3)==0 ) || (_tcsnccmp(p+4,_T("s://"),4)==0 ) ) )
 			{
-				if (strchr(p,'\'') || (strstr(p," +"))) {
+				if (_tcschr(p,_T('\'')) || (strstr(p,_T(" +")))) {
 #ifdef _VERBOSE
 					fwrite("\n----\n",6,1,filename);
-					fwrite(taginfo->name,strlen(taginfo->name),1,filename);
+					fwrite(taginfo->name,_tcslen(taginfo->name),1,filename);
 					fwrite("\n",1,1,filename);
-					fwrite(taginfo->attrs[i].name,strlen(taginfo->attrs[i].name),1,filename);
+					fwrite(taginfo->attrs[i].name,_tcslen(taginfo->attrs[i].name),1,filename);
 					fwrite("\n",1,1,filename);
-					fwrite(taginfo->attrs[i].value,strlen(taginfo->attrs[i].value),1,filename);
+					fwrite(taginfo->attrs[i].value,_tcslen(taginfo->attrs[i].value),1,filename);
 					fwrite("\n",1,1,filename);
 #endif
 				} else 
 				{
 					
-						char *myhost = p +7;
-						if (p[4]=='s') {
+						HTTPCHAR *myhost = p +7;
+						if (p[4]==_T('s')) {
 							myhost++;
 						}
-						char *path=strchr(myhost,'/');
-						char tags[256];
-						snprintf(tags,sizeof(tags)-1,"%s %s", taginfo->name,taginfo->attrs[i].name);
-						tags[sizeof(tags)-1]='\0';
+						HTTPCHAR *path=_tcschr(myhost,_T('/'));
+						HTTPCHAR tags[256];
+						_sntprintf(tags,sizeof(tags)/sizeof(HTTPCHAR)-1,_T("%s %s"), taginfo->name,taginfo->attrs[i].name);
+						tags[sizeof(tags)/sizeof(HTTPCHAR)-1]=0;
 						if (path)
 						{
 							response->AddUrlCrawled(p,tags);
@@ -277,8 +277,8 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 
 						} else
 						{
-                            size_t l = strlen(p);
-							char *x = (char*)malloc(l+2);
+                            size_t l = _tcslen(p);
+							HTTPCHAR *x = (HTTPCHAR*)malloc(l+2);
 							memcpy(x,p,l);
 							x[l]='/';
 							x[l+1]=0;
@@ -300,7 +300,7 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
   Se construyen dos urls pero despues no se usan correctamente!!
 
 */
-				if ( (strncmp(p,"javascript",10)==0) )
+				if ( (_tcsnccmp(p,_T("javascript"),10)==0) )
 				{
 
 					//MessageBox( NULL, p,"0", MB_OK|MB_ICONINFORMATION );
@@ -314,9 +314,9 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 					fwrite("\n",1,1,javascript);
 #endif
 //					add = 0;
-				} else if ( (*p==' ')  || (*p=='\'') || (*p=='#') || (*p=='+') || (strchr(p,'\'')) ||
-					(strchr(p,'\"')) || (strstr(p,"mailto:")) || (strstr(p,"//:")) || (strstr(p," +"))  ||
-					(strstr(p,"<%"))  )
+				} else if ( (*p==_T(' '))  || (*p==_T('\'')) || (*p==_T('#')) || (*p==_T('+')) || (_tcschr(p,_T('\''))) ||
+					(_tcschr(p,_T('\"'))) || (strstr(p,_T("mailto:"))) || (strstr(p,_T("//:"))) || (strstr(p,_T(" +")))  ||
+					(strstr(p,_T("<%")))  )
 				{
 
 #ifdef _VERBOSE
@@ -330,15 +330,15 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 #endif
 				} else 
 				{
-						char tags[256];
-						snprintf(tags,sizeof(tags)-1,"%s %s", taginfo->name,taginfo->attrs[i].name);
+						HTTPCHAR tags[256];
+						_sntprintf(tags,sizeof(tags)-1,_T("%s %s"), taginfo->name,taginfo->attrs[i].name);
 						tags[sizeof(tags)-1]='\0';
 
-				char *urlptr =tmp+7+strlen(lpHostname);
+				HTTPCHAR *urlptr =tmp+7+_tcslen(lpHostname);
 				if (*p=='/') {
-					snprintf(tmp,sizeof(tmp)-1,"http://%s%s",lpHostname,p);
+					_sntprintf(tmp,sizeof(tmp)-1,"http://%s%s",lpHostname,p);
 				} else {
-					sprintf(tmp,"http://%s%s%s",lpHostname,lpBaseURL,p);
+					_stprintf(tmp,_T("http://%s%s%s"),lpHostname,lpBaseURL,p);
 				}
 				FixUrlTransversal(urlptr);
 						response->AddUrlCrawled(tmp,tags);
@@ -353,12 +353,12 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 			//Extraer objetos que no machean. Ejemplo:
 			//javascript:window.open('http://www.terra.es/deportes/futbol/directos/evento_champions_v2.cfm?id_evento=161736','blank','width=750,height=665,resizable=no,statusbar=no,scrollbars=no,top=0,left=0');window.location.href='http://www.terra.es/deportes/futbol/'
 
-			char *p = stristr(taginfo->attrs[i].value,"http");
+			HTTPCHAR *p = stristr(taginfo->attrs[i].value,_T("http"));
 //			int ofst;
 			if (p) {
 
 
-			if ( (strncmp(p+4,"://",3)==0) && (strncmp(p+4,"s://",4)==0) && (strncmp(p+4,"s%3A//",6)==0)  && (strncmp(p+4,"%3A//",5)==0) )
+			if ( (_tcsnccmp(p+4,_T("://"),3)==0) && (_tcsnccmp(p+4,_T("s://"),4)==0) && (_tcsnccmp(p+4,_T("s%3A//"),6)==0)  && (_tcsnccmp(p+4,_T("%3A//"),5)==0) )
 			{
 				p=NULL;
 			} else
@@ -367,14 +367,14 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 //						int add = 0;
 							//char *parameters =
 							RemoveParameters(p);
-							char *q=strchr(p,'\'');
+							HTTPCHAR *q=_tcschr(p,_T('\''));
 							if (q) *q=0;
-							q=strchr(p,'\"');
+							q=_tcschr(p,_T('\"'));
 							if (q) *q=0;
 
-							char tags[256];
-							snprintf(tags,sizeof(tags)-1,"%s %s", taginfo->name,taginfo->attrs[i].name);
-							tags[sizeof(tags)-1]='\0';
+							HTTPCHAR tags[256];
+							_sntprintf(tags,sizeof(tags)/sizeof(HTTPCHAR)-1,_T("%s %s"), taginfo->name,taginfo->attrs[i].name);
+							tags[sizeof(tags)/sizeof(HTTPCHAR)-1]=0;
 
 							response->AddUrlCrawled(p,tags);
 							//printf("*Gathered Link1: %s %s %s\n",taginfo->name,taginfo->attrs[i].name,p);
@@ -1322,7 +1322,7 @@ void HTTPAPI::doSpider( char *host,char *FullPath, httpdata*  response)
 	char *p = FullPath +1;
 	char *l;
 	do {
-		l = strchr(p,'/');
+		l = _tcschr(p,_T('/'));
 		if (l) {
 			p=l+1;
 		}

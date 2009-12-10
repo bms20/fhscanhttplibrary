@@ -81,7 +81,7 @@ typedef int (*HTTP_IO_REQUEST_CALLBACK) (int cbType, void *api,HTTPHANDLE HTTPHa
 typedef struct _cb_list{
     unsigned int cbType;
     HTTP_IO_REQUEST_CALLBACK cb;   
-	char *lpDescription;
+	HTTPCHAR* lpDescription;
 } CB_LIST, *PCB_LIST;
 
 

@@ -1257,7 +1257,7 @@ void buildAuthResponse(tSmbNtlmAuthChallenge *challenge, tSmbNtlmAuthResponse *r
     char *p = strchr(u,'@');
     char *w = NULL;
     char *d = strdup(GetUnicodeString(challenge,uDomain));
-    char *domain = d;
+    const char *domain = d;
 	if (domainname != NULL) domain = domainname;
 
 	if (host == NULL) host = "";
@@ -1280,7 +1280,7 @@ void buildAuthResponse(tSmbNtlmAuthChallenge *challenge, tSmbNtlmAuthResponse *r
     AddBytes(response,ntResponse,ntRespData,24);
 
 	assert(strlen(domain) < 128);
-    AddUnicodeString(response,uDomain,domain);
+    AddUnicodeString(response,uDomain,(char*)domain);
 	assert(strlen(u) < 128);
     AddUnicodeString(response,uUser,u);
 	assert(strlen(w) < 128);

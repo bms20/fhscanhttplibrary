@@ -134,7 +134,7 @@ int ConnectionHandling::InitializeConnection(class HTTPAPIHANDLE *HTTPHandle)
 
 		if (HTTPHandle->GetHTTPConfig(ConfigProxyHost) )
 		{			
-			port=atoi(HTTPHandle->GetHTTPConfig(ConfigProxyPort));
+			port=_tstoi(HTTPHandle->GetHTTPConfig(ConfigProxyPort));
 			ConnectionAgainstProxy=1;
 		} else
 		{
@@ -148,7 +148,7 @@ int ConnectionHandling::InitializeConnection(class HTTPAPIHANDLE *HTTPHandle)
 			target = TARGET_FREE;
 			return(0);
 		}
-		strcpy(targetDNS, HTTPHandle->GetHTTPConfig(ConfigHTTPHost));
+		_tcscpy(targetDNS, HTTPHandle->GetHTTPConfig(ConfigHTTPHost));
 		#ifdef _DBG_
 		printf("Connection stablished against %s\n",this->targetDNS);
 		#endif
@@ -224,13 +224,14 @@ void ConnectionHandling::Disconnect(int level)
 
 
 
+
+
 int ConnectionHandling::SendHttpRequest(httpdata* request)
 {
-
 #ifdef UNICODE
-// Convert a Unicode string to an ASCII string
-char *Header = (char*)malloc(resquest->HeaderSize+1);
-WideCharToMultiByte(CP_ACP, 0, resquest->Header, -1, Header, resquest->HeaderSize+1, NULL, NULL);
+/* Convert Unicode string to ASCII string */
+char *Header = (char*)malloc(request->HeaderSize+1);
+WideCharToMultiByte(CP_ACP, 0, request->Header, -1, Header, request->HeaderSize+1, NULL, NULL);
 #endif
 
 	if (ssl) 
@@ -426,6 +427,7 @@ double ConnectionHandling::ReadChunkNumber(char *encodedData, size_t encodedlen,
 /************************************************************************************************************************/
 httpdata *GetHttpHeadersFromBuffer(char *lpBuffer)
 {
+	/* No Unicode conversion */
 	size_t offset = 0;
 	char *HeadersEnd = NULL;
 	char *p = strstr(lpBuffer, "\r\n\r\n");
@@ -453,7 +455,7 @@ httpdata *GetHttpHeadersFromBuffer(char *lpBuffer)
 #else
 	response->InitHTTPData(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
 #endif
-	//return ( new httpdata (lpBuffer,(HeadersEnd - lpBuffer) + offset) );
+	
 	return (response);
 }
 /************************************************************************************************************************/
@@ -595,10 +597,10 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 						HTTPSTR p = response->GetHeaderValue(_T("Connection:"), 0);
 						if (p)
 						{
-							if (strnicmp(p, _T("close"), 7) == 0)
+							if (_tcsncicmp(p, _T("close"), 7) == 0)
 							{
 								ConnectionClose = 1;
-							} else if (strnicmp(p, _T("Keep-Alive"), 10) == 0)
+							} else if (_tcsncicmp(p, _T("Keep-Alive"), 10) == 0)
 							{
 								ConnectionClose = 0;
 							}
@@ -608,10 +610,10 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 							p = response->GetHeaderValue(_T("Proxy-Connection:"), 0);
 							if (p)
 							{
-								if (strnicmp(p, _T("close"), 7) == 0)
+								if (_tcsncicmp(p, _T("close"), 7) == 0)
 								{
 									ConnectionClose = 1;
-								} else if (strnicmp(p, _T("Keep-Alive"), 10) == 0)
+								} else if (_tcsncicmp(p, _T("Keep-Alive"), 10) == 0)
 								{
 									ConnectionClose = 0;
 								}
@@ -630,14 +632,14 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 							break;
 						} else
 						{
-                        	ContentLength = atoi(p);
+                        	ContentLength = _tstoi(p);
 							BytesToBeReaded = ContentLength - BufferSize;
 						}
 						free(p);
 					}
 
 					/*HTTP 1.1 HEAD RESPONSES SHOULD NOT SEND BODY DATA.*/
-					if (strnicmp(request->Header, "HEAD ", 5) == 0)
+					if (_tcsncicmp(request->Header, _T("HEAD "), 5) == 0)
 					{
 						if ((lpBuffer[7] == '1') && (ContentLength))
 						{
@@ -650,7 +652,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					}
 
 					/*HTTP 1.1 HEAD RESPONSE DOES NOT SEND BODY DATA. */
-					if (strnicmp(request->Header, "CONNECT ", 8) == 0)
+					if (_tcsncicmp(request->Header, _T("CONNECT "), 8) == 0)
 					{
 						BytesToBeReaded=0;
 						free(lpBuffer);
@@ -658,10 +660,10 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 						break;
 					}
 
-					p = response->GetHeaderValue( "Transfer-Encoding:", 0);
+					p = response->GetHeaderValue( _T("Transfer-Encoding:"), 0);
 					if (p)
 					{
-						if (strnicmp(p, "chunked", 7) == 0)
+						if (_tcsncicmp(p, _T("chunked"), 7) == 0)
 						{
 							ChunkEncodeSupported = 1;
 #ifdef _DBG_
@@ -812,10 +814,10 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 		response->UpdateAndReplaceFileMappingData(HTTPIOMappingData);
 		if (ChunkEncodeSupported)
 		{
-			char tmp[100];
-			sprintf(tmp,"Content-Length: %i",response->DataSize);
+			HTTPCHAR tmp[100];
+			_stprintf(tmp,_T("Content-Length: %i"),response->DataSize);
 			response->AddHeader(tmp);
-			response->RemoveHeader("Transfer-Encoding:");
+			response->RemoveHeader(_T("Transfer-Encoding:"));
 		}
 	}
 	if (TmpChunkData) free(TmpChunkData);
@@ -981,11 +983,11 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 			{
                 BufferSize=BufferSize-response->HeaderSize;
 				memcpy(lpBuffer,lpBuffer+response->HeaderSize,BufferSize);
-				char *p=response->GetHeaderValue("Content-Length: ",0);
+				HTTPCHAR *p=response->GetHeaderValue(_T("Content-Length: "),0);
 				if (p)
 				{
-					ContentLength=atoi(p);
-					if (p[0]=='-') //Negative Content Length
+					ContentLength=_tstoi(p);
+					if (*p==_T('-')) //Negative Content Length
 					{
 						ConnectionClose=1;
 						free(lpBuffer);
@@ -1008,7 +1010,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 						if (BufferSize <= ContentLength)
 						{
 							lpBuffer=(char*)realloc(lpBuffer,BufferSize+1);
-							lpBuffer[BufferSize]='\0';
+							lpBuffer[BufferSize]=0;
 
 						} else
 						{
@@ -1053,7 +1055,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 				if (!ContentLength) 
 				{
 #ifdef __WIN32__RELEASE__
-					MessageBoxA( NULL, response->Data,"Content-Length Error?", MB_OK|MB_ICONINFORMATION );
+					MessageBox( NULL, response->Data,_T("Content-Length Error?"), MB_OK|MB_ICONINFORMATION );
 #else
 					printf("Content-Length Error: %s\n",response->Data);
 #endif
@@ -1122,7 +1124,7 @@ void ConnectionHandling::Acceptdatasock( SOCKET ListenSocket )
 	int clientLen= sizeof(struct sockaddr_in);
 	datasock= (int) accept(ListenSocket,(struct sockaddr *) &webserver,(socklen_t *)&clientLen);
 	target=webserver.sin_addr.s_addr;
-	strcpy(targetDNS,inet_ntoa(webserver.sin_addr));		
+	_tcscpy(targetDNS,inet_ntoa(webserver.sin_addr));		
 	Connectionid++;
 }
 /*******************************************************************************************/
@@ -1142,7 +1144,7 @@ void ConnectionHandling::CloseSocket(void)
 	closesocket(datasock); 
 }
 /*******************************************************************************************/
-char *ConnectionHandling::GettargetDNS(void)
+HTTPCHAR *ConnectionHandling::GettargetDNS(void)
 {
 	return targetDNS;
 }

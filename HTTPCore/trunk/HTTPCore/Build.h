@@ -35,13 +35,16 @@ SUCH DAMAGE.
 */
 #ifndef __BUILD_H_
 #define __BUILD_H_
-
+#define __TCHAR_H
 /****************** GLOBAL FLAGS **********************/
 #undef UNICODE
 #undef _UNICODE
 
-
-
+/*
+#ifndef UNICODE
+#define _UNICODE
+#endif
+*/
 
 #ifdef _UNICODE 
 	#define _HTTPWIDECHAR
@@ -50,7 +53,9 @@ SUCH DAMAGE.
 
 
 #ifndef LINUX
-#include <tchar.h>
+#include <windows.h>
+#include <winnls.h>
+//#include <tchar.h>
 #ifndef __WIN32__RELEASE__
 #define __WIN32__RELEASE__
 #endif
@@ -71,36 +76,6 @@ SUCH DAMAGE.
 
 #else
 
-#ifdef _UNICODE
-#include <wchar.h>
-typedef wchar_t         _TCHAR;
-#define _T(x)           L ## x
-#define _tcsdup         _wcsdup
-#define _tmain          wmain
-#define _tcsstr         wcsstr
-#define _tcscmp         wcscmp
-#define _tcsnccmp       wcsncmp
-#define _tcslen         wcslen
-#define _tcsncpy        wcsncpy
-#define _tcsncat        wcsncat
-#else
-typedef char            _TCHAR;
-#define _T(x)           x
-#define _tcsdup         strdup
-#define _tmain          main
-#define _tcsstr         strstr
-#define _tcscmp         strcmp
-#define _tcsnccmp       strncmp
-#define _tcslen         strlen
-#define _tcsncpy        strncpy
-#define _tcsncat        strncat
-
-#endif
-
-
-#define HTTPCSTR const _TCHAR * 
-#define HTTPSTR  _TCHAR *
-#define HTTPCHAR _TCHAR
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -138,10 +113,65 @@ typedef uint64_t __uint64;
 #endif
 /****************** GLOBAL FLAGS **********************/
 
+#ifdef _UNICODE
+#include <wchar.h>
+#ifndef _TCHAR
+typedef wchar_t         _TCHAR;
+#endif
+#define _T(x)           L ## x
+#define _tcsdup         _wcsdup
+#define _tmain          wmain
+#define _tcsstr         wcsstr
+#define _tcscmp         wcscmp
+#define _tcsnccmp       wcsncmp
+#define _tcslen         wcslen
+#define _tcsncpy        wcsncpy
+#define _tcsncat        wcsncat
+#define _sntprintf      _snwprintf
+#define _stprintf       _swprintf
+#define _tcscpy         wcscpy
+#define _tcsncicmp      _wcsnicmp
+#define _istspace   isspace
+#define _istspace   iswspace
+#define _tcstol     wcstol
+#define _tcstok         wcstok
+#define _tcschr         wcschr
+#define _tstoi      _wtoi
+#define _tcscat         wcscat
+#else
+#ifndef _TCHAR
+typedef char            _TCHAR;
+#endif
+#define _T(x)           x
+#define _tcsdup         strdup
+#define _tmain          main
+#define _tcsstr         strstr
+#define _tcscmp         strcmp
+#define _tcsnccmp       strncmp
+#define _tcslen         strlen
+#define _tcsncpy        strncpy
+#define _tcsncat        strncat
+#define _sntprintf      _snprintf
+#define _stprintf       sprintf
+#define _tcscpy     strcpy
+#define _tcsncicmp      strnicmp
+#define _istspace   isspace
+#define _tcstol     strtol
+#define _tcstok         strtok
+#define _tcschr         strchr
+#define _tstoi      atoi
+#define _tcscat     strcat
+#endif
+
 
 #define HTTPCSTR const _TCHAR * 
 #define HTTPSTR  _TCHAR *
 #define HTTPCHAR _TCHAR
+
+#define HTTPCSTR const _TCHAR * 
+#define HTTPSTR  _TCHAR *
+#define HTTPCHAR _TCHAR
+#define HTTPCCHAR const _TCHAR
 
 #endif
 

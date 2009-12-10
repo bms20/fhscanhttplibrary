@@ -277,7 +277,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 	switch (opt)
 	{
 	case ConfigAsyncronousProxy:
-			AsyncHTTPRequest = atoi(parameter);
+			AsyncHTTPRequest = _tstoi(parameter);
 		break;
 
 	case ConfigMaxDownloadSpeed:
@@ -313,7 +313,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 		{
 			free(AdditionalHeader);			
 		}
-		if ( (parameter) && (*parameter) && (strchr(parameter,':')) ) 
+		if ( (parameter) && (*parameter) && (_tcschr(parameter,_T(':'))) ) 
 		{
 			int len2 = (int) strlen(parameter);
 			if (memcmp(parameter+len2 -2,"\r\n",2)!=0) {
@@ -401,7 +401,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 
 	case ConfigProtocolversion:
 		if (parameter) {
-			version=atoi(parameter);
+			version=_tstoi(parameter);
 		} else version=1;
 		break;
 	case ConfigMaxDownloadSize:
@@ -413,10 +413,10 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 		}
 		break;
 	case ConfigCookieHandling:
-		CookieSupported=atoi(parameter);
+		CookieSupported=_tstoi(parameter);
 		break;
 	case ConfigAutoredirect:
-			AutoRedirect=atoi(parameter);;
+			AutoRedirect=_tstoi(parameter);;
 			break;
 	default:
 		return(-1);

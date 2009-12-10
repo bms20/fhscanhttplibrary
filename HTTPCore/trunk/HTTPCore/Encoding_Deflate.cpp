@@ -252,7 +252,7 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 	{
 		if (request)
 		{
-			if (strncmp(request->Header,"CONNECT ",8)!=0)
+			if (_tcsnccmp(request->Header,"CONNECT ",8)!=0)
 			{
 				request->RemoveHeader("Accept-Encoding: ");
 				request->AddHeader("Accept-Encoding: gzip, deflate");
@@ -270,11 +270,11 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 		if (!encoding)
 			return(CBRET_STATUS_NEXT_CB_CONTINUE);
 
-		char *p = strstr(encoding,"deflate");
+		char *p = _tcsstr(encoding,"deflate");
 		if (p)
 			type= DEFLATE_DATA;
 		else {
-		   p = strstr(encoding,"gzip");
+		   p = _tcsstr(encoding,"gzip");
 		   if (p)  type= GZIP_DATA;
 		}
 		free(encoding);

@@ -59,9 +59,9 @@ void HTTPSession::ParseReturnedBuffer(struct httpdata *HTTPrequest, struct httpd
 	char *line = request->GetHeaderValueByID(0);
 	if (line)
 	{
-		char *p=strchr(line,' ');
+		char *p=_tcschr(line,_T(' '));
 		if (p) {
-			char *q = strchr(p+1,' ');
+			char *q = _tcschr(p+1,_T(' '));
 			if (q) *q=0;
 			url = _tcsdup(p+1);
 			*p=0;
@@ -71,9 +71,9 @@ void HTTPSession::ParseReturnedBuffer(struct httpdata *HTTPrequest, struct httpd
 
 
 			strncpy(Method,line,sizeof(Method)-1);
-			char *parameters= strchr(url,'?');
+			char *parameters= _tcschr(url,_T('?'));
 			//if (!parameters) parameters= strchr(url,';');
-			if (!parameters) parameters= strchr(url,'&');
+			if (!parameters) parameters= _tcschr(url,_T('&'));
 
 			if (parameters)
 			{

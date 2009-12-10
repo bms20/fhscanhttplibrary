@@ -45,7 +45,7 @@ void httpdata::InitHTTPDataA(char* header,size_t headersize, char* lpPostData,si
 {
 	if ( (headersize) && (header) )
 	{
-		Header= (HTTPSTR)malloc(headersize+1);
+		Header= (HTTPSTR)malloc((headersize+1)*sizeof(HTTPCHAR));
 		MultiByteToWideChar(CP_ACP, 0, header, -1, Header, headersize+1);
 		Header[headersize]='\0';
 		HeaderSize = headersize;
@@ -78,7 +78,7 @@ void httpdata::InitHTTPData(HTTPCSTR header,size_t headersize, HTTPCSTR lpPostDa
 {
 	if ( (headersize) && (header) )
 	{
-		Header= (char*)malloc(headersize+1);
+		Header= (char*)malloc((headersize+1)*sizeof(HTTPCHAR));
 		memcpy(Header,header,headersize);
 		Header[headersize]='\0';
 		HeaderSize = headersize;
@@ -120,14 +120,51 @@ httpdata::httpdata()
 	Comments = NULL;
 }
 /*******************************************************************************************************/
-httpdata::httpdata(HTTPCSTR header)	 {  InitHTTPData(header,strlen(header),NULL,0); }
-httpdata::httpdata(HTTPCSTR header, size_t  headersize)   {	InitHTTPData(header,headersize,NULL,0); }
-httpdata::httpdata(HTTPCSTR header, HTTPCSTR lpPostData) {	InitHTTPData(header,strlen(header),lpPostData,strlen(lpPostData)); }
-httpdata::httpdata(HTTPCSTR header,size_t headersize, HTTPCSTR lpPostData,size_t  PostDataSize) { InitHTTPData(header,headersize,lpPostData,PostDataSize); }
+httpdata::httpdata(HTTPCSTR header)	 
+{  
+	InitHTTPData(header,strlen(header),NULL,0); 
+}
+
+httpdata::httpdata(HTTPCSTR header, size_t  headersize)   
+{	
+	InitHTTPData(header,headersize,NULL,0); 
+}
+
+httpdata::httpdata(HTTPCSTR header, HTTPCSTR lpPostData) 
+{	
+	InitHTTPData(header,_tcslen(header),lpPostData,_tcslen(lpPostData)); 
+}
+
+httpdata::httpdata(HTTPCSTR header,size_t headersize, HTTPCSTR lpPostData,size_t  PostDataSize) 
+{ 
+	InitHTTPData(header,headersize,lpPostData,PostDataSize); 
+}
+/*
+#ifdef UNICODE
+httpdata::httpdata(HTTPCSTR header, char* lpPostData) 
+{	
+	InitHTTPData(header,_tcslen(header),lpPostData,strlen(lpPostData)); 
+}
+
+httpdata::httpdata(HTTPCSTR header,size_t headersize, HTTPCSTR lpPostData,size_t  PostDataSize) 
+{ 
+	InitHTTPData(header,headersize,lpPostData,PostDataSize); 
+}
+#endif
+*/
 /*******************************************************************************************************/
-void httpdata::InitHTTPData(HTTPCSTR header) {	InitHTTPData(header,strlen(header),NULL,0); }
-void httpdata::InitHTTPData(HTTPCSTR header, size_t headersize) {	InitHTTPData(header,headersize,NULL,0); }
-void httpdata::InitHTTPData(HTTPCSTR header, HTTPCSTR lpPostData) {	InitHTTPData(header,strlen(header),lpPostData,strlen(lpPostData)); }
+void httpdata::InitHTTPData(HTTPCSTR header) 
+{	
+	InitHTTPData(header,strlen(header),NULL,0); 
+}
+void httpdata::InitHTTPData(HTTPCSTR header, size_t headersize) 
+{	
+	InitHTTPData(header,headersize,NULL,0); 
+}
+void httpdata::InitHTTPData(HTTPCSTR header, HTTPCSTR lpPostData) 
+{	
+	InitHTTPData(header,_tcslen(header),lpPostData,_tcslen(lpPostData)); 
+}
 /*******************************************************************************************************/
 /*
 #ifdef UNICODE
@@ -154,8 +191,8 @@ HTTPSTR httpdata::GetRequestedURL()
 			len++; q++;
 		}
 	}
-	char *requestedurl = (char*) malloc(len+1);
-	memcpy(requestedurl,p,len);
+	HTTPCHAR *requestedurl = (char*) malloc((len+1)*sizeof(HTTPCHAR));
+	memcpy(requestedurl,p,len*sizeof(HTTPCHAR));
 	requestedurl[len]=0;
 	return(requestedurl);
 }
@@ -167,25 +204,25 @@ It is the responsibility of the calling application to free the allocated memory
 HTTPSTR httpdata::GetHeaderValueByID(unsigned int id)
 {
 
-	char *base, *end;
+	HTTPCHAR *base, *end;
 	base = end=Header;
 
 	if (Header)
 	{
 		while (*end)
 		{
-			if  (*end=='\n')
+			if  (*end==_T('\n'))
 			{
 				if (id==0)
 				{
 					if ( (end - base)<=1) {
 						return(NULL);
 					}
-					char *p=(char *) malloc(end - base +1);
-					memcpy(p,base,end-base);
-					p[end-base]='\0';
-					if (p[end-base-1]=='\r')
-						p[end-base-1]='\0';
+					HTTPCHAR *p=(HTTPCHAR *) malloc((end - base +1)*sizeof(HTTPCHAR));
+					memcpy(p,base,(end-base)*sizeof(HTTPCHAR));
+					p[end-base]=_T('\0');
+					if (p[end-base-1]==_T('\r'))
+						p[end-base-1]=_T('\0');
 					return(p);
 				}
 				id--;
@@ -208,19 +245,19 @@ HTTPSTR httpdata::AddHeader(HTTPCSTR newheader)
 	{
 		int CLRFNeeded = 0;
 		size_t l = strlen(newheader);
-		if (memcmp(newheader + l -2,"\r\n",2)!=0) CLRFNeeded+=2;
-		if (memcmp(newheader + l -4,"\r\n",2)!=0) CLRFNeeded+=2;		
-		Header = (char*)realloc(Header,l+CLRFNeeded+1);		
-		memcpy(Header,newheader,l);	
+		if (memcmp(newheader + l -2,_T("\r\n"),2*sizeof(HTTPCHAR))!=0) CLRFNeeded+=2;
+		if (memcmp(newheader + l -4,_T("\r\n"),2*sizeof(HTTPCHAR))!=0) CLRFNeeded+=2;		
+		Header = (HTTPCHAR*)realloc(Header,(l+CLRFNeeded+1)*sizeof(HTTPCHAR));		
+		memcpy(Header,newheader,l*sizeof(HTTPCHAR));	
 		HeaderSize =l + CLRFNeeded;
 		if (CLRFNeeded)
 		{
-			memcpy(Header+l,"\r\n",2);
+			memcpy(Header+l,_T("\r\n"),2*sizeof(HTTPCHAR));
 			CLRFNeeded-=2;
 		}
 		if (CLRFNeeded)
 		{
-			memcpy(Header+l+2,"\r\n",2);
+			memcpy(Header+l+2,_T("\r\n"),2*sizeof(HTTPCHAR));
 			CLRFNeeded-=2;
 		}
 	} 
@@ -231,17 +268,17 @@ HTTPSTR httpdata::AddHeader(HTTPCSTR newheader)
 
 		if (newheader[NewSize-1] != '\n') CLRFNeeded = 2;
 
-		Header=(char*)realloc(Header, HeaderSize + NewSize + CLRFNeeded +1);
+		Header=(char*)realloc(Header, (HeaderSize + NewSize + CLRFNeeded +1)*sizeof(HTTPCHAR));
 		if (!Header) //safety check.
 		{
 			return(NULL);
 		}
-		memcpy(Header + HeaderSize -2, newheader,NewSize);
+		memcpy(Header + HeaderSize -2, newheader,NewSize*sizeof(HTTPCHAR));
 		if (CLRFNeeded) //Append CLRF to the header
 		{
-			memcpy(Header + HeaderSize -2 + NewSize,"\r\n",2);
+			memcpy(Header + HeaderSize -2 + NewSize,_T("\r\n"),2*sizeof(HTTPCHAR));
 		}
-		memcpy(Header + HeaderSize -2 + CLRFNeeded + NewSize,"\r\n",2);
+		memcpy(Header + HeaderSize -2 + CLRFNeeded + NewSize,_T("\r\n"),2*sizeof(HTTPCHAR));
 		HeaderSize+=NewSize + CLRFNeeded;
 	}
 	Header[HeaderSize]='\0';
@@ -252,7 +289,7 @@ HTTPSTR httpdata::AddHeader(HTTPCSTR newheader)
 /*******************************************************************************************************/
 char * httpdata::RemoveHeader(HTTPCSTR oldheader)
 {
-	char *base,*end;
+	HTTPCHAR *base,*end;
 	base = end=Header;
 
 	if ( (HeaderSize) && (Header) && (oldheader) )
@@ -263,9 +300,9 @@ char * httpdata::RemoveHeader(HTTPCSTR oldheader)
 			{
 				if (strnicmp(base,oldheader,HeaderLen)==0)
 				{
-					end=strchr(base,'\n');
-					memcpy(Header + (base - Header),end+1,strlen(end+1)+1);
-					Header=(char *)realloc(Header,HeaderSize - (end - base +1) +1 );
+					end=_tcschr(base,_T('\n'));
+					memcpy(Header + (base - Header),end+1,(strlen(end+1)+1)*sizeof(HTTPCHAR));
+					Header=(HTTPCHAR *)realloc(Header,(HeaderSize - (end - base +1) +1 )*sizeof(HTTPCHAR) );
 					HeaderSize = strlen(Header);
 					break;
 				}
@@ -289,7 +326,7 @@ int httpdata::AddComment(char *lpComment)
 		Comments=(char**)malloc(sizeof(char*));
 	} else 
 	{
-		Comments=(char**)realloc(Comments,sizeof(char*)*(nComments+1));
+		Comments=(char**)realloc(Comments,sizeof(HTTPCHAR*)*(nComments+1));
 	}
 	Comments[nComments]=_tcsdup(lpComment);
 	nComments++;
@@ -323,12 +360,12 @@ int httpdata::AddUrlCrawled(char *lpComment, char *tagtype)
 	}
 	if (nUrlCrawled==0)
 	{
-		UrlCrawled=(char**)malloc(sizeof(char*));
-		linktagtype=(char**)malloc(sizeof(char*));
+		UrlCrawled=(HTTPCHAR**)malloc(sizeof(HTTPCHAR*));
+		linktagtype=(HTTPCHAR**)malloc(sizeof(HTTPCHAR*));
 	} else 
 	{
-		UrlCrawled=(char**)realloc(UrlCrawled,sizeof(char*)*(nUrlCrawled+1));
-		linktagtype=(char**)realloc(linktagtype,sizeof(char*)*(nUrlCrawled+1));
+		UrlCrawled=(HTTPCHAR**)realloc(UrlCrawled,sizeof(HTTPCHAR*)*(nUrlCrawled+1));
+		linktagtype=(HTTPCHAR**)realloc(linktagtype,sizeof(HTTPCHAR*)*(nUrlCrawled+1));
 	}
 	UrlCrawled[nUrlCrawled]=_tcsdup(lpComment);
 	linktagtype[nUrlCrawled]=_tcsdup(tagtype);
@@ -336,7 +373,7 @@ int httpdata::AddUrlCrawled(char *lpComment, char *tagtype)
 	return(nUrlCrawled);
 }
 /*******************************************************************************************************/
-char *httpdata::GetUrlCrawled(int i)
+HTTPCHAR *httpdata::GetUrlCrawled(int i)
 {
 	if (i>=nUrlCrawled)
 	{
@@ -347,7 +384,7 @@ char *httpdata::GetUrlCrawled(int i)
 	}
 }
 /*******************************************************************************************************/
-char *httpdata::GettagCrawled(int i)
+HTTPCHAR *httpdata::GettagCrawled(int i)
 {
 	if (i>=nUrlCrawled)
 	{
@@ -423,8 +460,8 @@ HTTPSTR httpdata::GetHeaderValue(HTTPCSTR value,int n)
 						base  = base + valuelen;
 						while  (( *base==_T(' ')) || (*base==_T(':') ) )  { base++; }
 						size_t len =  (end-base);
-						char *header=(char*)malloc(len+1);
-						memcpy(header,base,len);
+						char *header=(char*)malloc((len+1)*sizeof(HTTPCHAR));
+						memcpy(header,base,len*sizeof(HTTPCHAR));
 						if (header[len-1]==_T('\r'))
 						{
 							header[len-1]=_T('\0');
@@ -501,12 +538,12 @@ int httpdata::GetStatus()
 			char tmp[4];
 			memcpy(tmp,Header+9,3);
 			tmp[3]=0;
-			int ret = atoi(tmp);
+			int ret = _tstoi(tmp);
 			if (ret ==0)
 			{
 				printf("HTTP Protocol Error - Invalid HTTP header data\n");
 			}
-			return(atoi(tmp));
+			return(_tstoi(tmp));
 		} else {
 			return(0);
 
@@ -525,8 +562,8 @@ char *httpdata::GetHTTPMethod()
 			len++;
 		}
 		if (!len) return ( NULL );
-		p=(HTTPCHAR*)malloc(len+1);
-		memcpy(p,Header,len);
+		p=(HTTPCHAR*)malloc((len+1)*sizeof(HTTPCHAR));
+		memcpy(p,Header,len*sizeof(HTTPCHAR));
 		p[len]=_T('\0');
 		return(p);
 	} else {
@@ -535,20 +572,20 @@ char *httpdata::GetHTTPMethod()
 
 }
 /*******************************************************************************************************/
-char *httpdata::Datastrstr(HTTPCSTR searchdata)
+HTTPSTR httpdata::Datastrstr(HTTPCSTR searchdata)
 {
 	if ((Data) && (DataSize))
 	{
-		return(strstr(Data,searchdata));
+		return(_tcsstr(Data,searchdata));
 	}
 	return(NULL);
 }
 /*******************************************************************************************************/
-char *httpdata::Headerstrstr(HTTPCSTR searchdata)
+HTTPSTR httpdata::Headerstrstr(HTTPCSTR searchdata)
 {
 	if ((Header) && (HeaderSize))
 	{
-		return(strstr(Header,searchdata));
+		return(_tcsstr(Header,searchdata));
 	}
 	return(NULL);
 }

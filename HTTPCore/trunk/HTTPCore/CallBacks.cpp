@@ -84,7 +84,6 @@ int HTTPCALLBACK::RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALL
 	} else {
 		CBList[CBItems-1].lpDescription = NULL;
 	}
-	//printf("REGISTRADO tipo %i---- TOTAL: %i\n",cbType,CBItems);
 	return(1);
 
 }

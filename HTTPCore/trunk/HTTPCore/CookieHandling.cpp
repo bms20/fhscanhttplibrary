@@ -59,7 +59,7 @@ Cookie::Cookie()
 	httponly =	0;
 }
 
-Cookie::Cookie(char *cName,char *cValue,time_t cExpire,char *cPath,char *cDomain, int cSecure, int cHttponly )
+Cookie::Cookie(HTTPCHAR *cName,HTTPCHAR *cValue,time_t cExpire,HTTPCHAR *cPath,HTTPCHAR *cDomain, int cSecure, int cHttponly )
 {
 	lpCookieName  = _tcsdup(cName);
 	lpCookieValue = _tcsdup(cValue);
@@ -70,7 +70,7 @@ Cookie::Cookie(char *cName,char *cValue,time_t cExpire,char *cPath,char *cDomain
 	httponly =	cHttponly;
 }
 
-void Cookie::SetValue(char *cValue)
+void Cookie::SetValue(HTTPCHAR *cValue)
 {
 	if (lpCookieValue) free(lpCookieValue);
 	lpCookieValue = _tcsdup(cValue);
@@ -82,8 +82,8 @@ void Cookie::SetDate(time_t cExpire)
 
 size_t Cookie::path_matches (HTTPCSTR RequestedPath)
 {
-	size_t len = strlen (path);
-	if (strncmp (RequestedPath, path, len))
+	size_t len = _tcslen (path);
+	if (_tcsnccmp (RequestedPath, path, len))
 		/* FULL_PATH doesn't begin with PREFIX. */
 		return 0;
 
@@ -91,13 +91,13 @@ size_t Cookie::path_matches (HTTPCSTR RequestedPath)
 	return len;
 }
 
-int Cookie::MatchCookie(char *lppath,char *lpdomain,char *CookieName, int securevalue)
+int Cookie::MatchCookie(HTTPCHAR *lppath,HTTPCHAR *lpdomain,HTTPCHAR *CookieName, int securevalue)
 {
 	return ( 
-		(strcmp(lpCookieName,CookieName)==0) && 
-		(strcmp(lppath,path)==0) && 
+		(_tcscmp(lpCookieName,CookieName)==0) && 
+		(_tcscmp(lppath,path)==0) && 
 		(securevalue ==secure) && 
-		(strcmp(lpdomain,lpdomain)==0) 
+		(_tcscmp(lpdomain,lpdomain)==0) 
 		);
 }
 
@@ -131,7 +131,7 @@ Cookie::~Cookie()
 /***********************************************************************/
 CookieStatus::CookieStatus()
 {
-	DomainList = new bTree((char*)"http://");
+	DomainList = new bTree(_T("http://"));
 	nDomains = 0;
 }
 
@@ -197,16 +197,16 @@ int CookieStatus::check_domain_match (HTTPCSTR cookie_domain, HTTPCSTR host)
 	doesn't require it, and it doesn't seem very useful, so we
 	don't.  */
 	if (numeric_address_p (cookie_domain))
-		return !strcmp (cookie_domain, host);
+		return !_tcscmp (cookie_domain, host);
 
 	/* The domain must contain at least one embedded dot. */
 	HTTPCSTR rest = cookie_domain;
-	size_t len = strlen (rest);
-	if (*rest == '.')
+	size_t len = _tcslen (rest);
+	if (*rest == _T('.'))
 		++rest, --len;            /* ignore first dot */
 	if (len <= 0)
 		return 0;
-	if (rest[len - 1] == '.')
+	if (rest[len - 1] == _T('.'))
 		--len;                    /* ignore last dot */
 	if (!memchr (rest, '.', len)) 		/* No dots. */
 		return 0;
@@ -236,7 +236,7 @@ int CookieStatus::check_domain_match (HTTPCSTR cookie_domain, HTTPCSTR host)
 	1. Tail must equal DOMAIN.
 	2. Head must not contain an embedded dot.  */
 
-	headlen = strlen (host) - strlen (cookie_domain);
+	headlen = _tcslen (host) - _tcslen (cookie_domain);
 
 	if (headlen <= 0)
 		/* DOMAIN must be a proper subset of HOST. */
@@ -265,7 +265,7 @@ BOOL CookieStatus::cookie_expired (time_t CookieExpireTime)
 /*
  Examina un array CoookieList y verifica si ya existe la cookie
 */
-int CookieStatus::CookieAlreadyExist(struct CookieList *List,char *path, char *domain, char *name, int secure )
+int CookieStatus::CookieAlreadyExist(struct CookieList *List,HTTPCHAR *path, HTTPCHAR *domain, HTTPCHAR *name, int secure )
 {
 	int ret;
 	for (int i=0;i<List->nCookies;i++)
@@ -278,7 +278,7 @@ int CookieStatus::CookieAlreadyExist(struct CookieList *List,char *path, char *d
 
 }
 
-char *CookieStatus::ReturnCookieHeaderFor(HTTPCSTR lpDomain,HTTPCSTR path,int CookieOverSSL)
+HTTPCHAR *CookieStatus::ReturnCookieHeaderFor(HTTPCSTR lpDomain,HTTPCSTR path,int CookieOverSSL)
 {
 
 	/* Locate Which node Name should be retrieved */
@@ -288,7 +288,7 @@ char *CookieStatus::ReturnCookieHeaderFor(HTTPCSTR lpDomain,HTTPCSTR path,int Co
 		DomainNameTreeNode = lpDomain;
 	} else
 	{
-		size_t len = strlen (lpDomain) -1;
+		size_t len = _tcslen (lpDomain) -1;
 		int n=0;
 		while (len>0)
 		{
@@ -309,7 +309,7 @@ char *CookieStatus::ReturnCookieHeaderFor(HTTPCSTR lpDomain,HTTPCSTR path,int Co
 		struct CookieList *List = (struct CookieList*)node->GetData();
 		if (List)
 		{
-			char *ServerCookie=NULL;
+			HTTPCHAR *ServerCookie=NULL;
 			time_t CurrentTime = time(NULL);
 			struct tm *test = gmtime(&CurrentTime);
 			CurrentTime = mktime(test);
@@ -323,15 +323,15 @@ char *CookieStatus::ReturnCookieHeaderFor(HTTPCSTR lpDomain,HTTPCSTR path,int Co
 //                    printf("Sacando Cookie %i\n",i);
 					if (!ServerCookie)
 					{
-						ServerCookie = (char*)malloc(strlen(List->CookieElement[i]->GetCookieName()) + strlen(List->CookieElement[i]->GetCookieValue()) +1 +1);
-						sprintf(ServerCookie,"%s=%s",List->CookieElement[i]->GetCookieName(),List->CookieElement[i]->GetCookieValue());
+						ServerCookie = (HTTPCHAR*)malloc( (_tcslen(List->CookieElement[i]->GetCookieName()) + _tcslen(List->CookieElement[i]->GetCookieValue()) +1 +1)*sizeof(HTTPCHAR));
+						_stprintf(ServerCookie,_T("%s=%s"),List->CookieElement[i]->GetCookieName(),List->CookieElement[i]->GetCookieValue());
 					} else
 					{
-						ServerCookie = (char*)realloc(ServerCookie,strlen(ServerCookie) + 2 + strlen(List->CookieElement[i]->GetCookieName()) + strlen(List->CookieElement[i]->GetCookieValue()) +1 +1);
-						strcat(ServerCookie,"; ");
-						strcat(ServerCookie,List->CookieElement[i]->GetCookieName());
-						strcat(ServerCookie,"=");
-						strcat(ServerCookie,List->CookieElement[i]->GetCookieValue());
+						ServerCookie = (HTTPCHAR*)realloc(ServerCookie,(_tcslen(ServerCookie) + 2 + _tcslen(List->CookieElement[i]->GetCookieName()) + _tcslen(List->CookieElement[i]->GetCookieValue()) +1 +1)*sizeof(HTTPCHAR));
+						_tcscat(ServerCookie,_T("; "));
+						_tcscat(ServerCookie,List->CookieElement[i]->GetCookieName());
+						_tcscat(ServerCookie,_T("="));
+						_tcscat(ServerCookie,List->CookieElement[i]->GetCookieValue());
 
                     }
 				} else
@@ -346,21 +346,21 @@ char *CookieStatus::ReturnCookieHeaderFor(HTTPCSTR lpDomain,HTTPCSTR path,int Co
 	return(NULL);
 }
 
-int CookieStatus::ParseCookieData(char *lpCookieData, HTTPCSTR lpPath, HTTPCSTR lpDomain)
+int CookieStatus::ParseCookieData(HTTPCHAR *lpCookieData, HTTPCSTR lpPath, HTTPCSTR lpDomain)
 {
 	int nvalues = 0;
-	char **name = NULL;
-	char **value = NULL;
+	HTTPCHAR **name = NULL;
+	HTTPCHAR **value = NULL;
 	time_t expire = (time_t)0;
 	time_t CurrentTime = 0;
 
 	//DomainList->SetTreeName(lpDomain);	
-	char *path = NULL;
-	char *domain = NULL;
+	HTTPCHAR *path = NULL;
+	HTTPCHAR *domain = NULL;
 	BOOL secure = 0;
 	BOOL httponly = 0;
 	int err = 0;
-	char *start, *end;
+	HTTPCHAR *start, *end;
 	int deletecookie = 0;
 
 	HTTPCSTR DomainNameTreeNode = NULL;
@@ -370,7 +370,7 @@ int CookieStatus::ParseCookieData(char *lpCookieData, HTTPCSTR lpPath, HTTPCSTR 
 		DomainNameTreeNode = lpDomain;
 	} else 
 	{
-		size_t len = strlen (lpDomain) -1;
+		size_t len = _tcslen (lpDomain) -1;
 		int n=0;
 		while (len>0)
 		{
@@ -385,12 +385,12 @@ int CookieStatus::ParseCookieData(char *lpCookieData, HTTPCSTR lpPath, HTTPCSTR 
 		if (!DomainNameTreeNode) DomainNameTreeNode = lpDomain;
 	}
 
-	char *p =strtok(lpCookieData,";");
+	HTTPCHAR *p =_tcstok(lpCookieData,_T(";"));
 	while ((p) && (!err) )
 	{
 		GetDataWithoutSpaces(p);
 		start = p;
-		end=strchr(p,'=');
+		end=_tcschr(p,_T('='));
 		if (end)
 		{
 			*end=0;
@@ -461,11 +461,11 @@ int CookieStatus::ParseCookieData(char *lpCookieData, HTTPCSTR lpPath, HTTPCSTR 
 			{
 				if (nvalues==0)
 				{
-					name = (char**) malloc(1*sizeof(char*));
-					value= (char**) malloc(1*sizeof(char*));
+					name = (HTTPCHAR**) malloc(1*sizeof(HTTPCHAR*));
+					value= (HTTPCHAR**) malloc(1*sizeof(HTTPCHAR*));
 				} else {
-					name = (char**)realloc(name,(nvalues+1)*sizeof(char*));
-					value =(char**)realloc(value,(nvalues+1)*sizeof(char*));
+					name = (HTTPCHAR**)realloc(name,(nvalues+1)*sizeof(HTTPCHAR*));
+					value =(HTTPCHAR**)realloc(value,(nvalues+1)*sizeof(HTTPCHAR*));
 				}
 				name[nvalues] = _tcsdup(start);
 				value[nvalues]= _tcsdup(end);
@@ -580,7 +580,7 @@ int CookieStatus::ParseCookieData(char *lpCookieData, HTTPCSTR lpPath, HTTPCSTR 
 
 }
 
-int CookieStatus::RemoveCookieFromList(struct CookieList *List,char *path,char *name, char *lpDomain)
+int CookieStatus::RemoveCookieFromList(struct CookieList *List,HTTPCHAR *path,HTTPCHAR *name,HTTPCHAR *lpDomain)
 {
 	for(int i=0;i<List->nCookies;i++)
 	{
@@ -603,7 +603,7 @@ void CookieStatus::InsertCookieToList(struct CookieList *List,char *path, char *
 
 
 
-time_t CookieStatus::ExtractDate(char *lpdate )
+time_t CookieStatus::ExtractDate(HTTPCHAR *lpdate )
 {
 	struct tm expirestm;
 
