@@ -3,6 +3,21 @@
 
 #include <stdio.h>
 
+/*
+class FHSCANCONFIG {
+	int ProxyInstance;
+	int ManualRequest;
+	int NoBruteforce;
+	int VerboseMode;
+	int nlogins;
+	USERLIST *users;
+
+public:
+
+};
+*/
+
+
 struct _ports {
    int port;
    int ssl;
@@ -11,27 +26,27 @@ struct _ports {
 //hosts que no procesaremos
 struct  _ignore {
    int status;
-   char server[200];
+   HTTPCHAR server[200];
 };
 
 //Autenticacion de routers fuera del directorio raiz
 struct _fakeauth {
    unsigned int	 status;
-   char  server[200];
-   char  authurl[200];
-   char  method[10]; //GET |POST
-   char  postdata[200];
+   HTTPCHAR  server[200];
+   HTTPCHAR  authurl[200];
+   HTTPCHAR  method[10]; //GET |POST
+   HTTPCHAR  postdata[200];
 };
 typedef struct _logins {
-	char user[40];
+	HTTPCHAR user[40];
 } USERLOGIN;
 
 //resultado de una peticion http
 
 
 typedef struct _UserPass{
-   char UserName[50];
-   char Password[50];
+   HTTPCHAR UserName[50];
+   HTTPCHAR Password[50];
 } USERLIST;
 //
 //char *GetHeaderValue(HTTPSession* data, char  *Header) ;
@@ -39,43 +54,43 @@ typedef struct _UserPass{
 
 //información de un router que soporta auth por webform
 struct _webform {
-   char  model[200];       //Fake version
+   HTTPCHAR  model[200];       //Fake version
    unsigned int status;            //codigo de error de la página principal
-   char  server[200]; //banner del servidor Web
-   char  matchstring[200]; //string de la peticion con la que machear los resultados.
-   char  ValidateImage[200];
-   char  authurl[200];
-   char  authmethod[10];
-   char  authform[1024];
+   HTTPCHAR  server[200]; //banner del servidor Web
+   HTTPCHAR  matchstring[200]; //string de la peticion con la que machear los resultados.
+   HTTPCHAR  ValidateImage[200];
+   HTTPCHAR  authurl[200];
+   HTTPCHAR  authmethod[10];
+   HTTPCHAR  authform[1024];
    int   requireloginandpass;
-   char  validauthstring[200];
-   char  validauthstringalt[200];
-   char  invalidauthstring[200];
-   char  invalidauthstringalt[200]; 
-   char  AdditionalHeader[200];
+   HTTPCHAR  validauthstring[200];
+   HTTPCHAR  validauthstringalt[200];
+   HTTPCHAR  invalidauthstring[200];
+   HTTPCHAR  invalidauthstringalt[200]; 
+   HTTPCHAR  AdditionalHeader[200];
    int   UpdateCookie;
-   char  InitialCookieURL[200];
-   char  ValidateAlternativeurl[200];
-   char LoadAdditionalUrl[200];
-   char ReconnectOnMatch[200];
+   HTTPCHAR  InitialCookieURL[200];
+   HTTPCHAR  ValidateAlternativeurl[200];
+   HTTPCHAR LoadAdditionalUrl[200];
+   HTTPCHAR ReconnectOnMatch[200];
 };
 
 //vulnerability list
 
 typedef struct _vulnerability_match
 {
-   char Validatestring[200][200];
-   char Ignorestring[200];
-   char description[200];
+   HTTPCHAR Validatestring[200][200];
+   HTTPCHAR Ignorestring[200];
+   HTTPCHAR description[200];
    int  nstrings;
    }MATCH, *PMATCH;
 
 typedef struct _vulnerability_list {
-   char  vulnerability[200];
+   HTTPCHAR  vulnerability[200];
    unsigned int status;
-   char server[200];
-   char  url[200];
-   char Ignoresignature[200];
+   HTTPCHAR server[200];
+   HTTPCHAR  url[200];
+   HTTPCHAR Ignoresignature[200];
 
    int nMatch;
    PMATCH Match;

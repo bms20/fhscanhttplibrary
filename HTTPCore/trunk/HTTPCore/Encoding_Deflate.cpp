@@ -44,12 +44,13 @@ SUCH DAMAGE.
 */
 #ifdef _ZLIB_SUPPORT_
 
+
 #include "Encoding_Deflate.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
+#include "Build.h"
  #ifdef __WIN32__RELEASE__
 	HMODULE						f_hLIBZ = NULL;
 	INFLATE_FUNC				INFLATE;
@@ -87,7 +88,7 @@ __inline static int get_byte(z_stream *strm)
 	NULL is returned instead.
 */
 /******************************************************************************/
-HTTPIOMapping *gunzip(char *in, size_t inSize, int what)
+HTTPIOMapping *gunzip(void *in, size_t inSize, int what)
 {
 	int ret;
     unsigned have;
@@ -223,13 +224,13 @@ HTTPIOMapping *gunzip(char *in, size_t inSize, int what)
 	\note This function does not block requests, only tries to decode gzip or deflated HTTP response.
 */
 /******************************************************************************/
-int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response)
+int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPRequest* request,HTTPResponse* response)
 {
 #ifdef __WIN32__RELEASE__
 
 	if (!f_hLIBZ)
 	{
-		f_hLIBZ = LoadLibraryA("zlib1.dll");
+		f_hLIBZ = LoadLibrary(_T("zlib1.dll"));
 		if (!f_hLIBZ)
 		{
 			printf("## FATAL - ZLIB LIBRARY NOT FOUND\n");
@@ -252,10 +253,10 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 	{
 		if (request)
 		{
-			if (_tcsnccmp(request->Header,"CONNECT ",8)!=0)
+			if (_tcsnccmp(request->GetHeaders(),_T("CONNECT "),8)!=0)
 			{
-				request->RemoveHeader("Accept-Encoding: ");
-				request->AddHeader("Accept-Encoding: gzip, deflate");
+				request->RemoveHeader(_T("Accept-Encoding: "));
+				request->AddHeader(_T("Accept-Encoding: gzip, deflate"));
 			}
 		}
 		return (CBRET_STATUS_NEXT_CB_CONTINUE);
@@ -263,27 +264,27 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 	{
 		int type = NORMAL_DATA;
 
-		if ( (!response) || (!response->HeaderSize) || (!response->Header) )  {
+		if ( (!response) || (!response->GetHeaders()) || (!response->GetHeaderSize()) )  {
 		   return (CBRET_STATUS_NEXT_CB_CONTINUE);
 		}
-		char *encoding=response->GetHeaderValue("Content-Encoding:",0);
+		HTTPCHAR *encoding=response->GetHeaderValue(_T("Content-Encoding:"),0);
 		if (!encoding)
 			return(CBRET_STATUS_NEXT_CB_CONTINUE);
 
-		char *p = _tcsstr(encoding,"deflate");
+		HTTPCHAR *p = _tcsstr(encoding,_T("deflate"));
 		if (p)
 			type= DEFLATE_DATA;
 		else {
-		   p = _tcsstr(encoding,"gzip");
+		   p = _tcsstr(encoding,_T("gzip"));
 		   if (p)  type= GZIP_DATA;
 		}
 		free(encoding);
 
 		if (type != NORMAL_DATA)
 		{
-			if (response->Data)
+			if (response->GetData())
 			{
-				HTTPIOMapping *decoded = gunzip(response->Data, response->DataSize,type);
+				HTTPIOMapping *decoded = gunzip(response->GetData(), response->GetDataSize(),type);
 				#ifdef _DBG_
 				if (decoded)
 				{
@@ -294,10 +295,10 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* requ
 				}
 				#endif
 				response->UpdateAndReplaceFileMappingData(decoded);
-				response->RemoveHeader("Content-Encoding:");
-				response->RemoveHeader("Content-Length:");
-				char tmp[256];
-				sprintf(tmp,"Content-Length: %i\r\n",response->DataSize);
+				response->RemoveHeader(_T("Content-Encoding:"));
+				response->RemoveHeader(_T("Content-Length:"));
+				HTTPCHAR tmp[256];
+				_stprintf(tmp,_T("Content-Length: %i\r\n"),response->GetDataSize());
 				response->AddHeader(tmp);
 			}
 		}

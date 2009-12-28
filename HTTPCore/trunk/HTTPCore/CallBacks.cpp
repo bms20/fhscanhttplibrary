@@ -135,7 +135,7 @@ int  HTTPCALLBACK::RemoveHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLB
     \note a Blocked httpdata* request or response could be used for example when a plugin is implementing a popup filtering.
 */
 /**********************************************************************************************************************/
-int HTTPCALLBACK::DoCallBack(int cbType,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response)
+int HTTPCALLBACK::DoCallBack(int cbType,HTTPHANDLE HTTPHandle,HTTPRequest* request,HTTPResponse* response)
 { 
     unsigned int i;
 	int ret;

@@ -6,17 +6,17 @@
 #endif
 
 
-#define RAWUSER   "!!!RAWUSER!!!"
-#define RAWPASS   "!!!RAWPASS!!!"
-#define B64USER   "!!!B64USER!!!"
-#define B64PASS   "!!!B64PASS!!!"
-#define MD5USER   "!!!MD5USER!!!"
-#define MD5PASS   "!!!MD5PASS!!!"
-#define RAWIPAD   "!!!RAWIPAD!!!"
-#define RAWPORT   "!!!RAWPORT!!!"
-#define RAWTIME   "!!!RAWTIME!!!"
-#define HD5USER   "!!!HD5USER!!!"
-#define HD5PASS   "!!!HD5PASS!!!"
+#define RAWUSER   _T("!!!RAWUSER!!!")
+#define RAWPASS   _T("!!!RAWPASS!!!")
+#define B64USER   _T("!!!B64USER!!!")
+#define B64PASS   _T("!!!B64PASS!!!")
+#define MD5USER   _T("!!!MD5USER!!!")
+#define MD5PASS   _T("!!!MD5PASS!!!")
+#define RAWIPAD   _T("!!!RAWIPAD!!!")
+#define RAWPORT   _T("!!!RAWPORT!!!")
+#define RAWTIME   _T("!!!RAWTIME!!!")
+#define HD5USER   _T("!!!HD5USER!!!")
+#define HD5PASS   _T("!!!HD5PASS!!!")
 
 #ifndef HTTPHANDLE
  #define HTTPHANDLE int

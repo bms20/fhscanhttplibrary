@@ -42,7 +42,8 @@ SUCH DAMAGE.
 
 //#include "HTTPHANDLE.h"
 //#include "HTTPData.h"
-#include "HTTPResponse.h"
+//#include "HTTPResponse.h"
+#include "HTTPSession.h"
 #include "Threading.h"
 #include "CallBacks.h"
 //#include "SSLModule.h"
@@ -102,7 +103,7 @@ class HTTPAPI : public encoders
 	void *ctx;							/* Proxy SSL vars */
 	void *bio_err;						/* Proxy SSL vars */
 	int InitProxyCTX(void);
-	char	*FHScanUserAgent;			/* HTTPAPI User Agent */
+	HTTPCHAR	*FHScanUserAgent;			/* HTTPAPI User Agent */
 	class CookieStatus *COOKIE;         /* Automatic Cookie Handling struct */
 	
 	friend int ThreadFunc(void *foo);
@@ -111,22 +112,22 @@ class HTTPAPI : public encoders
 	
 	class HTTPAPIHANDLE *GetHTTPAPIHANDLE(HTTPHANDLE HTTPHandle);	
 	void  CleanConnectionTable(LPVOID *unused);
-	class ConnectionHandling *GetSocketConnection(class HTTPAPIHANDLE *HTTPHandle, httpdata* request);
+	class ConnectionHandling *GetSocketConnection(class HTTPAPIHANDLE *HTTPHandle, HTTPRequest* request);
 	void  BuildBasicAuthHeader(HTTPCSTR Header,HTTPCSTR lpUsername, HTTPCSTR lpPassword,HTTPSTR destination, int dstsize);
-	httpdata* DispatchHTTPRequest(HTTPHANDLE HTTPHandle, httpdata* request);
-	httpdata* BuildHTTPProxyResponseHeader( int isSSLStablished,int closeconnection, int status, HTTPCSTR protocol,const char* title, const char* extra_header, const char* mime_type, int length, time_t mod );
-	httpdata* BuildHTTPProxyTunnelConnection( HTTPHANDLE HTTPHandle);
+	HTTPResponse* DispatchHTTPRequest(HTTPHANDLE HTTPHandle, HTTPRequest* request);
+	HTTPResponse* BuildHTTPProxyResponseHeader( int isSSLStablished,int closeconnection, int status, HTTPCSTR protocol,const HTTPCHAR* title, const HTTPCHAR* extra_header, const HTTPCHAR* mime_type, int length, time_t mod );
+	HTTPRequest* BuildHTTPProxyTunnelConnection( HTTPHANDLE HTTPHandle);
 	int   ParseRequest(HTTPSTR line, HTTPSTR method,  HTTPSTR host, HTTPSTR path, int *port);
 	int   SkipHeader(HTTPSTR header);
 	void  *ListenConnection(void *foo);
 	int   DispatchHTTPProxyRequest(void *ListeningConnection);
 	void  SendHTTPProxyErrorMessage( ConnectionHandling* connection,int connectionclose, int status,HTTPCSTR protocol, HTTPCSTR title, HTTPCSTR extra_header, HTTPCSTR text );
-	void  ExtractCookiesFromResponseData( httpdata* response, HTTPCSTR path, HTTPCSTR TargetDNS);
-	char  *BuildCookiesFromStoredData( HTTPCSTR TargetDNS, HTTPCSTR path, int secure);
-	httpdata* BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,size_t PostDataSize);
-	char  *GetPathFromURL(HTTPCSTR url);
-	char  *GetPathFromLocationHeader(httpdata* response, int ssl, const char* domain);
-	enum AuthenticationType GetSupportedAuthentication(httpdata *response);
+	void  ExtractCookiesFromResponseData( HTTPResponse* response, HTTPCSTR path, HTTPCSTR TargetDNS);
+	HTTPCHAR  *BuildCookiesFromStoredData( HTTPCSTR TargetDNS, HTTPCSTR path, int secure);
+	HTTPRequest* BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,size_t PostDataSize);
+	HTTPCHAR  *GetPathFromURL(HTTPCSTR url);
+	HTTPCHAR  *GetPathFromLocationHeader(HTTPResponse* response, int ssl, const HTTPCHAR* domain);
+	enum AuthenticationType GetSupportedAuthentication(HTTPResponse *response);
 	
 public:
 	HTTPAPI();
@@ -144,11 +145,11 @@ public:
 	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData);
 	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,size_t PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);	
-	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request);
-	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,httpdata* request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
+	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPRequest* request);
+	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPRequest* request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	HTTPSession*   SendHttpRequest(HTTPCSTR Fullurl);
 	
-	HTTPSession*   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, size_t eaderSize, HTTPCSTR PostData, size_t PostDataSize);		
+	HTTPSession*   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, HTTPCSTR PostData, size_t PostDataSize);		
 
 	int        InitHTTPProxy(HTTPCSTR hostname, unsigned short port);
 	int        InitHTTPProxy(HTTPCSTR hostname, HTTPCSTR port);
@@ -158,7 +159,9 @@ public:
 
 	int        RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,HTTPCSTR Description);
 	void       CancelHTTPRequest(HTTPHANDLE HTTPHandle);
-	void       doSpider(HTTPSTR host,HTTPSTR FullPath, httpdata*  response);
+#ifdef _SPIDER_
+	void       doSpider(HTTPSTR host,HTTPSTR FullPath, HTTPResponse*  response);
+#endif
 };	
 
 

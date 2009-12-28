@@ -41,7 +41,9 @@ SUCH DAMAGE.
 #ifndef __CALLBACKS_H__
 #define __CALLBACKS_H__
 
-#include "HTTPData.h"
+#include "HTTPRequest.h"
+#include "HTTPResponse.h"
+
 
 #ifdef __WIN32__RELEASE__
 
@@ -53,10 +55,10 @@ typedef int (__cdecl* HTTP_IO_REQUEST_CALLBACK) (
     int         cbType,
 	void *api,
     HTTPHANDLE  HTTPHandle,
-	httpdata   *request,
-    httpdata*  response);
+	HTTPRequest   *request,
+    HTTPResponse  *response);
 #else
-typedef int (*HTTP_IO_REQUEST_CALLBACK) (int cbType, void *api,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response);// __attribute__((stdcall));
+typedef int (*HTTP_IO_REQUEST_CALLBACK) (int cbType, void *api,HTTPHANDLE HTTPHandle,HTTPRequest* request,HTTPResponse* response);// __attribute__((stdcall));
 #endif
 
 //Callbacks types (You can register custom callbacks if needed)
@@ -95,7 +97,7 @@ public:
 	void SetHTTPApiInstance(void *api) { ParentHTTPApi = api; }
 	int RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,HTTPCSTR Description);
 	int  RemoveHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb);
-	int DoCallBack(int cbType,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response);
+	int DoCallBack(int cbType,HTTPHANDLE HTTPHandle,HTTPRequest* request,HTTPResponse* response);
 };
 
 

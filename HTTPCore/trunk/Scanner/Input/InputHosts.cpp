@@ -12,7 +12,7 @@ extern int          nports;
 extern struct       _ports ports[MAX_PORTS];
 
 /******************************************************************************/
-int AddNewTarget(unsigned long ip,unsigned long endip, char *hostname, int port, int ssl)
+int AddNewTarget(unsigned long ip,unsigned long endip, HTTPCHAR *hostname, int port, int ssl)
 {
 	struct sockaddr_in iip;
 	iip.sin_addr.s_addr = htonl((long)ip);
@@ -22,7 +22,7 @@ int AddNewTarget(unsigned long ip,unsigned long endip, char *hostname, int port,
 	if (ip == 0)
 	{
     	targets = (PTARGETS) realloc(targets,sizeof(TARGETS)*(ntargets+1));
-		targets[ntargets].hostname = strdup(hostname);
+		targets[ntargets].hostname = _tcsdup(hostname);
 		targets[ntargets].port=port;
 		targets[ntargets].ssl=ssl;
 		ntargets++;
@@ -45,7 +45,7 @@ int AddNewTarget(unsigned long ip,unsigned long endip, char *hostname, int port,
 
 /******************************************************************************/
 #ifdef XML_LIBRARY
-int ParseNmapXMLFile(char *lpFilename)
+int ParseNmapXMLFile(HTTPCHAR *lpFilename)
 {
 	int status=1;
 	XMLNode xMainNode=XMLNode::openFileHelper(lpFilename,NULL, &status);
@@ -85,7 +85,7 @@ int ParseNmapXMLFile(char *lpFilename)
 							{
 								if (!targets) targets = (PTARGETS) malloc(sizeof(TARGETS));
 								else targets = (PTARGETS) realloc(targets, (ntargets +1) *sizeof(TARGETS) );
-								targets[ntargets].hostname = strdup(xNode.getChildNode("host",i).getChildNode("address",0).getAttribute("addr"));
+								targets[ntargets].hostname = _tcsdup(xNode.getChildNode("host",i).getChildNode("address",0).getAttribute("addr"));
 								targets[ntargets].port=atoi(xNode.getChildNode("host",i).getChildNode("ports").getChildNode("port",j).getAttribute("portid"));
 								targets[ntargets].ssl = (strcmp(xNode.getChildNode("host",i).getChildNode("ports").getChildNode("port",j).getChildNode("service").getAttribute("name"),"https")==0);
 								ntargets++;
@@ -113,8 +113,8 @@ int ParseNmapXMLFile(char *lpFilename)
 int Parseipfile(FILE *ipfile)
 {
 	int total=0;
-	char *p;
-	char line[512];
+	HTTPCHAR *p;
+	HTTPCHAR line[512];
 	while (!feof(ipfile))
 	{
 		memset(line,'\0',sizeof(line));
@@ -132,7 +132,7 @@ int Parseipfile(FILE *ipfile)
 					*p=0;
 					p++;
 				}
-				AddNewTarget(0,0,line,atoi(p),0);
+				AddNewTarget(0,0,line,_tstoi(p),0);
 				total++;
 			} else 
 			{
@@ -150,9 +150,9 @@ int Parseipfile(FILE *ipfile)
 	return(total);
 }
 /******************************************************************************/
-int ParseHosts( char *lphosts)
+int ParseHosts( HTTPCHAR *lphosts)
 {
-	char *p;
+	HTTPCHAR *p;
 	int IP1[4];
 	int IP2[4];
 	int i;
@@ -162,7 +162,7 @@ int ParseHosts( char *lphosts)
 	int total = 0;
 
 
-	char *chunk = strtok(lphosts,",");
+	HTTPCHAR *chunk = _tcstok(lphosts,",");
 
 	while (chunk!=NULL)
 	{
@@ -243,7 +243,7 @@ int ParseHosts( char *lphosts)
 				}
 			}
 		}
-		chunk=strtok(NULL,",");
+		chunk=_tcstok(NULL,",");
 	}
 	return(total);
 
@@ -251,14 +251,14 @@ int ParseHosts( char *lphosts)
 
 
 /******************************************************************************/
-int ReadAndSanitizeInput(FILE *file, char *buffer,int len) {
+int ReadAndSanitizeInput(FILE *file, HTTPCHAR *buffer,int len) {
 	//read a line from a file stream, and removes '\r' and '\n'
 	//if the line is not a comment, true is returned
 	fgets(buffer,len,file);
 	buffer[len-1]='\0';
 	size_t bufferSize =  strlen(buffer);
 	if ( (bufferSize>3) && buffer[0]!='#'  && buffer[0]!=';'  ) {
-		char *p=buffer+bufferSize-1;
+		HTTPCHAR *p=buffer+bufferSize-1;
 		while ( (*p=='\r' ) || (*p=='\n') || (*p==' ') ) { p[0]='\0'; --p; }
 		return(1);
 	}

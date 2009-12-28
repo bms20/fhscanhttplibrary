@@ -9,7 +9,7 @@ TODO:
 
 //#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
-
+#include "../../HTTPCore/Build.h"
 #include "../FHScan.h"
 #include "LogSettings.h"
 
@@ -43,7 +43,7 @@ int CloseHTMLReport(void)
 		for(int i=0;i<7;i++) {
 			if (report[i].logfile)
 			{
-				fwrite(report[i].end,1,strlen(report[i].end),report[i].logfile);
+				fwrite(report[i].end,1,_tcslen(report[i].end),report[i].logfile);
 				fclose(report[i].logfile);
 			}
 		}
@@ -80,7 +80,7 @@ static int GetHtmlTitle(HTTPSession* data, char *output, size_t dstSize) {
         return(0);
 	}
 	buffer=data->response->Data;
-	BufferSize =  strlen(buffer);
+	BufferSize =  _tcslen(buffer);
 
 	if ( (buffer) && BufferSize>15) {
         for (unsigned int i=0;i<BufferSize-14;i++)
@@ -99,7 +99,7 @@ static int GetHtmlTitle(HTTPSession* data, char *output, size_t dstSize) {
 						if ( (q-p)<(int)dstSize) memcpy(output,p,q-p);
 						else            memcpy(output,p,dstSize-1);
 					} else {
-						BufferSize = strlen(p);
+						BufferSize = _tcslen(p);
 						if (BufferSize>dstSize)
 						{
 							memcpy(output,p,dstSize-1);
@@ -118,7 +118,7 @@ static int GetHtmlTitle(HTTPSession* data, char *output, size_t dstSize) {
 			char *lpTitle=data->response->GetHeaderValue("WWW-Authenticate: Basic",0);
 			if (lpTitle)
 			{
-				char *realm=strstr(lpTitle,"realm=\"");
+				char *realm=_tcsstr(lpTitle,"realm=\"");
 				if (realm){
 					realm+=7;
 					char *q=strchr(realm,'\"');
@@ -163,7 +163,7 @@ int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR UserName, HTTPCSTR Pas
 
 
 		snprintf(buffer,sizeof(buffer)-1,"   <tr> <td><a href=\"%s://%s:%i%s\" target=\"_blank\">+</a>%s</td> <td>%i</td> <td>%i</td> <td>%s</td>",data->NeedSSL ? "https" : "http" ,data->hostname,data->port,url ? url : "/",data->hostname,data->port,data->status,title);
-		fwrite(buffer,1,strlen(buffer),report[FROM].logfile);
+		fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 
 		
 		switch(FROM)
@@ -195,7 +195,7 @@ int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR UserName, HTTPCSTR Pas
 		case MESSAGE_ROUTER_PASSFOUND:
 //		case MESSAGE_WEBFORM_PASSFOUND:
 			snprintf(buffer,sizeof(buffer)-1,"<td>%s</td> <td>%s</td> <td>%s</td> ",(UserName!=NULL) ? UserName : "",(Password!=NULL) ? Password : "",url);
-			fwrite(buffer,1,strlen(buffer),report[FROM].logfile);
+			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 
 			if (csv) {
 					fprintf(stdout,"RTPASS|%s|%i|%i|%s|%s|%s|%s|%s\n",data->hostname,data->port,data->status,title,(UserName!=NULL) ? UserName : "",(Password!=NULL) ? Password : "",url,data->server);
@@ -206,7 +206,7 @@ int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR UserName, HTTPCSTR Pas
 		case MESSAGE_WEBFORMS_PASSNOTFOUND:  //router 401 & webform authentication
 
 			snprintf(buffer,sizeof(buffer)-1,"<td>%s</td> ",url);
-			fwrite(buffer,1,strlen(buffer),report[FROM].logfile);
+			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 			if (csv) {
 					fprintf(stdout,"RUPASS|%s|%i|%i|%s|%s|%s\n",data->hostname,data->port,data->status,title,url,data->server);
 			} else {
@@ -224,7 +224,7 @@ int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR UserName, HTTPCSTR Pas
 //		case MESSAGE_WEBSERVER_VULNERABILITY_AUTHNEEDED:
 //		case MESSAGE_WEBSERVER_PASSFOUND:
 			snprintf(buffer,sizeof(buffer)-1,"<td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> ",url,(UserName!=NULL) ? UserName : "",(Password!=NULL) ? Password : "",(VulnDescription!=NULL) ? VulnDescription : "");
-			fwrite(buffer,1,strlen(buffer),report[FROM].logfile);
+			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 
 			if (csv) {
 					fprintf(stdout,"WEBVUL|%s|%i|%i|%s|%s|%s|%s|%s|%s\n",data->hostname,data->port,data->status,title,(UserName!=NULL) ? UserName : "",(Password!=NULL) ? Password : "",url,(VulnDescription!=NULL) ? VulnDescription : "",data->server);
@@ -238,15 +238,15 @@ int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR UserName, HTTPCSTR Pas
 		}
 			if ((VulnDescription) && ( (FROM == MESSAGE_WEBFORM_PASSFOUND) || (FROM == MESSAGE_ROUTER_PASSFOUND) || (FROM == MESSAGE_WEBFORM_PASSFOUND) || (FROM == MESSAGE_WEBFORMS_PASSNOTFOUND)) )
 			{
-				sprintf(tmp," (%s)",VulnDescription);
+				sprintf(tmp,_T(" (%s)"),VulnDescription);
 			} 	else tmp[0]='\0';
 			snprintf(buffer,sizeof(buffer)-1,"<td id=\"IP%s\" onmouseover=\"testfunc(this.id);\" onmouseout=\"setVisibility('foo','none');\">%s %s ",data->hostname,data->server,tmp);
-			fwrite(buffer,1,strlen(buffer),report[FROM].logfile);
+			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 			snprintf(buffer,sizeof(buffer)-1,"<div id=\"headers_IP%s\" class=\"hideme\"> ",data->hostname);
-			fwrite(buffer,1,strlen(buffer),report[FROM].logfile);
+			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 
 			while (	p=data->response->GetHeaderValueByID(j++) ){
-				fwrite(p,1,strlen(p),report[FROM].logfile);
+				fwrite(p,1,_tcslen(p),report[FROM].logfile);
 				fwrite("<br/>",1,5,report[FROM].logfile);
 				free(p);
 			}
@@ -292,7 +292,7 @@ struct _ports *ports,
 		report=(PREPORT)malloc(sizeof(REPORT)*7);
 		memset(report,'\0',   sizeof(REPORT)*7);
 
-		FILE *TemplateHTML=fopen("tmpl.dat","r");
+		FILE *TemplateHTML=_tfopen("tmpl.dat","r");
 		if (!TemplateHTML) {
 			if (!csv) {
 				printf("[-] Error Loading tmpl.dat\n");
@@ -338,8 +338,8 @@ struct _ports *ports,
 				printf("\n\n");
 				*/
 				if (opt) {
-					for(int i=0;i<7;i++) strncat(report[i].header,where,opt-where);
-					if (strncmp(opt+1,"HOSTPATH",8)==0)
+					for(int i=0;i<7;i++) _tcsncat(report[i].header,where,opt-where);
+					if (_tcsnccmp(opt+1,"HOSTPATH",8)==0)
 					{
 						if (path!=NULL)
 						{
@@ -361,7 +361,7 @@ struct _ports *ports,
 							}
 						}
 					} else
-						if (strncmp(opt+1,"SCANDATE",8)==0)
+						if (_tcsnccmp(opt+1,"SCANDATE",8)==0)
 						{
 	#ifdef __WIN32__RELEASE__
 									snprintf(tmp,sizeof(tmp)-1,"%i/%i/%i - %i:%i ",LogTime.wMonth,LogTime.wDay,LogTime.wYear,LogTime.wHour,LogTime.wMinute);
@@ -371,7 +371,7 @@ struct _ports *ports,
 									for(int i=0;i<7;i++) strcat(report[i].header,tmp);
 						} else
 
-						if (strncmp(opt+1,"HTTPPORT",8)==0)
+						if (_tcsnccmp(opt+1,"HTTPPORT",8)==0)
 						{
 							for(int j=0;j<nports;j++)
 							{
@@ -386,14 +386,14 @@ struct _ports *ports,
 							}
 						} else
 
-								if (strncmp(opt+1,"NTHREADS",8)==0)
+								if (_tcsnccmp(opt+1,"NTHREADS",8)==0)
 								{
 									snprintf(tmp,sizeof(tmp)-1,"%i",nthreads);
 									for(int i=0;i<7;i++) strcat(report[i].header,tmp);
 									//strcat(report[i].header,"1");
 
 								}
-								if (strncmp(opt+1,"BRUTEFOR",8)==0)
+								if (_tcsnccmp(opt+1,"BRUTEFOR",8)==0)
 								{
 									if (bruteforce) {
 										for(int i=0;i<7;i++) strcat(report[i].header,"class=\"input\" >BruteForce");
@@ -401,7 +401,7 @@ struct _ports *ports,
 										for(int i=0;i<7;i++) strcat(report[i].header,"class=\"inputstrike\" >BruteForce");
 									}
 								} else
-									if (strncmp(opt+1,"FULLUSER",8)==0)
+									if (_tcsnccmp(opt+1,"FULLUSER",8)==0)
 									{
 										if (fulluserlist) {
 											for(int i=0;i<7;i++) strcat(report[i].header,"class=\"input\" >Full Users list");
@@ -409,7 +409,7 @@ struct _ports *ports,
 											for(int i=0;i<7;i++) strcat(report[i].header,"class=\"input\" > Simple Users List");
 										}
 									} else
-										if (strncmp(opt+1,"VULNCHEC",8)==0)
+										if (_tcsnccmp(opt+1,"VULNCHEC",8)==0)
 										{
 											if (vulnchecks) {
 												for(int i=0;i<7;i++) strcat(report[i].header,"class=\"input\" >Vulnerability Checks");
@@ -418,7 +418,7 @@ struct _ports *ports,
 											}
 
 										} else
-											if (strncmp(opt+1,"FOPTIONS",8)==0)
+											if (_tcsnccmp(opt+1,"FOPTIONS",8)==0)
 											{
 												for (int i=1; i < 7; i++) {
 													strncpy(report[i].header,report[i].header,sizeof(report[i].header)-1);
@@ -435,7 +435,7 @@ struct _ports *ports,
 													}
 												}
 											} else
-												if (strncmp(opt+1,"FRECORDS",8)==0) {
+												if (_tcsnccmp(opt+1,"FRECORDS",8)==0) {
 													for(int i=0;i<7;i++) {
 														//if (i!=0) strncat(report[i].header,where,opt-where);
 														//Shared columns
@@ -473,7 +473,7 @@ struct _ports *ports,
 													}
 												} else
 													//END OF HEADER - WRITE TAIL INFORMATION
-													if (strncmp(opt+1,"RECORDDT",8)==0)
+													if (_tcsnccmp(opt+1,"RECORDDT",8)==0)
 													{
 														for(int i=0;i<7;i++) {
 															//char foo[1024];
@@ -485,13 +485,13 @@ struct _ports *ports,
 															snprintf(tmp,sizeof(tmp)-1,"%s/%s",DirectoryLog,files[i]);
 #endif
 															//printf("Abriendo: %s\n",tmp);
-															report[i].logfile=fopen(tmp,"w");
+															report[i].logfile=_tfopen(tmp,"w");
 															if (!report[i].logfile) {
 																free(report);
 																report=NULL;
 																return(0);
 															}
-															fwrite(report[i].header,1,strlen(report[i].header),report[i].logfile);
+															fwrite(report[i].header,1,_tcslen(report[i].header),report[i].logfile);
 															fflush(report[i].logfile);
 														}
 														free(lpHTML);
@@ -500,7 +500,7 @@ struct _ports *ports,
 													}
 													where=opt+9;
 				} else {
-					for(int i=0;i<7;i++) strncat(report[i].header,where,strlen(where));
+					for(int i=0;i<7;i++) _tcsncat(report[i].header,where,_tcslen(where));
 				}
 			} while (opt);
 			free(lpHTML);

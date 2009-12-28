@@ -29,9 +29,9 @@ typedef struct _report {
 //functions
 int CloseHTMLReport(void);
 //int UpdateHTMLReport(HTTPSession* data, int FROM);
-int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR username, HTTPCSTR password, char *url, HTTPCSTR VulnDescription);
+int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR username, HTTPCSTR password, HTTPCHAR *url, HTTPCSTR VulnDescription);
 int InitHTMLReport(
- char *path,
+ HTTPCHAR *path,
  unsigned long currentip,
  unsigned long endip,
  int nports,

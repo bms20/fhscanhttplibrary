@@ -28,20 +28,20 @@ class encoders HTTPEncoder;
 
 
 
-static int what(char *code) {
+static int what(HTTPCHAR* code) {
 	//devuelve un codigo de error dependiendo del formato de los datos
-	if (strncmp(code,RAWUSER,13)==0) return(0);
-	if (strncmp(code,RAWPASS,13)==0) return(1);
-	if (strncmp(code,B64USER,13)==0) return(2);
-	if (strncmp(code,B64PASS,13)==0) return(3);
-	if (strncmp(code,MD5USER,13)==0) return(4);
-	if (strncmp(code,MD5PASS,13)==0) return(5);
-	if (strncmp(code,RAWIPAD,13)==0) return(6);
-	if (strncmp(code,RAWPORT,13)==0) return(7);
-	if (strncmp(code,RAWTIME,13)==0) return(8);
-	if (strncmp(code,HD5USER,13)==0) return(9);
-	if (strncmp(code,HD5PASS,13)==0) return(10);
-	if (strncmp(code,"!!!MD5S(",8)==0) return(11);
+	if (_tcsnccmp(code,RAWUSER,13)==0) return(0);
+	if (_tcsnccmp(code,RAWPASS,13)==0) return(1);
+	if (_tcsnccmp(code,B64USER,13)==0) return(2);
+	if (_tcsnccmp(code,B64PASS,13)==0) return(3);
+	if (_tcsnccmp(code,MD5USER,13)==0) return(4);
+	if (_tcsnccmp(code,MD5PASS,13)==0) return(5);
+	if (_tcsnccmp(code,RAWIPAD,13)==0) return(6);
+	if (_tcsnccmp(code,RAWPORT,13)==0) return(7);
+	if (_tcsnccmp(code,RAWTIME,13)==0) return(8);
+	if (_tcsnccmp(code,HD5USER,13)==0) return(9);
+	if (_tcsnccmp(code,HD5PASS,13)==0) return(10);
+	if (_tcsnccmp(code,_T("!!!MD5S("),8)==0) return(11);
 
 	//!!!Match(where,lpstart,lpend)!!!
 	/*
@@ -61,10 +61,10 @@ static int what(char *code) {
 /************************************/
 
 
-unsigned int MatchString(HTTPSession* new_data, char *validauthstring)
+unsigned int MatchString(HTTPSession* new_data, HTTPCHAR *validauthstring)
 {
 
-	if (validauthstring[0]=='\0') return(0);
+	if (validauthstring[0]==_T('\0')) return(0);
 	if ( (new_data) && (new_data->IsValidHTTPResponse()) )
 	{
 		if (new_data->response->Headerstrstr(validauthstring)!=NULL)
@@ -86,56 +86,56 @@ unsigned int MatchString(HTTPSession* new_data, char *validauthstring)
 
 
 /*************************************************************************************************/
-static void GenerateAuth(char *scheme, char *output, char *username, char *password,long ip,int port) {
+static void GenerateAuth(HTTPCHAR *scheme, HTTPCHAR *output, HTTPCHAR *username, HTTPCHAR *password,long ip,int port) {
 	//Generamos los datos del POST en base al esquema de autenticacion..
 
 	//printf("Generando con usuario: %s!! y pass: %s!!\n",username,password);
 	memset(output,'\0',MAX_POST_LENGTH);
-	char *opt;
-	char *p;
-	char *where=scheme;
-	char tmp[100];
+	HTTPCHAR *opt;
+	HTTPCHAR *p;
+	HTTPCHAR *where=scheme;
+	HTTPCHAR tmp[100];
 	do {
-		opt=strstr(where,"!!!");
+		opt=_tcsstr(where,_T("!!!"));
 		if (opt)
 		{
 			memset(tmp,'\0',sizeof(tmp));
-			strncat(output,where,opt-where);
+			_tcsncat(output,where,opt-where);
 			switch (what(opt))
 			{
 				case 0:
-					//			strncat(output,username,sizeof(output)-1);
-					strncat(output,username,MAX_POST_LENGTH -strlen(output));
+					//			_tcsncat(output,username,sizeof(output)-1);
+					_tcsncat(output,username,MAX_POST_LENGTH -_tcslen(output));
 					//printf("output vale: %s!!!!!!!!!!!\n",output);
 					break;
 				case 1:
-					//	strncat(output,password,sizeof(output)-1);
-					strncat(output,password,MAX_POST_LENGTH-strlen(output));
+					//	_tcsncat(output,password,sizeof(output)-1);
+					_tcsncat(output,password,MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 2:
-					HTTPEncoder.encodebase64((char *)tmp,(HTTPCSTR )username,strlen(username));
-					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
+					HTTPEncoder.encodebase64((char *)tmp,(HTTPCSTR )username,_tcslen(username));
+					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 3:
-					HTTPEncoder.encodebase64((char *)tmp,(HTTPCSTR )password,strlen(password));
-					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
+					HTTPEncoder.encodebase64((char *)tmp,(HTTPCSTR )password,_tcslen(password));
+					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 4:
-					HTTPEncoder.GetMD5TextHash(tmp,username,strlen(username));
-					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
+					HTTPEncoder.GetMD5TextHash(tmp,username,_tcslen(username));
+					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 5:
-					HTTPEncoder.GetMD5TextHash(tmp,password,strlen(password));
-					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
+					HTTPEncoder.GetMD5TextHash(tmp,password,_tcslen(password));
+					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 6:
 					struct sockaddr_in server;
 					server.sin_addr.s_addr=ip;
-					strncat(output,inet_ntoa(server.sin_addr),MAX_POST_LENGTH-strlen(output));
+					_tcsncat(output,inet_ntoa(server.sin_addr),MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 7:
 					snprintf(tmp,sizeof(tmp)-1,"%i",port);
-					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
+					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 					break;
 
 				case 8:
@@ -144,9 +144,9 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 					//               printf("fecha: %ld\n",localTime.time);               
 					//               printf("fecha: %ld\n",localTime.millitm);
 					snprintf(tmp,sizeof(tmp)-1,"%i",localTime.time);
-					strncat(output,tmp+4,MAX_POST_LENGTH-strlen(output));
+					_tcsncat(output,tmp+4,MAX_POST_LENGTH-_tcslen(output));
 					snprintf(tmp,sizeof(tmp)-1,"%i",localTime.millitm);
-					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
+					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 
 
 					//printf("fecha: %ld\n",localTime.millitm);               
@@ -154,46 +154,46 @@ static void GenerateAuth(char *scheme, char *output, char *username, char *passw
 
 					break;
 				case 9:
-					HTTPEncoder.GetMD5TextHash(tmp,username,strlen(username));
+					HTTPEncoder.GetMD5TextHash(tmp,username,_tcslen(username));
 					tmp[16]='\0';
-					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
+					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 10:
-					HTTPEncoder.GetMD5TextHash(tmp,password,strlen(password));
+					HTTPEncoder.GetMD5TextHash(tmp,password,_tcslen(password));
 					tmp[16]='\0';
-					strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
+					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 11:
 					//printf("analizando: -%s-\n",where);
-					p= strstr(opt+8,")!!!");
+					p= _tcsstr(opt+8,_T(")!!!"));
 					if  (p) {
 						char encodedpacket[512];
 						char decodedpacket[MAX_POST_LENGTH];
 						memset(encodedpacket,0,sizeof(encodedpacket));
 						memcpy(encodedpacket,opt+8,p-opt+8);
 
-						p=strstr(encodedpacket,")!!!");
+						p=_tcsstr(encodedpacket,_T(")!!!"));
 						if (p) *p=0;
 						//printf("El esquema a analizar es: %s\n",encodedpacket);
 						GenerateAuth(encodedpacket, decodedpacket,username,password,ip,port);
 						//printf("El paquete decoded es: %s\n",decodedpacket);
 
-						HTTPEncoder.GetMD5TextHash(tmp,decodedpacket,strlen(decodedpacket));
+						HTTPEncoder.GetMD5TextHash(tmp,decodedpacket,_tcslen(decodedpacket));
 						//printf("El hash es: %s\n",tmp);
-						strncat(output,tmp,MAX_POST_LENGTH-strlen(output));
-						opt += 8 + strlen(encodedpacket) + 4 -13;
+						_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
+						opt += 8 + _tcslen(encodedpacket) + 4 -13;
 
 					}
 					break;
 				default: //invalid scheme
-					strncat(output,opt,3);
+					_tcsncat(output,opt,3);
 					//opt+=3;
 					opt-=10;
 			}
 			where=opt+13;
 		} else
 		{ //copiamos el final
-			strncat(output,where,MAX_POST_LENGTH-strlen(output));
+			_tcsncat(output,where,MAX_POST_LENGTH-_tcslen(output));
 		}
 	} while(opt!=NULL);
 	//printf("Hemos decodificado esto a: %s\n",output);
@@ -206,19 +206,19 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 {
 
 
-	char post[MAX_POST_LENGTH];
-	char InvalidAuthString[MAX_POST_LENGTH];
-	char InvalidAuthStringalt[MAX_POST_LENGTH];
-	char AdditionalHeader[MAX_POST_LENGTH];
+	HTTPCHAR post[MAX_POST_LENGTH];
+	HTTPCHAR InvalidAuthString[MAX_POST_LENGTH];
+	HTTPCHAR InvalidAuthStringalt[MAX_POST_LENGTH];
+	HTTPCHAR AdditionalHeader[MAX_POST_LENGTH];
 
-	char *UserName,  *Password;
+	HTTPCHAR *UserName,  *Password;
 	int retry=RETRY_COUNT;
 	int RequestRetry=2;
 	HTTPSession* new_data;
 
 	int iteractions;
 	int login;
-	char tmp[512];
+	HTTPCHAR tmp[512];
 //	char *cookie = NULL;
 
 
@@ -235,17 +235,17 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 		}
 
 
-		if ( (WEBFORMS[webform].InitialCookieURL[0]!='\0')  )
+		if ( (WEBFORMS[webform].InitialCookieURL[0]!=0)  )
 		{
 			/* Request an additiona URL to get a cookie */
-			HTTPSession* InitialCookie=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[webform].InitialCookieURL,NULL,0,NULL,NULL);
+			HTTPSession* InitialCookie=api->SendHttpRequest(HTTPHandle,NULL,_T("GET"),WEBFORMS[webform].InitialCookieURL,NULL,0,NULL,NULL);
 			if (InitialCookie)
 			{
             	delete InitialCookie;
 			}
 		}
 		GenerateAuth(WEBFORMS[webform].authform,post,UserName,Password,request->ip,request->port);
-		*AdditionalHeader='\0';
+		*AdditionalHeader=0;
 		GenerateAuth(WEBFORMS[webform].AdditionalHeader,AdditionalHeader,UserName,Password,request->ip,request->port);
 		//printf("Usando cabecera adicional: %s\n",AdditionalHeader);
 
@@ -260,9 +260,9 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 
 		RequestRetry=2;
 		do {
-			if (AdditionalHeader[0]!='\0') api->SetHTTPConfig(HTTPHandle,ConfigCookie,AdditionalHeader);
-			new_data=api->SendHttpRequest(HTTPHandle,NULL,WEBFORMS[webform].authmethod,WEBFORMS[webform].authurl,post, strlen(post),NULL,NULL);
-			if (AdditionalHeader[0]!='\0') api->SetHTTPConfig(HTTPHandle,ConfigCookie,(const char*)NULL);
+			if (AdditionalHeader[0]!=0) api->SetHTTPConfig(HTTPHandle,ConfigCookie,AdditionalHeader);
+			new_data=api->SendHttpRequest(HTTPHandle,NULL,WEBFORMS[webform].authmethod,WEBFORMS[webform].authurl,post, _tcslen(post),NULL,NULL);
+			if (AdditionalHeader[0]!=0) api->SetHTTPConfig(HTTPHandle,ConfigCookie,(const char*)NULL);
 
 			if ( (!new_data) || (!new_data->IsValidHTTPResponse()) )
 			{
@@ -303,7 +303,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 #endif
 
 				//printf("TryHTTPWebformAuth::return: \n %s",new_data->lpBuffer);
-				if (strlen(WEBFORMS[webform].validauthstring)>0) {
+				if (_tcslen(WEBFORMS[webform].validauthstring)>0) {
 					if ( (MatchString(new_data,WEBFORMS[webform].validauthstring)) || (MatchString(new_data,WEBFORMS[webform].validauthstringalt)) ) {
 						memset(tmp,'\0',sizeof(tmp));
 						//snprintf(tmp,sizeof(tmp)-1,"%s %s", WEBFORMS[webform].model,"(Password Found)");
@@ -327,7 +327,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 						printf("TryHTTPWebformAuth::InvalidAuthStringalt: %s\n",InvalidAuthStringalt);
 #endif
 
-						if ( ( strlen(WEBFORMS[webform].invalidauthstringalt)==0 ) || (MatchString(new_data,InvalidAuthStringalt)==0) )
+						if ( ( _tcslen(WEBFORMS[webform].invalidauthstringalt)==0 ) || (MatchString(new_data,InvalidAuthStringalt)==0) )
 						{
 #ifdef _DBG_
 							printf("TryHTTPWebformAuth::invalidauthstringalt not found ;)\n");
@@ -403,9 +403,9 @@ int CheckWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data, int p
 			printf("CheckWebformAuth::data->status: %i == WEBFORMS[%i].status: %i\n",data->status,i,WEBFORMS[i].status);
 			printf("CheckWebformAuth::strlen: %i\n", strlen(data->server));
 			#endif
-			if ( (strlen(WEBFORMS[i].server)==0) ||
-				(strcmp(data->server,WEBFORMS[i].server)==0)  ||
-				( (strlen(data->server)==0) && (strcmp(WEBFORMS[i].server,"HTTP/1.0")==0) ) )
+			if ( (_tcslen(WEBFORMS[i].server)==0) ||
+				(_tcscmp(data->server,WEBFORMS[i].server)==0)  ||
+				( (_tcslen(data->server)==0) && (_tcscmp(WEBFORMS[i].server,_T("HTTP/1.0"))==0) ) )
 			{
 				#ifdef _DBG_
 				printf("CheckWebformAuth::vamos a verificar el string %i\n",i);
@@ -417,7 +417,7 @@ int CheckWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data, int p
 				#ifdef _DBG_
 					printf("CheckWebformAuth::match: %s\n\n",WEBFORMS[i].matchstring);
 				#endif
-					if (strlen(WEBFORMS[i].ValidateImage)==0)
+					if (_tcslen(WEBFORMS[i].ValidateImage)==0)
 					{
 #ifdef _DBG_
 						printf("CheckWebformAuth::ValidateImage len=0 %s\n\n",WEBFORMS[i].ValidateImage);

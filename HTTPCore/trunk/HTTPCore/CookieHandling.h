@@ -49,22 +49,22 @@ SUCH DAMAGE.
  #include <pthread.h>  //pthread
 #endif
 
-#define COOKIETIMEFORMAT  "%a, %d-%b-%Y %H:%M:%S GMT" /* time formats in cookie headers */
-#define COOKIETIMEFORMAT2 "%a, %d-%b-%y %H:%M:%S GMT" /* some idiotic websites send the year without the century */
+#define COOKIETIMEFORMAT  _T("%a, %d-%b-%Y %H:%M:%S GMT") /* time formats in cookie headers */
+#define COOKIETIMEFORMAT2 _T("%a, %d-%b-%y %H:%M:%S GMT") /* some idiotic websites send the year without the century */
 #define GetDataWithoutSpaces(data) \
 	while (*data==' ') data++;     \
 	while (data[_tcslen(data)-1]==_T(' ')) data[_tcslen(data)-1]=0
 
-#define IS_PATH(a)		(strcmp(a,"path")==0)
-#define IS_EXPIRES(a)	(strcmp(a,"expires")==0)
-#define IS_DOMAIN(a)   	(strcmp(a,"domain")==0)
-#define IS_MAXAGE(a)    (strcmp(a,"max-age")==0)
-#define IS_VERSION(a)   (strcmp(a,"version")==0)
+#define IS_PATH(a)		(_tcscmp(a,_T("path"))==0)
+#define IS_EXPIRES(a)	(_tcscmp(a,_T("expires"))==0)
+#define IS_DOMAIN(a)   	(_tcscmp(a,_T("domain"))==0)
+#define IS_MAXAGE(a)    (_tcscmp(a,_T("max-age"))==0)
+#define IS_VERSION(a)   (_tcscmp(a,_T("version"))==0)
 
-#define IS_HTTPONLY(a)    (strcmp(a,"HttpOnly")==0)
-#define IS_HTTPONLY2(a)    (strcmp(a,"httponly")==0)
+#define IS_HTTPONLY(a)    (_tcscmp(a,_T("HttpOnly"))==0)
+#define IS_HTTPONLY2(a)    (_tcscmp(a,_T("httponly"))==0)
 
-#define IS_SECURE(a)    (strcmp(a,"secure")==0)
+#define IS_SECURE(a)    (_tcscmp(a,_T("secure"))==0)
 /* Sanity checks.  These are important, otherwise it is possible for
 mailcious attackers to destroy important cookie information and/or
 violate your privacy.  */
@@ -142,7 +142,7 @@ public:
 	CookieStatus();
 	time_t ExtractDate(HTTPCHAR *lpdate);
 	int ParseCookieData(HTTPCHAR *lpCookieData, HTTPCSTR lpPath, HTTPCSTR lpDomain);
-	char *ReturnCookieHeaderFor(HTTPCSTR lpDomain,HTTPCSTR path,int CookieOverSSL);
+	HTTPCHAR *ReturnCookieHeaderFor(HTTPCSTR lpDomain,HTTPCSTR path,int CookieOverSSL);
 
 	int CookieAlreadyExist(struct CookieList *List,HTTPCHAR *path, HTTPCHAR *domain, HTTPCHAR *name, int secure );
 	~CookieStatus();

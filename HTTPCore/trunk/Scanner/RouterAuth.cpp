@@ -21,15 +21,17 @@ HTTPSession* DuplicateData(HTTPSession* data)
 
 	HTTPSession* new_data= new HTTPSession;
 	new_data->ip=data->ip;
-	strncpy(new_data->hostname,data->hostname,sizeof(new_data->hostname)-1);
+	_tcsncpy(new_data->hostname,data->hostname,sizeof(new_data->hostname)-1);
 	new_data->port=data->port;
 	new_data->NeedSSL=data->NeedSSL;
 
-	new_data->request = new httpdata(data->request->Header,data->request->HeaderSize,data->request->Data,data->request->DataSize);
-	new_data->response = new httpdata(data->response->Header,data->response->HeaderSize,data->response->Data,data->response->DataSize);
+	new_data->request = new HTTPRequest;
+	new_data->request->InitHTTPRequest((HTTPCHAR*)data->request->GetHeaders(),data->request->Data,data->request->DataSize);
+	new_data->response = new HTTPResponse;
+	new_data->response->InitHTTPResponse((HTTPCHAR*)data->response->GetHeaders(),data->response->Data,data->response->DataSize);
 
-	new_data->url= strdup(data->url);
-	new_data->server=strdup(data->server);
+	new_data->url= _tcsdup(data->url);
+	new_data->server=_tcsdup(data->server);
 	new_data->status=data->status;
 //	new_data->challenge=data->challenge;
 	return(new_data);
@@ -50,7 +52,7 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,
 		return(PASSWORD_NOT_FOUND);
     }
 
-	if (strstr(AuthData->postdata,"Cookie")!=NULL)
+	if (_tcsstr(AuthData->postdata,_T("Cookie"))!=NULL)
 	{
 		CookieNeeded=1;
 	}
@@ -68,7 +70,7 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,
 			if (!CookieNeeded)
 			{
 				//new_response3=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,AuthData->postdata,(unsigned int)strlen(AuthData->postdata),userpass[k].UserName,userpass[k].Password,challenge);
-				new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,AuthData->postdata,strlen(AuthData->postdata),userpass[k].UserName,userpass[k].Password);
+				new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,AuthData->postdata,_tcslen(AuthData->postdata),userpass[k].UserName,userpass[k].Password);
 			} else {
 				api->SetHTTPConfig(HTTPHandle,ConfigCookie,AuthData->postdata);
 				//new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,NULL,0,userpass[k].UserName,userpass[k].Password,challenge);
@@ -82,7 +84,7 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,
 			retries--;
 			Sleep(500);
 
-		} while ( (!new_response) && (retries>0)  && (strlen(userpass[k].UserName)>0) && (strlen(userpass[k].Password)>0));
+		} while ( (!new_response) && (retries>0)  && (_tcslen(userpass[k].UserName)>0) && (_tcslen(userpass[k].Password)>0));
 
 
 		/* Clean Cookie status */
@@ -101,7 +103,7 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,
 			}
 			if (CookieNeeded==2)
 			{
-                lpcookie=data->response->GetHeaderValue("Set-Cookie: ",0);
+                lpcookie=data->response->GetHeaderValue(_T("Set-Cookie: "),0);
 				if (lpcookie)
 				{
                     snprintf(cookie,sizeof(cookie)-1,"Cookie: %s",lpcookie);
@@ -128,9 +130,9 @@ HTTPSession* CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* dat
 	for(int i=0;i<nRouterAuth;i++)
 	{
 		if ( (AuthData[i].status == data->status ) &&
-		   ( (strncmp(data->server,AuthData[i].server,strlen(AuthData[i].server))==0) ||
+		   ( (_tcsnccmp(data->server,AuthData[i].server,_tcslen(AuthData[i].server))==0) ||
 			 (AuthData[i].server[0]=='*') ||
-			 ( (strlen(data->server)==0) && (strcmp(AuthData[i].server," ")==0))
+			 ( (_tcslen(data->server)==0) && (_tcscmp(AuthData[i].server,_T(" "))==0))
 		   )
 		   )
 		{
@@ -146,21 +148,21 @@ HTTPSession* CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* dat
 				//printf("aki2\n");
 			} else {
 				int CookieNeeded=0;
-				if (strstr(AuthData[i].postdata,"Cookie")!=NULL)
+				if (_tcsstr(AuthData[i].postdata,"Cookie")!=NULL)
 				{
 					CookieNeeded=1;
 
-					if (strstr(AuthData[i].postdata,"Cookie: !!!UPDATECOOKIE!!!")!=NULL)
+					if (_tcsstr(AuthData[i].postdata,_T("Cookie: !!!UPDATECOOKIE!!!"))!=NULL)
 					{
 						char tmp[256];
-						lpcookie=data->response->GetHeaderValue("Set-Cookie: ",0);
+						lpcookie=data->response->GetHeaderValue(_T("Set-Cookie: "),0);
 						if (lpcookie) {
 							snprintf(tmp,sizeof(tmp)-1,"Cookie: %s",lpcookie);
 							free(lpcookie);
-							lpcookie=strdup(tmp);
+							lpcookie=_tcsdup(tmp);
 						} else CookieNeeded=0;
 					} else{
-						lpcookie=strdup(AuthData[i].postdata);
+						lpcookie=_tcsdup(AuthData[i].postdata);
 					}
 				}
 
@@ -171,7 +173,7 @@ HTTPSession* CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* dat
 						api->SetHTTPConfig(HTTPHandle,ConfigCookie,(const char*)NULL);
 						free(lpcookie);
 					} else {
-						response=api->SendHttpRequest( HTTPHandle,NULL,AuthData[i].method,AuthData[i].authurl,AuthData[i].postdata,strlen(AuthData[i].postdata),NULL,NULL);
+						response=api->SendHttpRequest( HTTPHandle,NULL,AuthData[i].method,AuthData[i].authurl,AuthData[i].postdata,_tcslen(AuthData[i].postdata),NULL,NULL);
 					}
 				}
 				//SetHTTPConfig(HTTPHandle,OPT_HTTP_COOKIE,NULL);
@@ -199,7 +201,7 @@ HTTPSession* CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* dat
 					 //UpdateHTMLReport(response,MESSAGE_ROUTER_PASSFOUND,userpass[ret].UserName,userpass[ret].Password,AuthData[i].authurl,NULL);
 
 				 } else {
-					 UpdateHTMLReport(response,MESSAGE_WEBFORMS_PASSNOTFOUND,"UNKNOWN","UNKNOWN",AuthData[i].authurl,NULL);
+					 UpdateHTMLReport(response,MESSAGE_WEBFORMS_PASSNOTFOUND,_T("UNKNOWN"),_T("UNKNOWN"),AuthData[i].authurl,NULL);
 				 }
 				 return(response);
 			 }

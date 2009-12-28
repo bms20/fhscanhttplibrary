@@ -35,7 +35,8 @@ SUCH DAMAGE.
 */
 #ifndef __BUILD_H_
 #define __BUILD_H_
-#define __TCHAR_H
+#define __TCHAR_H /* force compatibility with codegear includes */
+#define __STDC_ISO_10646__  200104L
 /****************** GLOBAL FLAGS **********************/
 #undef UNICODE
 #undef _UNICODE
@@ -43,6 +44,7 @@ SUCH DAMAGE.
 /*
 #ifndef UNICODE
 #define _UNICODE
+#define UNICODE
 #endif
 */
 
@@ -131,13 +133,25 @@ typedef wchar_t         _TCHAR;
 #define _stprintf       _swprintf
 #define _tcscpy         wcscpy
 #define _tcsncicmp      _wcsnicmp
-#define _istspace   isspace
+
 #define _istspace   iswspace
 #define _tcstol     wcstol
 #define _tcstok         wcstok
 #define _tcschr         wcschr
 #define _tstoi      _wtoi
 #define _tcscat         wcscat
+#define _tcsicmp        _wcsicmp
+#define _stscanf        swscanf
+#define _istdigit   iswdigit
+#define _istspace   iswspace
+#define _istxdigit      isxdigit
+#define _istalpha   iswalpha
+#define _istalnum   iswalnum
+#define _totlower   towlower
+#define _totupper   towupper
+#define _tcsftime   wcsftime
+#define _tfopen     _wfopen
+#define _tprintf        wprintf
 #else
 #ifndef _TCHAR
 typedef char            _TCHAR;
@@ -161,6 +175,18 @@ typedef char            _TCHAR;
 #define _tcschr         strchr
 #define _tstoi      atoi
 #define _tcscat     strcat
+#define _tcsicmp        stricmp /*borland*/
+#define _stscanf        sscanf
+#define _istdigit   isdigit
+#define _istspace   isspace
+#define _istxdigit      isxdigit
+#define _istalpha   isalpha
+#define _istalnum   isalnum
+#define _totlower   tolower
+#define _totupper   toupper
+#define _tcsftime   strftime
+#define _tfopen     fopen
+#define _tprintf        printf
 #endif
 
 

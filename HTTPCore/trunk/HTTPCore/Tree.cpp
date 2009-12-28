@@ -401,7 +401,7 @@ TreeNode *TreeInsertItems(Tree *tree, TreeNode *parent, HTTPCHAR *strpath)
 	TreeNode *node;
 	HTTPCHAR *str = _tcsdup(strpath);
 	int IsFolder =  (str[strlen(str)-1] == '/');
-	HTTPCHAR *path = strtok(str,"/");
+	HTTPCHAR *path = _tcstok(str,"/");
 
 	if (!path) {
 		node = TreeInsert(tree,parent,"");
@@ -411,7 +411,7 @@ TreeNode *TreeInsertItems(Tree *tree, TreeNode *parent, HTTPCHAR *strpath)
 		do
 		{
 			node = TreeInsert(base,currentparent,path);
-			path = strtok(NULL,"/");
+			path = _tcstok(NULL,"/");
 			if ( (path) || (IsFolder) )
 			{
 				if (!node->SubItems)

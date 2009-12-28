@@ -487,7 +487,7 @@ HTTPCHAR *strptime (HTTPCSTR buf, HTTPCSTR format, struct tm *timeptr)
                 return NULL;
         }
     }
-    return (char *)buf;
+    return (HTTPCHAR *)buf;
 }
 #endif
 #endif

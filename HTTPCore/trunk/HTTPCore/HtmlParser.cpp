@@ -1,3 +1,4 @@
+#ifdef _SPIDER_
 #include "Build.h"
 #include "HtmlParser.h"
 #include <stdio.h>
@@ -7,33 +8,35 @@
 #include <assert.h>
 
 #include "HTTP.h"
-#include "HTTPData.h"
+#include "HTTPRequest.h"
+#include "HTTPResponse.h"
+
 
 /*******************************************************************************************************/
 VALIDTAGS tags[]= {
-{"action","" },
-{"background","td"},
-{"href",""},
-{"mce_href","a"},
-{"parameter",""},
-{"pluginspace","embeded"},
-{"src",""},
-{"template","url"},
-{"xmlns","html"},
-{"xmlns","meta"},
+{_T("action"),_T("") },
+{_T("background"),_T("td")},
+{_T("href"),_T("")},
+{_T("mce_href"),_T("a")},
+{_T("parameter"),_T("")},
+{_T("pluginspace"),_T("embeded")},
+{_T("src"),_T("")},
+{_T("template"),_T("url")},
+{_T("xmlns"),_T("html")},
+{_T("xmlns"),_T("meta")},
 };
 /*******************************************************************************************************/
 /*******************************************************************************************************/
-int IsValidHTMLTag(char *tagattribute, char *tagname)
+int IsValidHTMLTag(HTTPCHAR *tagattribute, HTTPCHAR *tagname)
 {
 	for (unsigned int i=0; i<sizeof(tags)/sizeof(VALIDTAGS);i++)
 	{
-		int ret = stricmp(tagattribute,tags[i].tagattribute);
+		int ret = _tcsicmp(tagattribute,tags[i].tagattribute);
 		if (ret==0)
 		{
-			if (tags[i].tagname[0]!='\0')
+			if (tags[i].tagname[0]!=_T('\0'))
 			{
-				if (stricmp(tags[i].tagname,tagname)==0)
+				if (_tcsicmp(tags[i].tagname,tagname)==0)
 				{
 					return(1);
 				}
@@ -48,13 +51,13 @@ int IsValidHTMLTag(char *tagattribute, char *tagname)
 	return(0);
 }
 /******************************************************************************/
-// Stristr : Case insensitive strstr
+// Stristr : Case insensitive _tcsstr
 /******************************************************************************/
-char *stristr(HTTPCSTR String, HTTPCSTR Pattern)
+HTTPCHAR *stristr(HTTPCSTR String, HTTPCSTR Pattern)
 {
-      char *pptr, *sptr, *start;
+      HTTPCHAR *pptr, *sptr, *start;
 
-      for (start = (char *)String; *start; start++)
+      for (start = (HTTPCHAR *)String; *start; start++)
       {
             /* find start of pattern in string */
             for ( ; ((*start) && (toupper(*start) != toupper(*Pattern))); start++)
@@ -62,8 +65,8 @@ char *stristr(HTTPCSTR String, HTTPCSTR Pattern)
             if (!*start)
                   return NULL;
 
-            pptr = (char *)Pattern;
-            sptr = (char *)start;
+            pptr = (HTTPCHAR *)Pattern;
+            sptr = (HTTPCHAR *)start;
 
             while (toupper(*sptr) == toupper(*pptr))
             {
@@ -160,13 +163,13 @@ HTTPCHAR *FixUrlTransversal(HTTPCHAR *path) {
 }
 
 /*******************************************************************************************************/
-char *RemoveParameters(char *data)
+HTTPCHAR *RemoveParameters(HTTPCHAR *data)
 {	
-	char *p=data;
+	HTTPCHAR *p=data;
 
 	while (*p)
 	{
-		if ((*p==';') || (*p=='#') || (*p=='?') || (*p=='&') ) 
+		if ((*p==_T(';')) || (*p==_T('#')) || (*p==_T('?')) || (*p==_T('&')) ) 
 		{
 			*p=0;
 			break;
@@ -194,7 +197,7 @@ char *RemoveParameters(char *data)
 	return(NULL);
 }
 /*******************************************************************************************************/
-static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, char *lpBaseURL, struct httpdata *response)
+static void test_mapper (struct taginfo *taginfo, void *arg, HTTPCHAR *lpHostname, HTTPCHAR *lpBaseURL, struct httpdata *response)
 {
 
 	//printf ("[%s%s]\n", taginfo->end_tag_p ? "/" : "", taginfo->name);
@@ -216,13 +219,13 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 			//Delete GET Parameters
 			// remove quotes \"value"\ or "\value\"
 			int salir=0;
-			char *p =taginfo->attrs[i].value;
+			HTTPCHAR *p =taginfo->attrs[i].value;
 			int n=0;
 
 
 			while ((*p) && (!salir))
 			{
-				if ( (*p=='\\') || (*p=='\"') ||  (*p=='+') ||  (*p=='\'')  ||  (*p=='(')  ||  (*p==')') ||  (*p==' ') ||  (*p=='\r') ||  (*p=='\n')   )
+				if ( (*p==_T('\\')) || (*p==_T('\"')) ||  (*p==_T('+')) ||  (*p==_T('\''))  ||  (*p==_T('('))  ||  (*p==_T(')')) ||  (*p==_T(' ')) ||  (*p==_T('\r')) ||  (*p==_T('\n'))   )
 				{
 					p++;
 					n++;
@@ -232,7 +235,7 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 			while ((*p) && (!salir) && (n>0))
 			{
 				size_t l =_tcslen(p)-1;
-				if ( (p[l]=='\\') || (p[l]=='\"') ||  (p[l]=='+') ||  (p[l]=='\'')  ||  (p[l]=='(')  ||  (p[l]==')') ||  (p[l]=='\r') ||  (p[l]=='\n')   )
+				if ( (p[l]==_T('\\')) || (p[l]==_T('\"')) ||  (p[l]==_T('+')) ||  (p[l]==_T('\''))  ||  (p[l]==_T('('))  ||  (p[l]==_T(')')) ||  (p[l]==_T('\r')) ||  (p[l]==_T('\n'))   )
 				{
 					p[l]=0;
 					l--;
@@ -249,7 +252,7 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 			 */
 			if ( (_tcsnccmp(p,_T("http"),4)==0 ) && ( (_tcsnccmp(p+4,_T("://"),3)==0 ) || (_tcsnccmp(p+4,_T("s://"),4)==0 ) ) )
 			{
-				if (_tcschr(p,_T('\'')) || (strstr(p,_T(" +")))) {
+				if (_tcschr(p,_T('\'')) || (_tcsstr(p,_T(" +")))) {
 #ifdef _VERBOSE
 					fwrite("\n----\n",6,1,filename);
 					fwrite(taginfo->name,_tcslen(taginfo->name),1,filename);
@@ -280,7 +283,7 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
                             size_t l = _tcslen(p);
 							HTTPCHAR *x = (HTTPCHAR*)malloc(l+2);
 							memcpy(x,p,l);
-							x[l]='/';
+							x[l]=_T('/');
 							x[l+1]=0;
 							response->AddUrlCrawled(x,tags);
 							free(x);
@@ -315,8 +318,8 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 #endif
 //					add = 0;
 				} else if ( (*p==_T(' '))  || (*p==_T('\'')) || (*p==_T('#')) || (*p==_T('+')) || (_tcschr(p,_T('\''))) ||
-					(_tcschr(p,_T('\"'))) || (strstr(p,_T("mailto:"))) || (strstr(p,_T("//:"))) || (strstr(p,_T(" +")))  ||
-					(strstr(p,_T("<%")))  )
+					(_tcschr(p,_T('\"'))) || (_tcsstr(p,_T("mailto:"))) || (_tcsstr(p,_T("//:"))) || (_tcsstr(p,_T(" +")))  ||
+					(_tcsstr(p,_T("<%")))  )
 				{
 
 #ifdef _VERBOSE
@@ -332,11 +335,11 @@ static void test_mapper (struct taginfo *taginfo, void *arg, char *lpHostname, c
 				{
 						HTTPCHAR tags[256];
 						_sntprintf(tags,sizeof(tags)-1,_T("%s %s"), taginfo->name,taginfo->attrs[i].name);
-						tags[sizeof(tags)-1]='\0';
+						tags[sizeof(tags)-1]=_T('\0');
 
 				HTTPCHAR *urlptr =tmp+7+_tcslen(lpHostname);
-				if (*p=='/') {
-					_sntprintf(tmp,sizeof(tmp)-1,"http://%s%s",lpHostname,p);
+				if (*p==_T('/')) {
+					_sntprintf(tmp,sizeof(tmp)-1,_T("http://%s%s"),lpHostname,p);
 				} else {
 					_stprintf(tmp,_T("http://%s%s%s"),lpHostname,lpBaseURL,p);
 				}
@@ -405,13 +408,13 @@ This ensures minimum amount of allocation and, for most tags, no
 allocation because the entire pool is kept on the stack.  */
 
 struct pool {
-	char *contents;               /* pointer to the contents. */
+	HTTPCHAR *contents;               /* pointer to the contents. */
 	int size;                     /* size of the pool. */
 	int tail;                     /* next available position index. */
 	bool resized;                 /* whether the pool has been resized
 								  using malloc. */
 
-	char *orig_contents;          /* original pool contents, usually
+	HTTPCHAR *orig_contents;          /* original pool contents, usually
 								  stack-allocated.  used by POOL_FREE
 								  to restore the pool to the initial
 								  state. */
@@ -435,7 +438,7 @@ already has room to accomodate SIZE bytes of data, this is a no-op.  */
 
 #define POOL_GROW(p, increase)                                  \
 	GROW_ARRAY ((p)->contents, (p)->size, (p)->tail + (increase), \
-	(p)->resized, char)
+	(p)->resized, HTTPCHAR)
 
 /* Append text in the range [beg, end) to POOL.  No zero-termination
 is done.  */
@@ -452,7 +455,7 @@ is done.  */
 pool strings.  */
 
 #define POOL_APPEND_CHR(p, ch) do {             \
-	char PAC_char = (ch);                         \
+	HTTPCHAR PAC_char = (ch);                         \
 	POOL_GROW (p, 1);                             \
 	(p)->contents[(p)->tail++] = PAC_char;        \
 } while (0)
@@ -524,7 +527,7 @@ the specified characters.  */
 /* Increment P by INC chars.  If P lands at a semicolon, increment it
 past the semicolon.  This ensures that e.g. "&lt;foo" is converted
 to "<foo", but "&lt,foo" to "<,foo".  */
-#define SKIP_SEMI(p, inc) (p += inc, p < end && *p == ';' ? ++p : p)
+#define SKIP_SEMI(p, inc) (p += inc, p < end && *p == _T(';') ? ++p : p)
 
 /* Decode the HTML character entity at *PTR, considering END to be end
 of buffer.  It is assumed that the "&" character that marks the
@@ -545,17 +548,17 @@ decode_entity (HTTPCSTR *ptr, HTTPCSTR end)
 
 	switch (*p++)
 	{
-	case '#':
+	case _T('#'):
 		/* Process numeric entities "&#DDD;" and "&#xHH;".  */
 		{
 			int digits = 0;
 			value = 0;
-			if (*p == 'x')
+			if (*p == _T('x'))
 				for (++p; value < 256 && p < end && ISXDIGIT (*p); p++, digits++)
 					value = (value << 4) + XDIGIT_TO_NUM (*p);
 			else
 				for (; value < 256 && p < end && ISDIGIT (*p); p++, digits++)
-					value = (value * 10) + (*p - '0');
+					value = (value * 10) + (*p - _T('0'));
 			if (!digits)
 				return -1;
 			/* Don't interpret 128+ codes and NUL because we cannot
@@ -566,24 +569,24 @@ decode_entity (HTTPCSTR *ptr, HTTPCSTR end)
 			return value;
 		}
 		/* Process named ASCII entities.  */
-	case 'g':
-		if (ENT1 (p, 't'))
-			value = '>', *ptr = SKIP_SEMI (p, 1);
+	case _T('g'):
+		if (ENT1 (p, _T('t')))
+			value = _T('>'), *ptr = SKIP_SEMI (p, 1);
 		break;
-	case 'l':
-		if (ENT1 (p, 't'))
-			value = '<', *ptr = SKIP_SEMI (p, 1);
+	case _T('l'):
+		if (ENT1 (p, _T('t')))
+			value = _T('<'), *ptr = SKIP_SEMI (p, 1);
 		break;
-	case 'a':
-		if (ENT2 (p, 'm', 'p'))
-			value = '&', *ptr = SKIP_SEMI (p, 2);
-		else if (ENT3 (p, 'p', 'o', 's'))
+	case _T('a'):
+		if (ENT2 (p, _T('m'), _T('p')))
+			value = _T('&'), *ptr = SKIP_SEMI (p, 2);
+		else if (ENT3 (p, _T('p'), _T('o'), _T('s')))
 			/* handle &apos for the sake of the XML/XHTML crowd. */
-			value = '\'', *ptr = SKIP_SEMI (p, 3);
+			value = _T('\''), *ptr = SKIP_SEMI (p, 3);
 		break;
-	case 'q':
-		if (ENT3 (p, 'u', 'o', 't'))
-			value = '\"', *ptr = SKIP_SEMI (p, 3);
+	case _T('q'):
+		if (ENT3 (p, _T('u'), _T('o'), _T('t')))
+			value = _T('\"'), *ptr = SKIP_SEMI (p, 3);
 		break;
 	}
 	return value;
@@ -639,7 +642,7 @@ convert_and_copy (struct pool *pool, HTTPCSTR beg, HTTPCSTR end, int flags)
 		processing the entities can only *shorten* the string, it can
 		never lengthen it.  */
 		HTTPCSTR from = beg;
-		char *to;
+		HTTPCHAR *to;
 		bool squash_newlines = !!(flags & AP_TRIM_BLANKS);
 
 		POOL_GROW (pool, end - beg);
@@ -647,7 +650,7 @@ convert_and_copy (struct pool *pool, HTTPCSTR beg, HTTPCSTR end, int flags)
 
 		while (from < end)
 		{
-			if (*from == '&')
+			if (*from == _T('&'))
 			{
 				int entity = decode_entity (&from, end);
 				if (entity != -1)
@@ -655,7 +658,7 @@ convert_and_copy (struct pool *pool, HTTPCSTR beg, HTTPCSTR end, int flags)
 				else
 					*to++ = *from++;
 			}
-			else if ((*from == '\n' || *from == '\r') && squash_newlines)
+			else if ((*from == _T('\n') || *from == _T('\r')) && squash_newlines)
 				++from;
 			else
 				*to++ = *from++;
@@ -667,18 +670,18 @@ convert_and_copy (struct pool *pool, HTTPCSTR beg, HTTPCSTR end, int flags)
 		/* Make POOL's tail point to the position following the string
 		we've written.  */
 		pool->tail = (int)(to - pool->contents);
-		POOL_APPEND_CHR (pool, '\0');
+		POOL_APPEND_CHR (pool, _T('\0'));
 	}
 	else
 	{
 		/* Just copy the text to the pool.  */
 		POOL_APPEND (pool, beg, end);
-		POOL_APPEND_CHR (pool, '\0');
+		POOL_APPEND_CHR (pool, _T('\0'));
 	}
 
 	if (flags & AP_DOWNCASE)
 	{
-		char *p = pool->contents + old_tail;
+		HTTPCHAR *p = pool->contents + old_tail;
 		for (; *p; p++)
 			*p = TOLOWER (*p);
 	}
@@ -700,7 +703,7 @@ This only affects attribute and tag names; attribute values allow
 an even greater variety of characters.  */
 
 #define NAME_CHAR_P(x) ((x) > 32 && (x) < 127                           \
-	&& (x) != '=' && (x) != '>' && (x) != '/')
+	&& (x) != _T('=') && (x) != _T('>') && (x) != _T('/'))
 
 #ifdef STANDALONE
 static int comment_backout_count;
@@ -729,8 +732,8 @@ static HTTPCSTR
 advance_declaration (HTTPCSTR beg, HTTPCSTR end)
 {
 	HTTPCSTR p = beg;
-	char quote_char = '\0';       /* shut up, gcc! */
-	char ch;
+	HTTPCHAR quote_char = _T('\0');       /* shut up, gcc! */
+	HTTPCHAR ch;
 
 	enum {
 		AC_S_DONE,
@@ -765,7 +768,7 @@ advance_declaration (HTTPCSTR beg, HTTPCSTR end)
 		case AC_S_BACKOUT:
 			break;
 		case AC_S_BANG:
-			if (ch == '!')
+			if (ch == _T('!'))
 			{
 				ch = *p++;
 				state = AC_S_DEFAULT;
@@ -776,20 +779,20 @@ advance_declaration (HTTPCSTR beg, HTTPCSTR end)
 		case AC_S_DEFAULT:
 			switch (ch)
 			{
-			case '-':
+			case _T('-'):
 				state = AC_S_DASH1;
 				break;
-			case ' ':
-			case '\t':
-			case '\r':
-			case '\n':
+			case _T(' '):
+			case _T('\t'):
+			case _T('\r'):
+			case _T('\n'):
 				ch = *p++;
 				break;
-			case '>':
+			case _T('>'):
 				state = AC_S_DONE;
 				break;
-			case '\'':
-			case '\"':
+			case _T('\''):
+			case _T('\"'):
 				state = AC_S_QUOTE1;
 				break;
 			default:
@@ -801,7 +804,7 @@ advance_declaration (HTTPCSTR beg, HTTPCSTR end)
 			}
 			break;
 		case AC_S_DCLNAME:
-			if (ch == '-')
+			if (ch == _T('-'))
 				state = AC_S_DASH1;
 			else if (NAME_CHAR_P (ch))
 				ch = *p++;
@@ -811,7 +814,7 @@ advance_declaration (HTTPCSTR beg, HTTPCSTR end)
 		case AC_S_QUOTE1:
 			/* We must use 0x22 because broken assert macros choke on
 			'"' and '\"'.  */
-			assert (ch == '\'' || ch == 0x22);
+			assert (ch == _T('\'') || ch == 0x22);
 			quote_char = ch;      /* cheating -- I really don't feel like
 								  introducing more different states for
 								  different quote characters. */
@@ -830,14 +833,14 @@ advance_declaration (HTTPCSTR beg, HTTPCSTR end)
 			state = AC_S_DEFAULT;
 			break;
 		case AC_S_DASH1:
-			assert (ch == '-');
+			assert (ch == _T('-'));
 			ch = *p++;
 			state = AC_S_DASH2;
 			break;
 		case AC_S_DASH2:
 			switch (ch)
 			{
-			case '-':
+			case _T('-'):
 				ch = *p++;
 				state = AC_S_COMMENT;
 				break;
@@ -848,7 +851,7 @@ advance_declaration (HTTPCSTR beg, HTTPCSTR end)
 		case AC_S_COMMENT:
 			switch (ch)
 			{
-			case '-':
+			case _T('-'):
 				state = AC_S_DASH3;
 				break;
 			default:
@@ -857,14 +860,14 @@ advance_declaration (HTTPCSTR beg, HTTPCSTR end)
 			}
 			break;
 		case AC_S_DASH3:
-			assert (ch == '-');
+			assert (ch == _T('-'));
 			ch = *p++;
 			state = AC_S_DASH4;
 			break;
 		case AC_S_DASH4:
 			switch (ch)
 			{
-			case '-':
+			case _T('-'):
 				ch = *p++;
 				state = AC_S_DEFAULT;
 				break;
@@ -909,20 +912,20 @@ find_comment_end (HTTPCSTR beg, HTTPCSTR end)
 	while ((p += 3) < end)
 		switch (p[0])
 	{
-		case '>':
-			if (p[-1] == '-' && p[-2] == '-')
+		case _T('>'):
+			if (p[-1] == _T('-') && p[-2] == _T('-'))
 				return p + 1;
 			break;
-		case '-':
+		case _T('-'):
 at_dash:
-			if (p[-1] == '-')
+			if (p[-1] == _T('-'))
 			{
 at_dash_dash:
 				if (++p == end) return NULL;
 				switch (p[0])
 				{
-				case '>': return p + 1;
-				case '-': goto at_dash_dash;
+				case _T('>'): return p + 1;
+				case _T('-'): goto at_dash_dash;
 				}
 			}
 			else
@@ -930,11 +933,11 @@ at_dash_dash:
 				if ((p += 2) >= end) return NULL;
 				switch (p[0])
 				{
-				case '>':
-					if (p[-1] == '-')
+				case _T('>'):
+					if (p[-1] == _T('-'))
 						return p + 1;
 					break;
-				case '-':
+				case _T('-'):
 					goto at_dash;
 				}
 			}
@@ -947,7 +950,7 @@ present in hash table HT.  */
 
 static bool name_allowed (const struct hash_table *ht, HTTPCSTR b, HTTPCSTR e)
 {
-	char *copy=NULL;
+	HTTPCHAR *copy=NULL;
 	if (!ht)
 		return true;
 	(b, e, copy);
@@ -998,14 +1001,14 @@ unnecessary copying of tags/attributes which the caller doesn't
 care about.)  */
 
 void map_html_tags (HTTPCSTR text, size_t size,
-			   void (*mapfun) (struct taginfo *, void *,char*,char*,httpdata*), void *maparg,
+			   void (*mapfun) (struct taginfo *, void *,HTTPCHAR*,HTTPCHAR*,httpdata*), void *maparg,
 			   int flags,
 			   const struct hash_table *allowed_tags,
-			   const struct hash_table *allowed_attributes, char *lphostname, char *lpURL,struct httpdata *response)
+			   const struct hash_table *allowed_attributes, HTTPCHAR *lphostname, HTTPCHAR *lpURL,struct httpdata *response)
 {
 	/* storage for strings passed to MAPFUN callback; if 256 bytes is
 	too little, POOL_APPEND allocates more with malloc. */
-	char pool_initial_storage[256];
+	HTTPCHAR pool_initial_storage[256];
 	struct pool pool;
 
 	HTTPCSTR p = text;
@@ -1035,7 +1038,7 @@ look_for_tag:
 
 		/* Find beginning of tag.  We use memchr() instead of the usual
 		looping with ADVANCE() for speed. */
-		p =(char*) memchr (p, '<', end - p);
+		p =(HTTPCHAR*) memchr (p, _T('<'), end - p);
 		if (!p)
 			goto finish;
 
@@ -1044,10 +1047,10 @@ look_for_tag:
 
 		/* Establish the type of the tag (start-tag, end-tag or
 		declaration).  */
-		if (*p == '!')
+		if (*p == _T('!'))
 		{
 			if (!(flags & MHT_STRICT_COMMENTS)
-				&& p < end + 3 && p[1] == '-' && p[2] == '-')
+				&& p < end + 3 && p[1] == _T('-') && p[2] == _T('-'))
 			{
 				/* If strict comments are not enforced and if we know
 				we're looking at a comment, simply look for the
@@ -1079,7 +1082,7 @@ look_for_tag:
 				goto finish;
 			goto look_for_tag;
 		}
-		else if (*p == '/')
+		else if (*p == _T('/'))
 		{
 			end_tag = 1;
 			ADVANCE (p);
@@ -1091,7 +1094,7 @@ look_for_tag:
 			goto look_for_tag;
 		tag_name_end = p;
 		SKIP_WS (p);
-		if (end_tag && *p != '>')
+		if (end_tag && *p != _T('>'))
 			goto backout_tag;
 
 		if (!name_allowed (allowed_tags, tag_name_begin, tag_name_end))
@@ -1114,7 +1117,7 @@ look_for_tag:
 
 			SKIP_WS (p);
 
-			if (*p == '/')
+			if (*p == _T('/'))
 			{
 				/* A slash at this point means the tag is about to be
 				closed.  This is legal in XML and has been popularized
@@ -1123,12 +1126,12 @@ look_for_tag:
 				/*              ^  */
 				ADVANCE (p);
 				SKIP_WS (p);
-				if (*p != '>')
+				if (*p != _T('>'))
 					goto backout_tag;
 			}
 
 			/* Check for end of tag definition. */
-			if (*p == '>')
+			if (*p == _T('>'))
 				break;
 
 			/* Establish bounds of attribute name. */
@@ -1143,7 +1146,7 @@ look_for_tag:
 
 			/* Establish bounds of attribute value. */
 			SKIP_WS (p);
-			if (NAME_CHAR_P (*p) || *p == '/' || *p == '>')
+			if (NAME_CHAR_P (*p) || *p == _T('/') || *p == _T('>'))
 			{
 				/* Minimized attribute syntax allows `=' to be omitted.
 				For example, <UL COMPACT> is a valid shorthand for <UL
@@ -1153,21 +1156,21 @@ look_for_tag:
 				attr_raw_value_begin = attr_value_begin = attr_name_begin;
 				attr_raw_value_end = attr_value_end = attr_name_end;
 			}
-			else if (*p == '=')
+			else if (*p == _T('='))
 			{
 				ADVANCE (p);
 				SKIP_WS (p);
-				if (*p == '\"' || *p == '\'')
+				if (*p == _T('\"') || *p == _T('\''))
 				{
 					bool newline_seen = false;
-					char quote_char = *p;
+					HTTPCHAR quote_char = *p;
 					attr_raw_value_begin = p;
 					ADVANCE (p);
 					attr_value_begin = p; /* <foo bar="baz"> */
 					/*           ^     */
 					while (*p != quote_char)
 					{
-						if (!newline_seen && *p == '\n')
+						if (!newline_seen && *p == _T('\n'))
 						{
 							/* If a newline is seen within the quotes, it
 							is most likely that someone forgot to close
@@ -1180,7 +1183,7 @@ look_for_tag:
 							newline_seen = true;
 							continue;
 						}
-						else if (newline_seen && *p == '>')
+						else if (newline_seen && *p == _T('>'))
 							break;
 						ADVANCE (p);
 					}
@@ -1205,7 +1208,7 @@ look_for_tag:
 					violated by, for instance, `%' in `width=75%'.
 					We'll be liberal and allow just about anything as
 					an attribute value.  */
-					while (!ISSPACE (*p) && *p != '>')
+					while (!ISSPACE (*p) && *p != _T('>'))
 						ADVANCE (p);
 					attr_value_end = p; /* <foo bar=baz qux=quix> */
 					/*             ^          */
@@ -1303,24 +1306,24 @@ finish:
 #undef SKIP_NON_WS
 
 typedef struct _spiderItem {
-char *path;
-char *parameters;
-char *urlcookie;
-char *hostname;
+HTTPCHAR *path;
+HTTPCHAR *parameters;
+HTTPCHAR *urlcookie;
+HTTPCHAR *hostname;
 int  SSL;
 int port;
 } SPIDERITEM;
 
 
 
-void HTTPAPI::doSpider( char *host,char *FullPath, httpdata*  response)
+void HTTPAPI::doSpider( HTTPCHAR *host,HTTPCHAR *FullPath, httpdata*  response)
 {
 	if (!response->DataSize) {
         return;
 	}
 	int tag_counter = 0;
-	char *p = FullPath +1;
-	char *l;
+	HTTPCHAR *p = FullPath +1;
+	HTTPCHAR *l;
 	do {
 		l = _tcschr(p,_T('/'));
 		if (l) {
@@ -1333,3 +1336,4 @@ void HTTPAPI::doSpider( char *host,char *FullPath, httpdata*  response)
 }
 
 /*******************************************************************************************************/
+#endif

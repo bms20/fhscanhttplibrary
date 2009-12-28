@@ -8,7 +8,7 @@
  #include <windows.h>
 #endif
 
-int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]);
+int LoadConfigurationFiles(HTTPAPI *api,int argc, HTTPSTR argv[]);
 int LoadKnownWebservers(HTTPCSTR path);
 int LoadKnownRouters(HTTPCSTR path);
 int LoadWebForms(HTTPCSTR path);

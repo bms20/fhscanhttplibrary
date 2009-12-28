@@ -1,7 +1,8 @@
 #ifndef __AUTHSCANNER_
 #define __AUTHSCANNER_
 
- #include "../HTTPCore/HTTP.h"
+#include "../HTTPCore/Build.h" 
+#include "../HTTPCore/HTTP.h"
  #include "../HTTPCore/Threading.h"
 
 #include <stdio.h>
@@ -41,7 +42,7 @@
 
 #define MAX_PATH 256
 #define MAXIMUM_WAIT_OBJECTS 64
-#define _strdup strdup
+#define __tcsdup _tcsdup
 #define BOOL int
 #define closesocket close
 #define strnicmp strncasecmp

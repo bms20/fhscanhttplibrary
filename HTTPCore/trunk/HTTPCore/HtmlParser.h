@@ -1,3 +1,4 @@
+
 #ifndef __HTML_PARSER__H__
 #define __HTML_PARSER__H__
 
@@ -8,7 +9,7 @@
 #  ifdef __cplusplus
 typedef bool _Bool;
 #  else
-typedef unsigned char _Bool;
+typedef unsigned HTTPCHAR _Bool;
 #  endif
 # endif
 # define bool _Bool
@@ -141,13 +142,13 @@ still need Wget headers to compile.  */
 # undef TOLOWER
 # undef TOUPPER
 
-# define ISSPACE(x) isspace (x)
-# define ISDIGIT(x) isdigit (x)
-# define ISXDIGIT(x) isxdigit (x)
-# define ISALPHA(x) isalpha (x)
-# define ISALNUM(x) isalnum (x)
-# define TOLOWER(x) tolower (x)
-# define TOUPPER(x) toupper (x)
+# define ISSPACE(x) _istspace (x)
+# define ISDIGIT(x) _istdigit (x)
+# define ISXDIGIT(x) _istxdigit (x)
+# define ISALPHA(x) _istalpha (x)
+# define ISALNUM(x) _istalnum (x)
+# define TOLOWER(x) _totlower (x)
+# define TOUPPER(x) _totupper (x)
 
 struct hash_table {
 	int dummy;
@@ -172,11 +173,11 @@ Esta estructura contiene una lista de etiquetas susceptibles a tener enlaces HTT
 */
 
 typedef struct {
-	char tagattribute[50];
-	char tagname[50];
+	HTTPCHAR tagattribute[50];
+	HTTPCHAR tagname[50];
 } VALIDTAGS;
 
-int IsValidHTMLTag(char *tagattribute, char *tagname);
+int IsValidHTMLTag(HTTPCHAR *tagattribute, HTTPCHAR *tagname);
 
 
 
@@ -216,8 +217,8 @@ as that of the covered work.  */
 
 
 struct attr_pair {
-  char *name;			/* attribute name */
-  char *value;			/* attribute value */
+  HTTPCHAR *name;			/* attribute name */
+  HTTPCHAR *value;			/* attribute value */
 
   /* Needed for URL conversion; the places where the value begins and
      ends, including the quotes and everything. */
@@ -229,7 +230,7 @@ struct attr_pair {
 };
 
 struct taginfo {
-  char *name;			/* tag name */
+  HTTPCHAR *name;			/* tag name */
   int end_tag_p;		/* whether this is an end-tag */
   int nattrs;			/* number of attributes */
   struct attr_pair *attrs;	/* attributes */
@@ -246,12 +247,13 @@ struct hash_table;		/* forward declaration */
                                    <a href=" foo "> as "foo" */
 
 void map_html_tags (HTTPCSTR , int,
-		    void (*) (struct taginfo *, void *, char*, char*,struct httpdata*),
+		    void (*) (struct taginfo *, void *, HTTPCHAR*, HTTPCHAR*,struct httpdata*),
 			void *, int,
 		    const struct hash_table *, const struct hash_table *,
-			char *, char *,httpdata*);
+			HTTPCHAR *, HTTPCHAR *,httpdata*);
 
-void doSpider(char *host, char* url,char *x, int length,int ssl);
+void doSpider(HTTPCHAR *host, HTTPCHAR* url,HTTPCHAR *x, int length,int ssl);
 
 #endif /* __HTML_PARSER__H__ */
+
 

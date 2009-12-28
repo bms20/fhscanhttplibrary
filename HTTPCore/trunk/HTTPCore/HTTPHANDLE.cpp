@@ -110,8 +110,8 @@ int HTTPAPIHANDLE::InitHandle(HTTPSTR hostname,unsigned short HTTPPort,int ssl)
 		memcpy(&remote.sin_addr.s_addr, hostend->h_addr, 4);
 	}
 	target=remote.sin_addr.s_addr;
-	strncpy(targetDNS, hostname ,sizeof(targetDNS)-1);
-	targetDNS[sizeof(targetDNS)-1]='\0';
+	_tcsncpy(targetDNS, hostname ,sizeof(targetDNS)-1);
+	targetDNS[sizeof(targetDNS)/sizeof(HTTPCHAR)-1]=_T('\0');
 	port			= HTTPPort;
 
 	NeedSSL			= ssl;
@@ -213,8 +213,8 @@ HTTPAPIHANDLE::~HTTPAPIHANDLE()
 /*******************************************************************************************************/
 int HTTPAPIHANDLE::SetHTTPConfig(int opt,int parameter)
 {
-	char tmp[12];
-	sprintf(tmp,"%i",parameter);
+	HTTPCHAR tmp[12];
+	_stprintf(tmp,_T("%i"),parameter);
 	switch (opt)
 	{
 		case ConfigDisconnectConnection:
@@ -296,14 +296,14 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 			Cookie= NULL;
 		}
 		if ( (parameter) && (*parameter) ){			
-			if (strnicmp(parameter,"Cookie: ",8)==0) //Validate the cookie parameter
+			if (_tcsncicmp(parameter,_T("Cookie: "),8)==0) //Validate the cookie parameter
 			{
 				Cookie=_tcsdup(parameter);
 			} else //Add Cookie Header..
 			{
-				Cookie=(char*)malloc( 8 + strlen(parameter) +1 );
-				strcpy(Cookie,"Cookie: ");
-				strcpy(Cookie+8,parameter);
+				Cookie=(HTTPCHAR*)malloc( (8 + _tcslen(parameter) +1)*sizeof(HTTPCHAR) );
+				_tcscpy(Cookie,_T("Cookie: "));
+				_tcscpy(Cookie+8,parameter);
 			}
 		}
 		break;
@@ -315,9 +315,9 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 		}
 		if ( (parameter) && (*parameter) && (_tcschr(parameter,_T(':'))) ) 
 		{
-			int len2 = (int) strlen(parameter);
+			int len2 = (int) _tcslen(parameter);
 			if (memcmp(parameter+len2 -2,"\r\n",2)!=0) {
-				AdditionalHeader = (char*)malloc(len2 +2 +1 );
+				AdditionalHeader = (HTTPCHAR*)malloc((len2 +2 +1)*sizeof(HTTPCHAR) );
 				memcpy(AdditionalHeader,parameter,len2);
 				memcpy(AdditionalHeader +len2,"\r\n\x00",3);
 			} else {
@@ -369,7 +369,7 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 			target=remote.sin_addr.s_addr;
 		}
 		conexion=NULL;
-		if (!lpProxyPort) lpProxyPort=_tcsdup("8080");
+		if (!lpProxyPort) lpProxyPort=_tcsdup(_T("8080"));
 		break;
 
 	case ConfigProxyPort:
@@ -434,7 +434,7 @@ HTTPSTR HTTPAPIHANDLE::GetHTTPConfig(enum HttpOptions opt)
 	case ConfigHTTPHost:
 		return (targetDNS);
 	case ConfigHTTPPort:
-		sprintf(lpTmpData,"%i",port);
+		_stprintf(lpTmpData,_T("%i"),port);
 		return (lpTmpData);
 	case ConfigMaxDownloadSpeed:
 		return(NULL);
@@ -453,19 +453,19 @@ HTTPSTR HTTPAPIHANDLE::GetHTTPConfig(enum HttpOptions opt)
 	case ConfigProxyPass:
 		return ( lpProxyPassword );
 	case ConfigProtocolversion:
-		sprintf(lpTmpData,"%i",version);
+		_stprintf(lpTmpData,_T("%i"),version);
 		return (lpTmpData);
 	case ConfigProxyInitialized:
 		if (ProxyInitialized)
 		{
-			sprintf(lpTmpData,"%i",ProxyInitialized);
+			_stprintf(lpTmpData,_T("%i"),ProxyInitialized);
 			return (lpTmpData);
 		}
 		break;
 	case ConfigSSLConnection:
 		if (NeedSSL)
 		{
-			sprintf(lpTmpData,"%i",NeedSSL);
+			_stprintf(lpTmpData,_T("%i"),NeedSSL);
 			return (lpTmpData);
 		} 
 		break;
@@ -474,14 +474,14 @@ HTTPSTR HTTPAPIHANDLE::GetHTTPConfig(enum HttpOptions opt)
 	case ConfigCookieHandling:
 		if (CookieSupported)
 		{
-			sprintf(lpTmpData,"%i",CookieSupported);
+			_stprintf(lpTmpData,_T("%i"),CookieSupported);
 			return (lpTmpData);
 		}
 		break;
 	case ConfigAutoredirect:
 		if (AutoRedirect)
 		{
-			sprintf(lpTmpData,"%i",AutoRedirect);
+			_stprintf(lpTmpData,_T("%i"),AutoRedirect);
 			return (lpTmpData);
 		}
 		break;
@@ -496,30 +496,30 @@ HTTPSTR HTTPAPIHANDLE::GetHTTPConfig(enum HttpOptions opt)
 
 
 /*******************************************************************************************************/
-char *HTTPAPIHANDLE::GetAdditionalHeaderValue(HTTPCSTR value,int n)
+HTTPCHAR *HTTPAPIHANDLE::GetAdditionalHeaderValue(const HTTPCHAR *value,int n)
 {
-	char *base,*end;
+	HTTPCHAR *base,*end;
 	end=base=AdditionalHeader;
 	if ( (AdditionalHeader) && (value) )
 	{
-		size_t valuelen = strlen(value);
+		size_t valuelen = _tcslen(value);
 		while (*end) {
-			if (*end=='\n')
+			if (*end==_T('\n'))
 			{
-				if (strnicmp(base,value,valuelen)==0)
+				if (_tcsncicmp(base,value,valuelen)==0)
 				{
 					if (n==0)
 					{
 						base  = base + valuelen;
-						while  (( *base==' ') || (*base==':') )  { base++; }
+						while  (( *base==_T(' ')) || (*base==_T(':')) )  { base++; }
 						size_t len = (end-base);
-						char *header=(char*)malloc(len+1);
+						HTTPCHAR *header=(HTTPCHAR*)malloc(len+2);
 						memcpy(header,base,len);
-						if (header[len-1]=='\r')
+						if (header[len-1]==_T('\r'))
 						{
-							header[len-1]='\0';
+							header[len-1]=_T('\0');
 						} else {
-							header[len]='\0';
+							header[len]=_T('\0');
 						}
 						return (header);
 					} else
@@ -535,7 +535,7 @@ char *HTTPAPIHANDLE::GetAdditionalHeaderValue(HTTPCSTR value,int n)
 	return(NULL);
 }
 /*******************************************************************************************************/
-	void HTTPAPIHANDLE::SetLastAuthenticationString(char *authstring) {
+	void HTTPAPIHANDLE::SetLastAuthenticationString(HTTPCHAR *authstring) {
 		if (LastAuthenticationString) free(LastAuthenticationString);
 		LastAuthenticationString = authstring;
 	}
@@ -554,7 +554,7 @@ char *HTTPAPIHANDLE::GetAdditionalHeaderValue(HTTPCSTR value,int n)
 
     }
 /*******************************************************************************************************/
-	char *HTTPAPIHANDLE::GetLastRequestedUri(void) 
+	HTTPCHAR *HTTPAPIHANDLE::GetLastRequestedUri(void) 
 	{ 
 		return LastRequestedUri; 
 	};

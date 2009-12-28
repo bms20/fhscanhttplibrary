@@ -133,10 +133,10 @@ public:
 	HTTPSTR GetHTTPConfig(enum HttpOptions);
 
 	//Authentication related
-	char *GetLastRequestedUri(void);
+	HTTPCHAR *GetLastRequestedUri(void);
 	void SetLastRequestedUri(HTTPCSTR url);
 	HTTPCHAR *GetLastAuthenticationString() { return LastAuthenticationString; }
-	void SetLastAuthenticationString(char *authstring);
+	void SetLastAuthenticationString(HTTPCHAR *authstring);
 
 	//Connection related
 	long GetTarget() { return target; }
@@ -150,7 +150,7 @@ public:
 	void SetClientConnection(void *Client_Connection) { ClientConnection = Client_Connection; }
 
 	
-	char *GetAdditionalHeaderValue(HTTPCSTR value,int n);
+	HTTPCHAR *GetAdditionalHeaderValue(HTTPCSTR value,int n);
 	int IsAutoRedirectEnabled(void) { return ( AutoRedirect); }
 	int GetMaximumRedirects(void) { return (MaximumRedirects); }
 	void DecrementMaximumRedirectsCount(void) { MaximumRedirects--; }

@@ -222,31 +222,74 @@ void ConnectionHandling::Disconnect(int level)
 #define HTTP_RECV_ERROR_CODE_NO_DATA       0x04
 #define HTTP_RECV_ERROR_CODE_INVALID_DATA  0x08
 
-
-
-
-
-int ConnectionHandling::SendHttpRequest(httpdata* request)
+/*******************************************************************************************************/
+int ConnectionHandling::SendData(char *data,size_t len)
 {
-#ifdef UNICODE
+	if (ssl) 
+	{
+		return SSL_WRITE(ssl, data, len);
+	} else 
+	{
+		return send(datasock, data, len, 0);
+	}
+}
+/*******************************************************************************************************/
+int ConnectionHandling::SendHttpResponse(HTTPResponse *response)
+{
+#ifdef _UNICODE
+
+#else
+	SendData((char*)response->GetHeaders(),response->GetHeaderSize());
+	if (response->DataSize)
+	{
+		SendData((char*)response->Data,response->DataSize);
+	}
+	return(1);
+#endif
+}
+
+int ConnectionHandling::SendHttpRequest(HTTPRequest* request)
+{
+#ifdef _UNICODE
+#else
+	SendData((char*)request->GetHeaders(),request->GetHeaderSize());
+	if (request->DataSize)
+	{
+		SendData((char*)request->Data,request->DataSize);
+	}
+	return(1);
+#endif
+
+#ifdef _UNICODE
 /* Convert Unicode string to ASCII string */
-char *Header = (char*)malloc(request->HeaderSize+1);
-WideCharToMultiByte(CP_ACP, 0, request->Header, -1, Header, request->HeaderSize+1, NULL, NULL);
+char *Header = (char*)malloc(request->GetHeaderSize()+1);
+WideCharToMultiByte(CP_ACP, 0, request->GetHeaders(), -1, Header, request->GetHeaderSize()+1, NULL, NULL);
+char *Data =  NULL;
+if  (request->GetDataSize())
+{
+	Data = (char*)malloc(request->GetDataSize()+1);
+	WideCharToMultiByte(CP_ACP, 0, request->GetData(), -1, Data, request->GetDataSize()+1, NULL, NULL);
+}
 #endif
 
 	if (ssl) 
 	{
 #ifdef UNICODE
-		int err=SSL_WRITE(ssl, Header, (int)request->HeaderSize);
+		int err=SSL_WRITE(ssl, Header, (int)request->GetHeaderSize());
 		free(Header);
 #else
-		int err=SSL_WRITE(ssl, request->Header, (int)request->HeaderSize);
+		int err=SSL_WRITE(ssl, request->GetHeaders(), (int)request->GetHeaderSize());
 #endif
 		if (err>0)
 		{
-			if (request->DataSize)
+			if (request->GetDataSize())
 			{
-				err=SSL_WRITE(ssl, request->Data, (int)request->DataSize);
+			#ifdef UNICODE
+				err=SSL_WRITE(ssl, Data, (int)request->GetDataSize());
+				free(Data);
+			#else
+				err=SSL_WRITE(ssl, request->GetData(), (int)request->GetDataSize());
+			#endif
 			}
 		}
 		if (err <=0)
@@ -258,17 +301,22 @@ WideCharToMultiByte(CP_ACP, 0, request->Header, -1, Header, request->HeaderSize+
 		}
 	} else
 	{
-#ifdef UNICODE
-		int err = send(datasock, Header, (int)request->HeaderSize, 0);
+#ifdef _UNICODE
+		int err = send(datasock, Header, (int)request->GetHeaderSize(), 0);
 		free(Header);
 #else
-		int err = send(datasock, request->Header, (int)request->HeaderSize, 0);
+		int err = send(datasock, request->GetHeaders(), (int)request->GetHeaderSize(), 0);
 #endif
 		if (err > 0)
 		{
-			if (request->DataSize)
+			if (request->GetDataSize())
 			{
-				err = send(datasock, request->Data, (int)request->DataSize, 0);
+				#ifdef _UNICODE
+				err = send(datasock, Data, (int)request->GetDataSize(), 0);
+				free(Data);
+				#else
+				err = send(datasock, request->GetData(), (int)request->GetDataSize(), 0);
+				#endif
 			}
 		}
 		if (err <= 0)
@@ -280,16 +328,15 @@ WideCharToMultiByte(CP_ACP, 0, request->Header, -1, Header, request->HeaderSize+
 		}
 
 	}
-
 	UpdateLastConnectionActivityTime();
 	return (1);
 }
 
 /**********************************************************/
-httpdata* ConnectionHandling::SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,httpdata *request)
+HTTPResponse* ConnectionHandling::SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,HTTPRequest*request)
 {
 	IoOperationLock.LockMutex();
-	httpdata *response = NULL;
+	HTTPResponse *response = NULL;
 	int ret = InitializeConnection(HTTPHandle);
 	if (ret)
 	{
@@ -425,7 +472,7 @@ double ConnectionHandling::ReadChunkNumber(char *encodedData, size_t encodedlen,
 
 }
 /************************************************************************************************************************/
-httpdata *GetHttpHeadersFromBuffer(char *lpBuffer)
+HTTPResponse *GetHttpHeadersFromBuffer(char *lpBuffer)
 {
 	/* No Unicode conversion */
 	size_t offset = 0;
@@ -449,14 +496,48 @@ httpdata *GetHttpHeadersFromBuffer(char *lpBuffer)
 	{
 		return(NULL);
 	}
-	httpdata *response = new httpdata;
+	HTTPResponse *response = new HTTPResponse;
 #ifdef UNICODE	
-	response->InitHTTPDataA(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
+	response->InitHTTPResponseA(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
 #else
-	response->InitHTTPData(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
+	response->InitHTTPResponse(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
 #endif
 	
 	return (response);
+}
+/************************************************************************************************************************/
+HTTPRequest *GetHTTPRequestFromBuffer(char *lpBuffer)
+{
+	/* No Unicode conversion */
+	size_t offset = 0;
+	char *HeadersEnd = NULL;
+	char *p = strstr(lpBuffer, "\r\n\r\n");
+	if (p)
+	{
+		offset = 4;
+		HeadersEnd = p;
+	}
+	p = strstr(lpBuffer, "\n\n"); // no rfc compliant (like d-link routers)
+	if (p)
+	{
+		if ((!HeadersEnd) || (p < HeadersEnd))
+		{
+			offset = 2;
+			HeadersEnd = p;
+		}
+	}
+	if (!HeadersEnd)
+	{
+		return(NULL);
+	}
+	HTTPRequest *request = new HTTPRequest;
+#ifdef UNICODE	
+	request->InitHTTPRequestA(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
+#else
+	request->InitHTTPRequest(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
+#endif
+	
+	return (request);
 }
 /************************************************************************************************************************/
 int ConnectionHandling::SendBufferToProxyClient(class ConnectionHandling *ProxyClientConnection, char *buf,int read_size)
@@ -479,7 +560,7 @@ int ConnectionHandling::SendBufferToProxyClient(class ConnectionHandling *ProxyC
 }
 /************************************************************************************************************************/
 
-httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request, int *ErrorCode)
+HTTPResponse* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, HTTPRequest* request, int *ErrorCode)
 {
 
 	/* IO VARIABLES TO HANDLE HTTP RESPONSE */
@@ -489,7 +570,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 	char *lpBuffer = NULL;	       /* Pointer that stores the returned HTTP Data until its flushed to disk or splited into headers and data */
 	size_t BufferSize = 0;   /* Size of the returned HTTP Data lpBuffer */
 	int BytesToBeReaded = -1;      /* Number of bytes remaining to be readed on the HTTP Stream (-1 means that the number of bytes is still unknown, 0 that we have reached the end of the html data ) */
-	httpdata* response = NULL;    /* Returned HTTP Information */
+	HTTPResponse* response = NULL;    /* Returned HTTP Information */
 
 	/* SOME CRITICAL INFORMATION THAT WE WILL GATHER FROM THE HTTP STREAM*/
 	unsigned int ChunkEncodeSupported = 0; /* HTTP PROTOCOL FLAG: Server supports chunk encoding */
@@ -573,12 +654,12 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 				/* Extract Information from the remote HTTP Headers */
 				if (response)
 				{
-					BufferSize = BufferSize - response->HeaderSize;
+					BufferSize = BufferSize - response->GetHeaderSize();
 					int HTTPStatusCode = response->GetStatus();
 					if (HTTPStatusCode == 0)
 					{
 						/* Protocolo ERROR - We are reading bad stuff */
-						printf("Error: %s\n",request->Header);
+						printf("Error: %s\n",request->GetHeaders());
 						*ErrorCode = HTTP_RECV_ERROR_CODE_INVALID_DATA | HTTP_CONNECTION_CLOSE;
 						return (NULL);
 					}
@@ -592,7 +673,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					{
                     	BytesToBeReaded = 0;
 					}
-					if (response->Header[7] ==_T('0')) ConnectionClose = 1;
+					if (response->GetHeaders()[7] ==_T('0')) ConnectionClose = 1;
 					
 						HTTPSTR p = response->GetHeaderValue(_T("Connection:"), 0);
 						if (p)
@@ -639,7 +720,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					}
 
 					/*HTTP 1.1 HEAD RESPONSES SHOULD NOT SEND BODY DATA.*/
-					if (_tcsncicmp(request->Header, _T("HEAD "), 5) == 0)
+					if (_tcsncicmp(request->GetHeaders(), _T("HEAD "), 5) == 0)
 					{
 						if ((lpBuffer[7] == '1') && (ContentLength))
 						{
@@ -652,7 +733,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					}
 
 					/*HTTP 1.1 HEAD RESPONSE DOES NOT SEND BODY DATA. */
-					if (_tcsncicmp(request->Header, _T("CONNECT "), 8) == 0)
+					if (_tcsncicmp(request->GetHeaders(), _T("CONNECT "), 8) == 0)
 					{
 						BytesToBeReaded=0;
 						free(lpBuffer);
@@ -682,7 +763,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					if (!HTTPIOMappingData)
 					{
 						HTTPIOMappingData = new HTTPIOMapping;
-						HTTPIOMappingData->WriteMappingData(BufferSize,lpBuffer + response->HeaderSize);
+						HTTPIOMappingData->WriteMappingData(BufferSize,lpBuffer + response->GetHeaderSize());
 						free(lpBuffer);
 						lpBuffer=NULL;
 					} else
@@ -711,7 +792,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 					{
 						HTTPIOMappingData = new HTTPIOMapping;
 						TmpChunkData = (char*)malloc(BufferSize + BUFFSIZE );
-						memcpy(TmpChunkData,lpBuffer + response->HeaderSize,BufferSize);
+						memcpy(TmpChunkData,lpBuffer + response->GetHeaderSize(),BufferSize);
 						ChunkDataLength=BufferSize;
 						free(lpBuffer);
 						lpBuffer=NULL;
@@ -815,7 +896,7 @@ httpdata* ConnectionHandling::ReadHTTPResponseData(class ConnectionHandling *Pro
 		if (ChunkEncodeSupported)
 		{
 			HTTPCHAR tmp[100];
-			_stprintf(tmp,_T("Content-Length: %i"),response->DataSize);
+			_stprintf(tmp,_T("Content-Length: %i"),response->GetDataSize());
 			response->AddHeader(tmp);
 			response->RemoveHeader(_T("Transfer-Encoding:"));
 		}
@@ -900,7 +981,7 @@ int ConnectionHandling::InitSSLConnection()
 */
 /*******************************************************************************************/
 
-struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
+HTTPRequest *ConnectionHandling::ReadHTTPProxyRequestData()
 {
 	struct timeval tv;
 	char buf[BUFFSIZE+1];
@@ -911,7 +992,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 	unsigned long	ConnectionClose=0;
 	unsigned long	ContentLength=0;
 
-	httpdata* response=NULL;
+	HTTPRequest* request=NULL;
 	int		BytesPorLeer=-1;
 
 
@@ -953,7 +1034,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 			if (read_size<=0)
 			{
 				if (lpBuffer) free(lpBuffer);
-				if (response) delete response;
+				if (request) delete request;
 
 #ifdef _DBG_
 
@@ -975,15 +1056,15 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 			BufferSize+=read_size;
 			lpBuffer[BufferSize]='\0';
 		}
-		if (!response) //Buscamos el fin de las cabeceras
+		if (!request) //Buscamos el fin de las cabeceras
 		{
-			response = GetHttpHeadersFromBuffer(lpBuffer);
+			request = GetHTTPRequestFromBuffer(lpBuffer);
 
-			if (response)
+			if (request)
 			{
-                BufferSize=BufferSize-response->HeaderSize;
-				memcpy(lpBuffer,lpBuffer+response->HeaderSize,BufferSize);
-				HTTPCHAR *p=response->GetHeaderValue(_T("Content-Length: "),0);
+				BufferSize=BufferSize-request->GetHeaderSize();
+				memcpy(lpBuffer,lpBuffer+request->GetHeaderSize(),BufferSize);
+				HTTPCHAR *p=request->GetHeaderValue(_T("Content-Length: "),0);
 				if (p)
 				{
 					ContentLength=_tstoi(p);
@@ -1043,7 +1124,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 				//BytesPorLeer = ContentLength - BufferSize ;
 			}
 		}
-		if (response)
+		if (request)
 		{        /*
 				 if ( (response->DataSize==0) && (BufferSize) )
 				 {
@@ -1055,13 +1136,13 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 				if (!ContentLength) 
 				{
 #ifdef __WIN32__RELEASE__
-					MessageBox( NULL, response->Data,_T("Content-Length Error?"), MB_OK|MB_ICONINFORMATION );
+					MessageBoxA( NULL, (char*)request->GetData(),"Content-Length Error?", MB_OK|MB_ICONINFORMATION );
 #else
-					printf("Content-Length Error: %s\n",response->Data);
+					printf("Content-Length Error: %s\n",request->Data);
 #endif
 				}
-				response->Data=lpBuffer;
-				response->DataSize=BufferSize;
+				request->SetData(lpBuffer);
+				request->SetDataSize(BufferSize);
 			}
 
 			if (ContentLength)
@@ -1077,20 +1158,21 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 		}
 	}
 
-	if (!response)
+	if (!request)
 	{
 		//TODO: revisar si es BufferSize
-		response = new httpdata(NULL,0,lpBuffer,BufferSize);
+		request = new HTTPRequest;
+		request->InitHTTPRequest(NULL,lpBuffer,BufferSize);
 	} else
 	{
 		if (lpBuffer)
 		{
-			if (!response->DataSize)
+			if (!request->GetDataSize())
 			{
-				free(response->Data);
+				free(request->GetData());
 			}
-			response->Data = lpBuffer;
-			response->DataSize = BufferSize;
+			request->SetData(lpBuffer);
+			request->SetDataSize(BufferSize);
 		}
 	}
 /*
@@ -1104,7 +1186,7 @@ struct httpdata *ConnectionHandling::ReadHTTPProxyRequestData()
 		RemovePipeLineRequest();
 	}
 */
-	return(response);
+	return(request);
 }
 /*******************************************************************************************/
 
@@ -1124,7 +1206,24 @@ void ConnectionHandling::Acceptdatasock( SOCKET ListenSocket )
 	int clientLen= sizeof(struct sockaddr_in);
 	datasock= (int) accept(ListenSocket,(struct sockaddr *) &webserver,(socklen_t *)&clientLen);
 	target=webserver.sin_addr.s_addr;
-	_tcscpy(targetDNS,inet_ntoa(webserver.sin_addr));		
+
+#ifdef _UNICODE	
+	char tmp[256];
+	strcpy(tmp,inet_ntoa(webserver.sin_addr));
+	mbstowcs(targetDNS,tmp,strlen(tmp)+1);
+#else
+	_tcscpy(targetDNS,inet_ntoa(webserver.sin_addr));
+#endif
+/*	//size_t mbstowcs(wchar_t *pwcs, const char *s, size_t n);
+	mbstate_t       mbstate;
+    // Reset to initial shift state
+    memset((void*)&mbstate, 0, sizeof(mbstate));
+
+	//size_t wcsrtombs (char *dest, const wchar_t **src, size_t len, mbstate_t *ps);
+	//wcsrtombs(targetDNS,tmp,strlen(tmp),
+*/
+
+
 	Connectionid++;
 }
 /*******************************************************************************************/

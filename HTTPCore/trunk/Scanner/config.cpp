@@ -1,8 +1,13 @@
 
+
+
 #include "FHScan.h"
 #include "estructuras.h"
 #include "update.h"
 #include "Input/InputHosts.h"
+
+
+
 
 extern USERLIST        *userpass;
 extern struct          _fakeauth FakeAuth[MAX_AUTH_LIST];
@@ -22,8 +27,8 @@ extern VLIST			vlist[200];
 extern int				nvlist;
 extern int				csv;
 extern unsigned int		nthreads;
-extern unsigned long	currentip;
-extern unsigned long	endip;
+//extern unsigned long	currentip;
+//extern unsigned long	endip;
 extern int				FullUserList;
 extern char				**KnownWebservers;
 extern int				nKnownWebservers;
@@ -33,19 +38,19 @@ extern int				nKnownRouters;
 extern char				*ipfilepath;
 
 #ifdef XML_LIBRARY
-char *nmap=NULL;
+HTTPCHAR *nmap=NULL;
 #endif
-char *hosts=NULL;
+HTTPCHAR *hosts=NULL;
 
-extern char *Fullurl;
-extern char *method;
-extern char *vhost;
-extern char *PostData;
+extern HTTPCHAR *Fullurl;
+extern HTTPCHAR *method;
+extern HTTPCHAR *vhost;
+extern HTTPCHAR *PostData;
 extern int  PostDataSize ;
-extern char *additionalheaders;
+extern HTTPCHAR *additionalheaders;
 extern int  spider;
 extern int ShowLinks;
-extern char *LinkType;
+extern HTTPCHAR *LinkType;
 extern int ShowResponse;
 extern int proxyScanOnly;
 
@@ -54,20 +59,20 @@ extern int proxyScanOnly;
 
 
 /******************************************************************************/
-static void ValidateLine(char *source,char *dst) {
+static void ValidateLine(HTTPCHAR *source,HTTPCHAR *dst) {
 	int j=0;
-	size_t len = strlen(source);
+	size_t len = _tcslen(source);
 	for (unsigned int i=0;i<len;i++) {
-		if (source[i]=='\\') {
+		if (source[i]==_T('\\')) {
 			switch (source[i+1]) {
-		   case 'r':
-			   source[i+1]='\r';
+		   case _T('r'):
+			   source[i+1]=_T('\r');
 			   break;
-		   case 'n':
-			   source[i+1]='\n';
+		   case _T('n'):
+			   source[i+1]=_T('\n');
 			   break;
-		   case 't':
-			   source[i+1]='\t';
+		   case _T('t'):
+			   source[i+1]=_T('\t');
 			   break;
 		   default:
 			   dst[j]=source[i];
@@ -84,10 +89,10 @@ static void ValidateLine(char *source,char *dst) {
 
 int LoadKnownWebservers(HTTPCSTR path)
 {
-	char tmp[100];
+	HTTPCHAR tmp[100];
 	int len=sizeof(tmp);
 	nKnownWebservers=0;
-	FILE *webservers=fopen(path,"r");
+	FILE *webservers=_tfopen(path,_T("r"));
 	if (!webservers) {
 		return (0);
 	}
@@ -96,11 +101,11 @@ int LoadKnownWebservers(HTTPCSTR path)
 		while (!feof(webservers))
 		{
 			memset(tmp,'\0',sizeof(tmp));
-			if (ReadAndSanitizeInput(webservers,tmp,len) && (strlen(tmp)>0) )
+			if (ReadAndSanitizeInput(webservers,tmp,len) && (_tcslen(tmp)>0) )
 		 {
 			 KnownWebservers=(char**)realloc(KnownWebservers,sizeof(char*)*(nKnownWebservers+1));
-			 KnownWebservers[nKnownWebservers]=(char *)malloc(len+1);
-			 strcpy(KnownWebservers[nKnownWebservers],tmp);
+			 KnownWebservers[nKnownWebservers]=(HTTPCHAR*)malloc((len+1)*sizeof(HTTPCHAR));
+			 _tcscpy(KnownWebservers[nKnownWebservers],tmp);
 			 //            printf("anadiendo: !%s!\n",tmp);
 			 nKnownWebservers++;
 		 }
@@ -117,9 +122,9 @@ int LoadKnownWebservers(HTTPCSTR path)
 
 int LoadKnownRouters(HTTPCSTR path)
 {
-	char tmp[100];
+	HTTPCHAR tmp[100];
 	int len=sizeof(tmp);
-	FILE *webservers=fopen(path,"r");
+	FILE *webservers=_tfopen(path,_T("r"));
 	if (!webservers) {
 		return(0);
 	}
@@ -130,11 +135,11 @@ int LoadKnownRouters(HTTPCSTR path)
 		while (!feof(webservers))
 		{
 			memset(tmp,'\0',sizeof(tmp));
-			if (ReadAndSanitizeInput(webservers,tmp,len) && (strlen(tmp)>1))
+			if (ReadAndSanitizeInput(webservers,tmp,len) && (_tcslen(tmp)>1))
 		 {
 			 KnownRouters=(char**)realloc(KnownRouters,sizeof(char*)*(nKnownRouters+1));
-			 KnownRouters[nKnownRouters]=(char *)malloc(len+1);
-			 strcpy(KnownRouters[nKnownRouters],tmp);
+			 KnownRouters[nKnownRouters]=(HTTPCHAR *)malloc((len+1)*sizeof(HTTPCHAR));
+			 _tcscpy(KnownRouters[nKnownRouters],tmp);
 
 			 //            printf("%2.2i - %s\n",nKnownRouters,KnownRouters[nKnownRouters]);
 			 nKnownRouters++;
@@ -154,15 +159,16 @@ int LoadKnownRouters(HTTPCSTR path)
 
 int LoadWebForms(HTTPCSTR path)
 {
-	FILE *webforms=fopen(path,"r");
+	FILE *webforms=_tfopen(path,_T("r"));
 	nWebforms=0;
 
-	if (webforms) {
-		char line[512];
-		char tmp[512];
+	if (webforms) 
+	{
+		HTTPCHAR line[512];
+		HTTPCHAR tmp[512];
 
 		int i;
-		for(i=0;i<MAX_WEBFORMS;i++) memset((char *)&WEBFORMS[i],'\0',sizeof(struct _webform));
+		for(i=0;i<MAX_WEBFORMS;i++) memset((HTTPCHAR*)&WEBFORMS[i],'\0',sizeof(struct _webform));
 		while( (!feof(webforms)) && (nWebforms<MAX_WEBFORMS) )
 		{
 			//fgets(tmp,sizeof(tmp),webforms);
@@ -173,58 +179,58 @@ int LoadWebForms(HTTPCSTR path)
 				memset(line,'\0',sizeof(line));
 				ValidateLine(tmp,line);
 
-				if (strncmp(line,"Model=",6)==0)
-					strncpy(WEBFORMS[nWebforms].model,line+6,sizeof(WEBFORMS[nWebforms].model));
+				if (_tcsnccmp(line,_T("Model="),6)==0)
+					_tcsncpy(WEBFORMS[nWebforms].model,line+6,sizeof(WEBFORMS[nWebforms].model));
 
-				if (strncmp(line,"status=",7)==0)
-					WEBFORMS[nWebforms].status=atoi(line+7);
-				if (strncmp(line,"server=",7)==0) {
-					strncpy(WEBFORMS[nWebforms].server,line+7,sizeof(WEBFORMS[nWebforms].server));
+				if (_tcsnccmp(line,_T("status="),7)==0)
+					WEBFORMS[nWebforms].status=_tstoi(line+7);
+				if (_tcsnccmp(line,_T("server="),7)==0) {
+					_tcsncpy(WEBFORMS[nWebforms].server,line+7,sizeof(WEBFORMS[nWebforms].server));
 				}
-				if (strncmp(line,"Matchstring=",12)==0)
-					strncpy(WEBFORMS[nWebforms].matchstring,line+12,sizeof(WEBFORMS[nWebforms].matchstring));
-				if (strncmp(line,"ValidateImage=",14)==0)
-					strncpy(WEBFORMS[nWebforms].ValidateImage,line+14,sizeof(WEBFORMS[nWebforms].ValidateImage));
-				if (strncmp(line,"authurl=",8)==0)
-					strncpy(WEBFORMS[nWebforms].authurl,line+8,sizeof(WEBFORMS[nWebforms].authurl));
-				if (strncmp(line,"authmethod=",11)==0)
-					strncpy(WEBFORMS[nWebforms].authmethod,line+11,sizeof(WEBFORMS[nWebforms].authmethod));
-				if (strncmp(line,"requireloginandpass=",20)==0)
-					WEBFORMS[nWebforms].requireloginandpass=atoi(line+20);
-				if (strncmp(line,"authform=",9)==0)
-					strncpy(WEBFORMS[nWebforms].authform,line+9,sizeof(WEBFORMS[nWebforms].authform));
-				if (strncmp(line,"validauthstring=",16)==0) {
-					strncpy(WEBFORMS[nWebforms].validauthstring,line+16,sizeof(WEBFORMS[nWebforms].validauthstring));
+				if (_tcsnccmp(line,_T("Matchstring="),12)==0)
+					_tcsncpy(WEBFORMS[nWebforms].matchstring,line+12,sizeof(WEBFORMS[nWebforms].matchstring));
+				if (_tcsnccmp(line,_T("ValidateImage="),14)==0)
+					_tcsncpy(WEBFORMS[nWebforms].ValidateImage,line+14,sizeof(WEBFORMS[nWebforms].ValidateImage));
+				if (_tcsnccmp(line,_T("authurl="),8)==0)
+					_tcsncpy(WEBFORMS[nWebforms].authurl,line+8,sizeof(WEBFORMS[nWebforms].authurl));
+				if (_tcsnccmp(line,_T("authmethod="),11)==0)
+					_tcsncpy(WEBFORMS[nWebforms].authmethod,line+11,sizeof(WEBFORMS[nWebforms].authmethod));
+				if (_tcsnccmp(line,_T("requireloginandpass="),20)==0)
+					WEBFORMS[nWebforms].requireloginandpass=_tstoi(line+20);
+				if (_tcsnccmp(line,_T("authform="),9)==0)
+					_tcsncpy(WEBFORMS[nWebforms].authform,line+9,sizeof(WEBFORMS[nWebforms].authform));
+				if (_tcsnccmp(line,_T("validauthstring="),16)==0) {
+					_tcsncpy(WEBFORMS[nWebforms].validauthstring,line+16,sizeof(WEBFORMS[nWebforms].validauthstring));
 				}
-				if (strncmp(line,"validauthstringalt=",19)==0) {
-					strncpy(WEBFORMS[nWebforms].validauthstringalt,line+19,sizeof(WEBFORMS[nWebforms].validauthstringalt));
+				if (_tcsnccmp(line,_T("validauthstringalt="),19)==0) {
+					_tcsncpy(WEBFORMS[nWebforms].validauthstringalt,line+19,sizeof(WEBFORMS[nWebforms].validauthstringalt));
 				}
 
 
-				if (strncmp(line,"invalidauthstring=",18)==0) {
-					strncpy(WEBFORMS[nWebforms].invalidauthstring,line+18,sizeof(WEBFORMS[nWebforms].invalidauthstring));
+				if (_tcsnccmp(line,_T("invalidauthstring="),18)==0) {
+					_tcsncpy(WEBFORMS[nWebforms].invalidauthstring,line+18,sizeof(WEBFORMS[nWebforms].invalidauthstring));
 					nWebforms++;
 				}
 				//optional Headers
-				if (strncmp(line,"invalidauthstringalt=",21)==0) {
-					strncpy(WEBFORMS[nWebforms-1].invalidauthstringalt,line+21,sizeof(WEBFORMS[nWebforms-1].invalidauthstringalt));
+				if (_tcsnccmp(line,_T("invalidauthstringalt="),21)==0) {
+					_tcsncpy(WEBFORMS[nWebforms-1].invalidauthstringalt,line+21,sizeof(WEBFORMS[nWebforms-1].invalidauthstringalt));
 				}
-				if (strncmp(line,"AdditionalHeader=",17)==0) {
-					strncpy(WEBFORMS[nWebforms-1].AdditionalHeader,line+17,sizeof(WEBFORMS[nWebforms-1].AdditionalHeader));
+				if (_tcsnccmp(line,_T("AdditionalHeader="),17)==0) {
+					_tcsncpy(WEBFORMS[nWebforms-1].AdditionalHeader,line+17,sizeof(WEBFORMS[nWebforms-1].AdditionalHeader));
 				}
-				if (strncmp(line,"UpdateCookie=",13)==0)
-					WEBFORMS[nWebforms-1].UpdateCookie=atoi(line+13);
-				if (strncmp(line,"InitialCookieURL=",17)==0) {
-					strncpy(WEBFORMS[nWebforms-1].InitialCookieURL,line+17,sizeof(WEBFORMS[nWebforms-1].InitialCookieURL));	
+				if (_tcsnccmp(line,_T("UpdateCookie="),13)==0)
+					WEBFORMS[nWebforms-1].UpdateCookie=_tstoi(line+13);
+				if (_tcsnccmp(line,_T("InitialCookieURL="),17)==0) {
+					_tcsncpy(WEBFORMS[nWebforms-1].InitialCookieURL,line+17,sizeof(WEBFORMS[nWebforms-1].InitialCookieURL));	
 				}
-				if (strncmp(line,"ValidateAlternativeurl=",23)==0) {
-					strncpy(WEBFORMS[nWebforms-1].ValidateAlternativeurl,line+23,sizeof(WEBFORMS[nWebforms-1].ValidateAlternativeurl));	
+				if (_tcsnccmp(line,_T("ValidateAlternativeurl="),23)==0) {
+					_tcsncpy(WEBFORMS[nWebforms-1].ValidateAlternativeurl,line+23,sizeof(WEBFORMS[nWebforms-1].ValidateAlternativeurl));	
 				}
-				if (strncmp(line,"LoadAdditionalUrl=",18)==0) {
-					strncpy(WEBFORMS[nWebforms-1].LoadAdditionalUrl,line+18,sizeof(WEBFORMS[nWebforms-1].LoadAdditionalUrl));	
+				if (_tcsnccmp(line,_T("LoadAdditionalUrl="),18)==0) {
+					_tcsncpy(WEBFORMS[nWebforms-1].LoadAdditionalUrl,line+18,sizeof(WEBFORMS[nWebforms-1].LoadAdditionalUrl));	
 				}
-				if (strncmp(line,"ReconnectOnMatch=",17)==0) {
-					strncpy(WEBFORMS[nWebforms-1].ReconnectOnMatch,line+17,sizeof(WEBFORMS[nWebforms-1].ReconnectOnMatch));	
+				if (_tcsnccmp(line,_T("ReconnectOnMatch="),17)==0) {
+					_tcsncpy(WEBFORMS[nWebforms-1].ReconnectOnMatch,line+17,sizeof(WEBFORMS[nWebforms-1].ReconnectOnMatch));	
 				}
 
 
@@ -238,11 +244,11 @@ int LoadWebForms(HTTPCSTR path)
 //------------------------------------------------------------------------------
 int LoadUserList(HTTPCSTR path) {
 	FILE *userlist;
-	char *p;
-	char user[200];
+	HTTPCHAR *p;
+	HTTPCHAR user[200];
 
 	nUsers=0;
-	userlist=fopen(path,"r");
+	userlist=_tfopen(path,_T("r"));
 
 
 	if (userlist) {
@@ -250,9 +256,9 @@ int LoadUserList(HTTPCSTR path) {
 		{
 			memset(user,'\0',sizeof(user));
 			fgets(user,sizeof(user)-1,userlist);
-			if ( (strlen(user)>1) && (user[0]!='#') )
+			if ( (_tcslen(user)>1) && (user[0]!='#') )
 			{
-				p=user+strlen(user)-1;
+				p=user+_tcslen(user)-1;
 				while ( (*p=='\r' ) || (*p=='\n') || (*p==' ') ) { p[0]='\0'; --p; }
 				p=strchr(user,':');
 				if (p)
@@ -260,8 +266,8 @@ int LoadUserList(HTTPCSTR path) {
 					userpass=(USERLIST*)realloc(userpass,sizeof(USERLIST)*(nUsers+1));
 					memset(&userpass[nUsers],'\0',sizeof(USERLIST));
 					p[0]='\0';
-					strncpy(userpass[nUsers].UserName,user,sizeof(userpass[nUsers].UserName)-1);
-					strncpy(userpass[nUsers].Password,p+1,sizeof(userpass[nUsers].Password)-1);
+					_tcsncpy(userpass[nUsers].UserName,user,sizeof(userpass[nUsers].UserName)-1);
+					_tcsncpy(userpass[nUsers].Password,p+1,sizeof(userpass[nUsers].Password)-1);
 					nUsers++;
 				}
 			}
@@ -274,20 +280,20 @@ int LoadUserList(HTTPCSTR path) {
 /******************************************************************************/
 int LoadSingleUserList(HTTPCSTR path) {
 	FILE *userlist;
-	char *p;
-	char user[200];
+	HTTPCHAR *p;
+	HTTPCHAR user[200];
 	int i=0;
 
 	nLogins=0;
 
 
 
-	userlist=fopen(path,"r");
+	userlist=_tfopen(path,_T("r"));
 	if (userlist) {
 		while( (!feof(userlist)) ) //&& (nLogins<MAX_USER_LIST) )
 		{
 			fgets(user,sizeof(user)-1,userlist);
-			if ( (strlen(user)>1) && (user[0]!='#') )
+			if ( (_tcslen(user)>1) && (user[0]!=_T('#')) )
 			{
 				nLogins++;
 			}
@@ -299,12 +305,12 @@ int LoadSingleUserList(HTTPCSTR path) {
 
 			memset(user,'\0',sizeof(user));
 			fgets(user,sizeof(user)-1,userlist);
-			if ( (strlen(user)>1) && (user[0]!='#') )
+			if ( (_tcslen(user)>1) && (user[0]!='#') )
 			{
-				p=user+strlen(user)-1;
+				p=user+_tcslen(user)-1;
 				while ( (*p=='\r' ) || (*p=='\n') || (*p==' ') ) { p[0]='\0'; --p; }
 				memset(logins[i].user,0,40);
-				strncpy(logins[i].user,user,40-1);
+				_tcsncpy(logins[i].user,user,40-1);
 				i++;
 			}
 		} 
@@ -319,17 +325,17 @@ int LoadSingleUserList(HTTPCSTR path) {
 int LoadWebservers(HTTPCSTR path) {
 
 	FILE *webservers;
-	char tmp[512];
-	char line[512];
+	HTTPCHAR tmp[512];
+	HTTPCHAR line[512];
 
 
 
-	webservers=fopen(path,"r");
+	webservers=_tfopen(path,_T("r"));
 	if (!webservers) {
 		return(0);
 	}
 	nvlist=-1;
-	for(unsigned int i=0;i<sizeof(vlist)/sizeof(VLIST);i++) memset((char *)&vlist[i],'\0',sizeof(VLIST));
+	for(unsigned int i=0;i<sizeof(vlist)/sizeof(VLIST);i++) memset((HTTPCHAR *)&vlist[i],'\0',sizeof(VLIST));
 	while (!feof(webservers))
 	{
 		memset(tmp,'\0',sizeof(tmp));
@@ -338,49 +344,49 @@ int LoadWebservers(HTTPCSTR path) {
 			memset(line,'\0',sizeof(line));
 			ValidateLine(tmp,line);
 
-			if (strncmp(line,"vulnerability=",14)==0){
+			if (_tcsnccmp(line,"vulnerability=",14)==0){
 				nvlist++;
-				strncpy(vlist[nvlist].vulnerability,line+14,sizeof(vlist[nvlist].vulnerability)-1);
+				_tcsncpy(vlist[nvlist].vulnerability,line+14,sizeof(vlist[nvlist].vulnerability)-1);
 			}
-			if (strncmp(line,"status=",7)==0){
-				vlist[nvlist].status=atoi(line+7);
+			if (_tcsnccmp(line,_T("status="),7)==0){
+				vlist[nvlist].status=_tstoi(line+7);
 			}
-			if (strncmp(line,"server=",7)==0){
-				strncpy(vlist[nvlist].server,line+7,sizeof(vlist[nvlist].server)-1);
+			if (_tcsnccmp(line,_T("server="),7)==0){
+				_tcsncpy(vlist[nvlist].server,line+7,sizeof(vlist[nvlist].server)-1);
 			}
-			if (strncmp(line,"url=",4)==0){
-				strncpy(vlist[nvlist].url,line+4,sizeof(vlist[nvlist].url)-1);
+			if (_tcsnccmp(line,_T("url="),4)==0){
+				_tcsncpy(vlist[nvlist].url,line+4,sizeof(vlist[nvlist].url)-1);
 			}
-			if (strncmp(line,"Ignoresignature=",16)==0){
-				strncpy(vlist[nvlist].Ignoresignature,line+16,sizeof(vlist[nvlist].Ignoresignature)-1);
+			if (_tcsnccmp(line,_T("Ignoresignature="),16)==0){
+				_tcsncpy(vlist[nvlist].Ignoresignature,line+16,sizeof(vlist[nvlist].Ignoresignature)-1);
 			}
 #define TOTALMATCHES vlist[nvlist].nMatch
 
 
-			if (strncmp(line,"description=",12)==0){
+			if (_tcsnccmp(line,_T("description="),12)==0){
 				//RESERVAMOS MEMORIA PARA UN NUEVO MATCH
 				vlist[nvlist].Match=(PMATCH)realloc(vlist[nvlist].Match,sizeof(MATCH)*(TOTALMATCHES+1));
 				//PONEMOS A NULL LA VALIDACIoN
 				//vlist[nvlist].Match[ TOTALMATCHES ].Validatestring=NULL;
 				vlist[nvlist].Match[ TOTALMATCHES ].nstrings=0;
 				//COPIAMOS LA DESCRIPCION
-				strncpy( vlist[nvlist].Match[vlist[nvlist].nMatch].description,line+12,sizeof(vlist[nvlist].Match[vlist[nvlist].nMatch].description)-1);
+				_tcsncpy( vlist[nvlist].Match[vlist[nvlist].nMatch].description,line+12,sizeof(vlist[nvlist].Match[vlist[nvlist].nMatch].description)-1);
 				//INCREMENTAMOS EL CONTANDOR DE MATCHES
 				vlist[nvlist].nMatch++;
 			}
 
-			if (strncmp(line,"Validatestring=",15)==0){
+			if (_tcsnccmp(line,_T("Validatestring="),15)==0){
 				//reservamos memoria para los matches..
 				//vlist[nvlist].Match[ TOTALMATCHES -1].Validatestring=(char *)realloc(vlist[nvlist].Match[ TOTALMATCHES ].Validatestring, 200 * vlist[nvlist].Match[ TOTALMATCHES -1].nstrings+1);
 				//copiamos la linea
-				strncpy(vlist[nvlist].Match[TOTALMATCHES -1].Validatestring[vlist[nvlist].Match[ TOTALMATCHES -1].nstrings],line+15,sizeof(vlist[nvlist].Match[TOTALMATCHES -1].Validatestring[vlist[nvlist].Match[ TOTALMATCHES -1].nstrings])-1);
+				_tcsncpy(vlist[nvlist].Match[TOTALMATCHES -1].Validatestring[vlist[nvlist].Match[ TOTALMATCHES -1].nstrings],line+15,sizeof(vlist[nvlist].Match[TOTALMATCHES -1].Validatestring[vlist[nvlist].Match[ TOTALMATCHES -1].nstrings])-1);
 				vlist[nvlist].Match[ TOTALMATCHES  -1].nstrings++;
 			}
-			if (strncmp(line,"Ignorestring=",13)==0){
+			if (_tcsnccmp(line,_T("Ignorestring="),13)==0){
 				//reservamos memoria para los matches..
 				//vlist[nvlist].Match[ TOTALMATCHES -1].Validatestring=(char *)realloc(vlist[nvlist].Match[ TOTALMATCHES ].Validatestring, 200 * vlist[nvlist].Match[ TOTALMATCHES -1].nstrings+1);
 				//copiamos la linea
-				strcpy( vlist[nvlist].Match[TOTALMATCHES-1].Ignorestring-1,line+13);
+				_tcscpy( vlist[nvlist].Match[TOTALMATCHES-1].Ignorestring-1,line+13);
 			}
 
 
@@ -395,30 +401,30 @@ int LoadWebservers(HTTPCSTR path) {
 
 int LoadRouterAuth(HTTPCSTR path) {
 	FILE *RouterAuth;
-	char line[200];
-	char *p;
+	HTTPCHAR line[200];
+	HTTPCHAR *p;
 	//int nRouterAuth=0;
 	nRouterAuth=0;
 
-	RouterAuth=fopen(path,"r");
+	RouterAuth=_tfopen(path,_T("r"));
 
 	if (RouterAuth) {
 		while (!feof(RouterAuth)) {
 			fgets(line,sizeof(line)-1,RouterAuth);
-			if ( (strlen(line)>5) && line[0]!='#' ) {
-				p=line+strlen(line)-1;
+			if ( (_tcslen(line)>5) && line[0]!='#' ) {
+				p=line+_tcslen(line)-1;
 				while ( (*p=='\r' ) || (*p=='\n') || (*p==' ') ) { p[0]='\0'; --p; }
-				p=strtok(line,"|");
-				FakeAuth[nRouterAuth].status=atoi(p);
-				p=strtok(NULL,"|");
-				strncpy(FakeAuth[nRouterAuth].server,p,sizeof(FakeAuth[nRouterAuth].server)-1);
-				if ( (strlen(p)==1) && (p[0]=='*') ) FakeAuth[nRouterAuth].server[0]='\0';
-				p=strtok(NULL,"|");
-				strncpy(FakeAuth[nRouterAuth].authurl,p,sizeof(FakeAuth[nRouterAuth].authurl)-1);
-				p=strtok(NULL,"|");
-				strncpy(FakeAuth[nRouterAuth].method,p,sizeof(FakeAuth[nRouterAuth].method)-1);
-				p=strtok(NULL,"|");
-				if (p) strncpy(FakeAuth[nRouterAuth].postdata,p,sizeof(FakeAuth[nRouterAuth].postdata)-1);
+				p=_tcstok(line,_T("|"));
+				FakeAuth[nRouterAuth].status=_tstoi(p);
+				p=_tcstok(NULL,_T("|"));
+				_tcsncpy(FakeAuth[nRouterAuth].server,p,sizeof(FakeAuth[nRouterAuth].server)-1);
+				if ( (_tcslen(p)==1) && (p[0]=='*') ) FakeAuth[nRouterAuth].server[0]='\0';
+				p=_tcstok(NULL,_T("|"));
+				_tcsncpy(FakeAuth[nRouterAuth].authurl,p,sizeof(FakeAuth[nRouterAuth].authurl)-1);
+				p=_tcstok(NULL,_T("|"));
+				_tcsncpy(FakeAuth[nRouterAuth].method,p,sizeof(FakeAuth[nRouterAuth].method)-1);
+				p=_tcstok(NULL,_T("|"));
+				if (p) _tcsncpy(FakeAuth[nRouterAuth].postdata,p,sizeof(FakeAuth[nRouterAuth].postdata)-1);
 				nRouterAuth++;
 			}
 		}
@@ -477,12 +483,11 @@ void usage(void) {
 
 
 
-int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
+int LoadConfigurationFiles(HTTPAPI *api,int argc, HTTPSTR argv[]){
 	int i;
-	char *p;
-//	struct sockaddr_in ip1,ip2;
+	HTTPCHAR *p;
 	int nhosts=0;
-	char dbg[512];
+	HTTPCHAR dbg[512];
 
 
 
@@ -495,103 +500,103 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 		if ( argv[i][0]=='-')
 		{
 
-			if (strcmp( argv[i],"--request")==0)
+			if (_tcscmp( argv[i],_T("--request"))==0)
 			{
-				Fullurl = strdup(argv[i+1]);
+				Fullurl = _tcsdup(argv[i+1]);
 				i++;
 			} else
-			if (strcmp( argv[i],"--showresponse")==0)
+			if (_tcscmp( argv[i],_T("--showresponse"))==0)
 			{
 				ShowResponse=1;
 			} else
 
-			if (strcmp( argv[i],"--showlinks")==0)
+			if (_tcscmp( argv[i],_T("--showlinks"))==0)
 			{
 				ShowLinks=1;
 				if ( (argc>i+1) && (argv[i+1][0]!='-') ) {
-					LinkType = strdup(argv[i+1]);
+					LinkType = _tcsdup(argv[i+1]);
 					i++;
 				}
 
 			} else
 
-			if (strcmp( argv[i],"--method")==0)
+			if (_tcscmp( argv[i],_T("--method"))==0)
 			{
-				method = strdup(argv[i+1]);
+				method = _tcsdup(argv[i+1]);
 				i++;
 			} else
-			if (strcmp( argv[i],"--data")==0)
+			if (_tcscmp( argv[i],_T("--data"))==0)
 			{
-				PostData = strdup(argv[i+1]);
-				PostDataSize = (int)strlen(PostData);
+				PostData = _tcsdup(argv[i+1]);
+				PostDataSize = (int)_tcslen(PostData);
 				i++;
 			} else
-			if (strcmp( argv[i],"--vhost")==0)
+			if (_tcscmp( argv[i],_T("--vhost"))==0)
 			{
-				vhost = strdup(argv[i+1]);
+				vhost = _tcsdup(argv[i+1]);
 				i++;
 			} else
-			if (strcmp( argv[i],"--proxyScanOnly")==0)
+			if (_tcscmp( argv[i],_T("--proxyScanOnly"))==0)
 			{
 				proxyScanOnly = 1;
 				bruteforce = 0;
 			} else
-			if (strcmp( argv[i],"--nobruteforce")==0)
+			if (_tcscmp( argv[i],_T("--nobruteforce"))==0)
 			{
 				bruteforce=0;
 			} else
-			 if (strcmp( argv[i],"--EnableProxy")==0) {
+			 if (_tcscmp( argv[i],_T("--EnableProxy"))==0) {
 				return(2);
 			 } else
-				if (strcmp(argv[i],"--update")==0) {
+				if (_tcscmp(argv[i],_T("--update"))==0) {
 						UpdateFHScan(api); exit(1);
 					} else
-						if (strcmp( argv[i],"--fulluserlist")==0) {
+						if (_tcscmp( argv[i],_T("--fulluserlist"))==0) {
 							FullUserList=1;
 						} else
-							if (strcmp( argv[i],"--verbose")==0) {
+							if (_tcscmp( argv[i],_T("--verbose"))==0) {
 								ShowAllhosts=1;
 							} else
-								if (strcmp( argv[i],"--logdir")==0) {
-									strcpy(DirectoryLog,argv[i+1]);
+								if (_tcscmp( argv[i],_T("--logdir"))==0) {
+									_tcscpy(DirectoryLog,argv[i+1]);
 									i++;
 								} else
-									if (strcmp( argv[i],"--csv")==0) {
+									if (_tcscmp( argv[i],_T("--csv"))==0) {
 										csv = 1;
 									} else
-										if ((strcmp( argv[i],"--ports")==0) || (strcmp( argv[i],"--port")==0) ) {
-											p=strtok(argv[i+1],",");
+										if ((_tcscmp( argv[i],_T("--ports"))==0) || (_tcscmp( argv[i],_T("--port"))==0) ) {
+											p=_tcstok(argv[i+1],_T(","));
 											while (p!=NULL) {
-												ports[nports].port=atoi(p);
+												ports[nports].port=_tstoi(p);
 												ports[nports].ssl=0;
-												p=strtok(NULL,",");
+												p=_tcstok(NULL,_T(","));
 												nports++;
 											}
 											i++;
 										} else
 
-											if ( (strcmp( argv[i],"--sslports")==0) || (strcmp( argv[i],"--sslport")==0) ){
-												p=strtok(argv[i+1],",");
+											if ( (_tcscmp( argv[i],_T("--sslports"))==0) || (_tcscmp( argv[i],_T("--sslport"))==0) ){
+												p=_tcstok(argv[i+1],_T(","));
 												while (p!=NULL) {
-													ports[nports].port=atoi(p);
+													ports[nports].port=_tstoi(p);
 													ports[nports].ssl=1;
-													p=strtok(NULL,",");
+													p=_tcstok(NULL,_T(","));
 													nports++;
 												}
 												i++;
 											} else
 
 
-												if (strcmp( argv[i],"--threads")==0) {
-													nthreads=atoi(argv[i+1]);
+												if (_tcscmp( argv[i],_T("--threads"))==0) {
+													nthreads=_tstoi(argv[i+1]);
 													i++;
 												} else
-													if (strcmp( argv[i],"--proxy")==0)
+													if (_tcscmp( argv[i],_T("--proxy"))==0)
 													{
                                                     	printf("estableciendo proxy...\n");
-														char proxyhost[512];
-														char proxyport[10];
-														if ( sscanf( argv[i+1], "http://%[^:/]:%s", proxyhost, proxyport ) == 2 )
+														HTTPCHAR proxyhost[512];
+														HTTPCHAR proxyport[10];
+														if ( _stscanf( argv[i+1], _T("http://%[^:/]:%s"), proxyhost, proxyport ) == 2 )
 														{
 															api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyHost,proxyhost);
 															api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyPort,proxyport);
@@ -603,16 +608,16 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 
 														i++;
 													} else
-														if (strcmp( argv[i],"--proxyauth")==0) {
+														if (_tcscmp( argv[i],_T("--proxyauth"))==0) {
 															api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyUser,argv[i+1]);
 															api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyPass,argv[i+2]);
 															i+=2;
 														} else
 
-															if (strcmp( argv[i],"--ipfile")==0) 
+															if (_tcscmp( argv[i],_T("--ipfile"))==0) 
 															{
 																ipfilepath=argv[i+1];
-																ipfile=fopen(ipfilepath,"r");
+																ipfile=_tfopen(ipfilepath,_T("r"));
 																if (ipfile) {
 																	printf("[+] Loaded ips from %s\n",argv[i+1]);
 																} else {
@@ -623,13 +628,13 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 																i++;
 															} else
 																#ifdef XML_LIBRARY
-																if ( (strcmp( argv[i],"--NmapFile")==0) || (strcmp( argv[i],"--nmapfile")==0) )
+																if ( (_tcscmp( argv[i],_T("--NmapFile"))==0) || (_tcscmp( argv[i],_T("--nmapfile"))==0) )
 																{
 																	nmap = argv[i+1];
 																	i++;
 																} else 
 																#endif
-																if ( (strcmp( argv[i],"--hosts")==0) || (strcmp( argv[i],"--host")==0) )
+																if ( (_tcscmp( argv[i],_T("--hosts"))==0) || (_tcscmp( argv[i],_T("--host"))==0) )
 																{
 																	hosts= argv[i+1];																	
 																	i++;
@@ -648,9 +653,9 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 
 
 	if (FullUserList) {
-		i=LoadUserList("UserListMulti.ini");
+		i=LoadUserList(_T("UserListMulti.ini"));
 	} else {
-		i=LoadUserList("UserListMulti-simple.ini");
+		i=LoadUserList(_T("UserListMulti-simple.ini"));
 	}
 	if (!i) {
 		if (!csv) printf("[-] UserList file not found\n");
@@ -659,21 +664,21 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 		if (!csv) printf("[+] Loaded %i user/pass combinations\n",i);
 	}
 
-	nRouterAuth=LoadRouterAuth("RouterAuth.ini");
+	nRouterAuth=LoadRouterAuth(_T("RouterAuth.ini"));
 	if (!nRouterAuth) {
 		if (!csv) printf("[-] Unable to load Router Auth engine\n");
 		return(1);
 	} else {
 		if (!csv) printf("[+] Loaded %i Router authentication schemes\n",nRouterAuth);
 	}
-	i=LoadWebForms("webforms.ini");
+	i=LoadWebForms(_T("webforms.ini"));
 	if (!i) {
 		if (!csv) printf("[-] Unable to load Webforms auth engine\n");
 		return(1);
 	} else {
 		if (!csv) printf("[+] Loaded %i webform authentication schemes\n",i);
 	}
-	i=LoadSingleUserList("UserListSingle.ini");
+	i=LoadSingleUserList(_T("UserListSingle.ini"));
 	if (!i) {
 		if (!csv) printf("[-] Unable to load Single login file\n");
 		return(1);
@@ -681,7 +686,7 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 		if (!csv) printf("[+] Loaded %i Single Users\n",i);
 	}
 
-	i=LoadWebservers("Webservers.ini");
+	i=LoadWebservers(_T("Webservers.ini"));
 	if (!i) {
 		if (!csv) printf("[-] Unable to load vulnerability database\n");
 		return(1);
@@ -690,7 +695,7 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 	}
 
 
-	i=LoadKnownWebservers("KnownWebservers.ini");
+	i=LoadKnownWebservers(_T("KnownWebservers.ini"));
 	if (!i) {
 		if (!csv) printf("[-] Unable to load Known Webservers database\n");
 		return(1);
@@ -698,7 +703,7 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, char *argv[]){
 		if (!csv) printf("[+] Loaded %i Known Webservers\n",i);
 	}
 
-	i=LoadKnownRouters("KnownRouters.ini");
+	i=LoadKnownRouters(_T("KnownRouters.ini"));
 	if (!i) {
 		if (!csv) printf("[-] Unable to load Known Routers database\n");
 		return(1);

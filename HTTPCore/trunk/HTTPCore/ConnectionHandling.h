@@ -112,8 +112,9 @@ class ConnectionHandling : public SSLModule
 	int              ReadBytes(char *buf, size_t bufsize,struct timeval *tv);
 	double 			 ReadChunkNumber(char *encodedData, size_t encodedlen, char *chunkcode);
 	int				 SendBufferToProxyClient(class ConnectionHandling *ProxyClientConnection, char *buf,int read_size);
-	struct httpdata *ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, httpdata* request, int *ErrorCode);
+	HTTPResponse	*ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, HTTPRequest* request, int *ErrorCode);
 	void             CloseSocket(void);
+	int				 SendData(char *data,size_t len);
 public:
 	ConnectionHandling();
 	~ConnectionHandling();
@@ -123,9 +124,12 @@ public:
 	
 	int				InitializeConnection(class HTTPAPIHANDLE *HTTPHandle);	
 	void            Disconnect(int level);
-	struct httpdata *ReadHTTPProxyRequestData();
-	int				SendHttpRequest(httpdata* request);
-	httpdata		*SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,httpdata *request);
+	HTTPRequest *ReadHTTPProxyRequestData();
+	int				SendHttpRequest(HTTPRequest* request);
+	int				SendHttpResponse(HTTPResponse *response);
+
+
+	HTTPResponse		*SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,HTTPRequest *request);
 		
 	
 

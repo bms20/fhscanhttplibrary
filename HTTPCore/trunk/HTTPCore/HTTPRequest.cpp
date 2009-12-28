@@ -33,50 +33,52 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 */
 #include <stdio.h>
-#include "HTTPResponse.h"
+#include "HTTPRequest.h"
 
-
-
-HTTPResponse::HTTPResponse()
+HTTPRequest::HTTPRequest()
 {
 	Data = NULL;
 	DataSize = 0;
-	StatusCode = 0;
-
+	requestedurl = NULL;
+	HTTPMethod = NULL;
+	BinaryData = 0;
 }
 /*******************************************************************************************************/
-void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, HTTPCHAR *HTTPData)
+void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders)
+{
+	InitHTTPHeaders(HTTPHeaders);
+}
+/*******************************************************************************************************/
+void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders, HTTPCHAR *HTTPData)
 {
 	InitHTTPHeaders(HTTPHeaders);
 	Data = _tcsdup(HTTPData);
 	DataSize = _tcslen(HTTPData);
 }
 /*******************************************************************************************************/
-void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, void* HTTPData, size_t HTTPDataSize)
+void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders, HTTPCHAR* HTTPData, size_t HTTPDataSize)
 {
 	InitHTTPHeaders(HTTPHeaders);
-	Data = (HTTPCHAR*) malloc(HTTPDataSize);
+	Data = (HTTPCHAR*)malloc(HTTPDataSize);
 	memcpy(Data,HTTPData,HTTPDataSize);
 	DataSize = HTTPDataSize;
-//	BinaryData = 1;
+	BinaryData = 1;
 }
 /*******************************************************************************************************/
-void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize, void* HTTPData, size_t HTTPDataSize)
+void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize, HTTPCHAR* HTTPData, size_t HTTPDataSize)
 {
 	Header = (HTTPCHAR*)malloc(HTTPHeaderSize+1);
 	memcpy(Header,HTTPHeaders,HTTPHeaderSize);
 	Header[HTTPHeaderSize]=0;
-	Data = (HTTPCHAR*)malloc(HTTPDataSize);
+	Data =(HTTPCHAR*) malloc(HTTPDataSize);
 	memcpy(Data,HTTPData,HTTPDataSize);
 	DataSize = HTTPDataSize;
-//	BinaryData = 1;
+	BinaryData = 1;
 
 }
 /*******************************************************************************************************/
-
-/*******************************************************************************************************/
 #ifdef UNICODE	
-void HTTPResponse::InitHTTPResponseA(char *lpBuffer,size_t HTTPHeaderSize, void *HTTPData, size_t HTTPDataSize)
+void HTTPRequest::InitHTTPRequestA(char *lpBuffer,size_t HTTPHeaderSize, void *HTTPData, size_t HTTPDataSize)
 {
 char *tmpHeader = malloc(HTTPHeaderSize+1);
 memcpy(tmpHeader,lpBuffer,HTTPHeaderSize);
@@ -85,117 +87,111 @@ tmpHeader[HTTPHeaderSize]=0;
 int ret = MultiByteToWideChar(CP_ACP, 0, tmpHeader, -1, NULL, 1024);
 Header = (wchar_t*)malloc(ret +2);
 MultiByteToWideChar(CP_ACP, 0, tmpHeader, -1, Header, -1);
-if (HTTPDataSize)
-{
+
 	Data = malloc(HTTPDataSize);
 	memcpy(Data,HTTPData,HTTPDataSize);
 	DataSize = HTTPDataSize;
-//	BinaryData = 1;
-}
+	BinaryData = 1;
+
 }
 #endif
+
 /*******************************************************************************************************/
-HTTPResponse::~HTTPResponse()
+HTTPRequest::~HTTPRequest()
 {
-		if (HTTPIOMappingData)
-		{
-			if (HTTPIOMappingData->IsAssigned())
-			{
-				if (HTTPIOMappingData->GetMappingData() != Data)
-				{
-					if (Data)	free(Data);
-				} 
-				delete HTTPIOMappingData;
-			} else 
-			{
-				if (Data)	free(Data);
-			}
-		} else {
-			if (Data)	free(Data);
-		}
+	if (requestedurl) {
+		free(requestedurl);
+		requestedurl = NULL;
+	}
+	if (HTTPMethod )
+	{
+		free(HTTPMethod);
+		HTTPMethod = NULL;
+	}
+	if (Data) {
+		free(Data);
 		Data = NULL;
-		DataSize = 0;
-		StatusCode = 0;
+	}
+	DataSize = 0;
+	BinaryData = 0;
 
 }
 /*******************************************************************************************************/
-int HTTPResponse::GetStatus()
+HTTPSTR HTTPRequest::GetRequestedURL()
 {
-	if (StatusCode) return(StatusCode);
-	if ( (GetHeaders()) && (GetHeaderSize()>12) )
-	{
-		HTTPCHAR tmp[4];
-		memcpy(tmp,GetHeaders()+9,3*sizeof(HTTPCHAR));
-		tmp[3]=0;
-		StatusCode = _tstoi(tmp);
-#ifdef _DBG_
-		if (StatusCode ==0)
+	if (requestedurl) return ( requestedurl );
+	const HTTPCHAR *p = GetHeaders();
+	int len=0;
+	if (p)
+	{		
+		while ( (*p) && (*p!=_T(' ')))  p++;
+		p++;
+		HTTPCHAR *q=(HTTPCHAR *)p;
+		while (*q)
 		{
-			printf("HTTP Protocol Error - Invalid HTTP header data\n");
+			if ( (*q==_T(' ')) || (*q==_T('?')) || (*q==_T('&')) || (*q==_T('\r')) || (*q==_T('\n')) )
+			break;
+			len++; 
+			q++;
 		}
-#endif
 	}
-	return(StatusCode);
+	requestedurl = (HTTPCHAR*) malloc((len+1)*sizeof(HTTPCHAR));
+	memcpy(requestedurl,p,len*sizeof(HTTPCHAR));
+	requestedurl[len]=0;
+	return(requestedurl);
 }
 /*******************************************************************************************************/
-void HTTPResponse::UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping)
+HTTPCHAR *HTTPRequest::GetHTTPMethod()
 {
-	if (HTTPIOMappingData)
+	if (HTTPMethod) return(HTTPMethod);
+	if ( (GetHeaders()) && (HeaderSize>12) )
 	{
-		if (Data == HTTPIOMappingData->GetMappingData())
-		{ /* previous filemapping existed , remove the filemapping however do not interact with memory*/
-			Data = NULL;
-			DataSize = 0;
+		int len=0;
+		HTTPCHAR *p=(HTTPCHAR *)GetHeaders();
+		while (*p!=_T(' '))
+		{
+			p++;
+			len++;
 		}
-	   delete HTTPIOMappingData;
-	   HTTPIOMappingData = NULL;
+		if (!len) return ( NULL );
+		HTTPMethod=(HTTPCHAR*)malloc((len+1)*sizeof(HTTPCHAR));
+		memcpy(HTTPMethod,GetHeaders(),len*sizeof(HTTPCHAR));
+		HTTPMethod[len]=_T('\0');
+		return(HTTPMethod);
 	} else {
-		if (Data) free(Data);
-		Data = NULL;
-		DataSize = 0;
+		return(NULL);
 	}
-	
-	if (newFileMapping)
-	{
-		HTTPIOMappingData = newFileMapping;
-	 	Data = HTTPIOMappingData->GetMappingData();
-		if (Data == NULL)
-		{
-			delete HTTPIOMappingData;
-			HTTPIOMappingData = NULL;
-		} else
-		{
-			DataSize = HTTPIOMappingData->GetMappingSize();
-		}
-	}
+
 }
+
 /*******************************************************************************************************/
-char* HTTPResponse::Datastrstr(char* searchdata)
+HTTPSTR HTTPRequest::GetData(void)
 {
-	if ((Data) && (DataSize))
-	{
-		return(strstr((char*)Data,searchdata));
-	}
-	return(NULL);
+	return(Data);
 }
 /*******************************************************************************************************/
-void HTTPResponse::SetData(void *lpData)
+size_t HTTPRequest::GetDataSize(void)
 {
-	Data = (HTTPCHAR*)lpData;
+	return(DataSize);
 }
 /*******************************************************************************************************/
-void HTTPResponse::SetDataSize(size_t datasize)
+void HTTPRequest::SetData(HTTPCHAR *lpData)
+{
+	Data = lpData;
+}
+/*******************************************************************************************************/
+#ifdef _UNICODE
+void HTTPRequest::SetData(char *lpData)
+{
+	Data = lpData;
+	BinaryData = TRUE;
+}
+#endif
+
+/*******************************************************************************************************/
+void HTTPRequest::SetDataSize(size_t datasize)
 {
 	DataSize = datasize;
 }
 /*******************************************************************************************************/
-HTTPSTR HTTPResponse::GetServerVersion()
-{
-	HTTPCHAR *server=NULL;
-	if ((Header) && (HeaderSize) )
-	{
-		server = GetHeaderValue(_T("Server: "),0);
-	}
-	return( server ? server :_tcsdup(_T("HTTP/1.0")) );
-}
-/*******************************************************************************************************/
+

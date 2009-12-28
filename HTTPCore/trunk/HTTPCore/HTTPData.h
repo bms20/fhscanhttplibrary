@@ -35,11 +35,14 @@ SUCH DAMAGE.
 */
 #ifndef __HTTPDATA_H__
 #define __HTTPDATA_H__
-#include "FileMapping.h"
-#include "HTTPHANDLE.h"
+//#include "FileMapping.h"
+//#include "HTTPHANDLE.h"
+//#include "HTTPHeaders.h"
 
 
 
+
+#if 0
 
 /*!\struct HTTP_DATA
   \brief An HTTP_DATA struct stores the information generated with an HTTP request or an HTTP response.\n
@@ -47,21 +50,17 @@ SUCH DAMAGE.
   If the data is related to an HTTP response, this struct will store the HTTP server response headers and HTTP data.
 */
 
-struct httpdata {
+class httpdata : public HTTPHeaders {
 private:
 	HTTPIOMapping *HTTPIOMappingData;
 	int nComments;
-	char **Comments;
+	HTTPCHAR **Comments;
 	int nUrlCrawled;
-	char **UrlCrawled;
-	char **linktagtype;
+	HTTPCHAR **UrlCrawled;
+	HTTPCHAR **linktagtype;
 	
 public:
-	HTTPSTR Header;
-    /*!< Pointer to a null terminated string that stores the HTTP Headers.\n 
-	The data stored under this parameter can b*/	
-	size_t HeaderSize;
-    /*!< Size of the HTTP Headers. */
+	
 	HTTPSTR Data;
     /*!< Pointer to a null terminated string that stores the HTTP Data. */
 	size_t DataSize;
@@ -91,28 +90,23 @@ public:
 	HTTPSTR RemoveHeader(HTTPCSTR Header);	
 	
 
-	/* Information gathering */
-	char			*GetServerVersion();
-	int 			 GetStatus();
-	char			*GetRequestedURL();
-	char			*GetHTTPMethod();	
 
-	void UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping);
+	
 
 	/* Spider */
 	int GetnComments();
-	int AddComment(char *lpComment);
-	char *GetComment(int i);
+	int AddComment(HTTPCHAR *lpComment);
+	HTTPCHAR *GetComment(int i);
 	int GetnUrlCrawled();
-	int AddUrlCrawled(char *lpComment, char *tagtype);
-	char *GetUrlCrawled(int i);
-	char *GettagCrawled(int i);
+	int AddUrlCrawled(HTTPCHAR *lpComment, HTTPCHAR *tagtype);
+	HTTPCHAR *GetUrlCrawled(int i);
+	HTTPCHAR *GettagCrawled(int i);
 
 	/* Misc Functions */
 	HTTPSTR Datastrstr  (HTTPCSTR searchdata);
 	HTTPSTR Headerstrstr(HTTPCSTR searchdata);
 };
-
+#endif
 
 
 

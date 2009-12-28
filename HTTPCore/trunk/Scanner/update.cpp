@@ -8,20 +8,20 @@ typedef struct update{
 	int Build;
 	int signature;
 
-	char host[256];
+	HTTPCHAR host[256];
 	int port;
 	int ssl;
-	char version_url[256];
-	char package_url[256];
-	char signature_url[256];
-	char *news;
-	char linux_url[256];
+	HTTPCHAR version_url[256];
+	HTTPCHAR package_url[256];
+	HTTPCHAR signature_url[256];
+	HTTPCHAR *news;
+	HTTPCHAR linux_url[256];
 } UPDATE;
 
 int CheckConfigFile(HTTPCSTR filename,UPDATE *local)
 {
-	FILE *update=fopen(filename,"r");
-	char line[1024];
+	FILE *update=_tfopen(filename,"r");
+	HTTPCHAR line[1024];
 	if (!update)
 	{
 		return(0);
@@ -31,53 +31,53 @@ int CheckConfigFile(HTTPCSTR filename,UPDATE *local)
 			if ( ReadAndSanitizeInput(update,line,sizeof(line)) ){
 				if (memcmp(line,"FHSCAN_MAYOR_VERSION= ",21)==0)
 				{
-					local->Mayor=atoi(line+21+1);
+					local->Mayor=_tstoi(line+21+1);
 				}
 				if (memcmp(line,"FHSCAN_MINOR_VERSION= ",21)==0)
 				{
-					local->Minor=atoi(line+21+1);
+					local->Minor=_tstoi(line+21+1);
 				}
 				if (memcmp(line,"FHSCAN_BUILD_VERSION= ",21)==0)
 				{
-					local->Build=atoi(line+21+1);
+					local->Build=_tstoi(line+21+1);
 				}
 				if (memcmp(line,"FHSCAN_SIGNATUREFILE= ",21)==0)
 				{
-					local->signature=atoi(line+21+1);
+					local->signature=_tstoi(line+21+1);
 				}
 	//----
 				if (memcmp(line,"FHSCAN_UPDATE_SERVER= ",21)==0)
 				{
-					strcpy(local->host,line+21+1);
+					_tcscpy(local->host,line+21+1);
 				}
 				if (memcmp(line,"FHSCAN_UPDATE_PORT__= ",21)==0)
 				{
-					local->port=atoi(line+21+1);
+					local->port=_tstoi(line+21+1);
 				}
 				if (memcmp(line,"FHSCAN_PROTOCOL_PORT= ",21)==0)
 				{
-					local->ssl=atoi(line+21+1);
+					local->ssl=_tstoi(line+21+1);
 				}
 				if (memcmp(line,"FHSCAN_CHECK_VERSION= ",21)==0)
 				{
-					strcpy(local->version_url,line+21+1);
+					_tcscpy(local->version_url,line+21+1);
 				}
 				if (memcmp(line,"FHSCAN_DWNLD_PACKAGE= ",21)==0)
 				{
-					strcpy(local->package_url,line+21+1);
+					_tcscpy(local->package_url,line+21+1);
 				}
 				if (memcmp(line,"FHSCAN_SIGNATUREFILE= ",21)==0)
 				{
-					strcpy(local->signature_url,line+21+1);
+					_tcscpy(local->signature_url,line+21+1);
 				}
 				if (memcmp(line,"FSCAN_DOWNLOAD_LINUX= ",21)==0)
 				{
-					strcpy(local->linux_url,line+21+1);
+					_tcscpy(local->linux_url,line+21+1);
 				}
 
 				if (memcmp(line,"FSCAN_UPDATE_NEWS___= ",21)==0)
 				{
-					local->news=strdup(line+21+1);
+					local->news=_tcsdup(line+21+1);
 				}
 
 			}
@@ -91,8 +91,8 @@ int CheckConfigFile(HTTPCSTR filename,UPDATE *local)
 int UpdateFHScan(HTTPAPI *api)
 {
 	FILE *update;
-//	char buf[4096];
-	char tmp[256];
+//	HTTPCHAR buf[4096];
+	HTTPCHAR tmp[256];
 
 	HTTPHANDLE HTTPHandle;
 	HTTPHANDLE NEWHTTPHandle;
@@ -100,7 +100,7 @@ int UpdateFHScan(HTTPAPI *api)
 	HTTPSession* DATA;
 	HTTPSession* DOWNLOAD;
 	UPDATE local,remote;
-//	char *p;
+//	HTTPCHAR *p;
 	int ret;
 	int completeupdate=0;
 
@@ -134,7 +134,7 @@ int UpdateFHScan(HTTPAPI *api)
 		printf("[-] Unable to locate http%s://%s%s:%i \n",local.ssl ? "s": "", local.host,local.version_url,local.port);
 		return(1);
 	}
-	update=fopen("tmp.dat","w");
+	update=_tfopen("tmp.dat","w");
 	fwrite(DATA->response->Data,1,DATA->response	->DataSize,update);
 	fclose(update);
 
@@ -151,9 +151,9 @@ int UpdateFHScan(HTTPAPI *api)
 		}
 		NEWHTTPHandle=api->InitHTTPConnectionHandle(remote.host,remote.port,remote.ssl);
 #ifdef __WIN32__RELEASE__
-		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,"GET",remote.package_url,NULL,0,NULL,NULL);
+		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,_T("GET"),remote.package_url,NULL,0,NULL,NULL);
 #else
-		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,"GET",remote.linux_url,NULL,0,NULL,NULL);
+		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,_T("GET"),remote.linux_url,NULL,0,NULL,NULL);
 #endif
 		if ( (DOWNLOAD) && (DOWNLOAD->response) && (DOWNLOAD->response->DataSize) )
 		{
@@ -163,11 +163,11 @@ int UpdateFHScan(HTTPAPI *api)
 			sprintf(tmp,"FHScan-%i.%i.%i-i386-Backtrack3.tgz",remote.Mayor,remote.Minor,remote.Build);
 #endif
 			printf("[+] Saving file as: %s  (please extract it manually)\n",tmp);
-			update=fopen(tmp,"wb");
+			update=_tfopen(tmp,_T("wb"));
 			fwrite(DOWNLOAD->response->Data,1,DOWNLOAD->response->DataSize,update);
 			fclose(update);
 			printf("[+] Saving FHSCAN_release.dat\n");
-			update=fopen("FHSCAN_release.dat","w");
+			update=_tfopen("FHSCAN_release.dat","w");
 			fwrite(DATA->response->Data,1,DATA->response->DataSize,update);
 			fclose(update);
 			//FreeRequest(DATA);
@@ -196,11 +196,11 @@ int UpdateFHScan(HTTPAPI *api)
 		{
 			sprintf(tmp,"FHScan_signature_%i.%i.%i_%i.zip",remote.Mayor,remote.Minor,remote.Build,remote.signature);
 			printf("[+] Saving file as: %s (please extract it manually)\n",tmp);
-			update=fopen(tmp,"w");
+			update=_tfopen(tmp,"w");
 			fwrite(DOWNLOAD->response->Data,1,DOWNLOAD->response->DataSize,update);
 			fclose(update);
 			printf("[+] Saving FHSCAN_release.dat\n");
-			update=fopen("FHSCAN_release.dat","w");
+			update=_tfopen("FHSCAN_release.dat","w");
 			fwrite(DATA->response->Data,1,DATA->response->DataSize,update);
 			fclose(update);
 			delete DATA;

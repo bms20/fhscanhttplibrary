@@ -48,12 +48,12 @@ int proxyScanOnly  = 0;
 
 
 /******************************************************************************/
-int IsKnownWebServer(char *server, int nKnownWebservers, char **KnownWebservers) {
+int IsKnownWebServer(HTTPCHAR *server, int nKnownWebservers, HTTPCHAR **KnownWebservers) {
 	if (server)
 	{
 		for (int i=0;i<nKnownWebservers;i++)
 		{
-			if (strnicmp(server,KnownWebservers[i],strlen(KnownWebservers[i]))==0)
+			if (_tcsncicmp(server,KnownWebservers[i],strlen(KnownWebservers[i]))==0)
 			{
 				return(1);
 			}
@@ -116,7 +116,7 @@ void *ScanHosts(void *ptr) {
 	HTTPSession* data;
 	HTTPHANDLE HTTPHandle;//data;
 	int ret;
-	char hostname[512];
+	HTTPCHAR hostname[512];
 
 	int port;
 	int ssl;
@@ -133,7 +133,7 @@ void *ScanHosts(void *ptr) {
 		HTTPHandle=api->InitHTTPConnectionHandle(hostname,port, ssl);
 		if (HTTPHandle!=INVALID_HHTPHANDLE_VALUE)
 		{
-			data = api->SendHttpRequest(HTTPHandle,"GET","/");
+			data = api->SendHttpRequest(HTTPHandle,_T("GET"),_T("/"));
 			if (
 				(data) &&
 				(
@@ -141,7 +141,7 @@ void *ScanHosts(void *ptr) {
 					(
 						(data->status==400)  &&
 						(data->server)  &&
-						(strcmp(data->server,"micro_httpd")==0 )
+						(_tcscmp(data->server,_T("micro_httpd"))==0 )
 					)
 				)
 			   ) //Hack to detect micro_http devices that returns "400 Bad Request"
@@ -169,7 +169,7 @@ void *ScanHosts(void *ptr) {
 
 			if (data)
 			{
-				char tmp[256];
+				HTTPCHAR tmp[256];
 				sprintf(tmp,"%s\n",hostname);
 				if (dump)
 				{
@@ -178,16 +178,16 @@ void *ScanHosts(void *ptr) {
 				if (VulnChecks)
 				{
 
-					char *p=data->response->GetHeaderValue("Server:",0);
+					char *p=data->response->GetHeaderValue(_T("Server:"),0);
 					if (!p) 
 					{
-						HTTPSession* head=api->SendHttpRequest(HTTPHandle,"HEAD","/");
+						HTTPSession* head=api->SendHttpRequest(HTTPHandle,_T("HEAD"),_T("/"));
 						if (head)
 						{
 							if (head->server)  
 							{
 								if (data->server) free (data->server);
-								data->server=strdup(head->server);
+								data->server=_tcsdup(head->server);
 							}
 							delete head;
 							//FreeRequest(head);
@@ -285,23 +285,23 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 		}
 		char *newpath=strchr(host,'/');
 		if (newpath) {
-			path=strdup(newpath);
+			path=_tcsdup(newpath);
 			*newpath=0;
 		} else {
-			path=strdup("/");
+			path=_tcsdup("/");
 		}
 	} else {
 		*p=0;
 		p++;
 		char *newpath=strchr(p,'/');
 		if (newpath) {
-			path=strdup(newpath);
+			path=_tcsdup(newpath);
 			*newpath=0;
-			port = atoi(p);
+			port = _tstoi(p);
 		} else
 		{
-			port = atoi(p);
-			path=strdup("/");
+			port = _tstoi(p);
+			path=_tcsdup("/");
 		}
 	}
 
@@ -327,7 +327,7 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 	{
 		printf(" [+] Request: %s - port: %i - Url: %s\n",host,port,path);
 		printf(" [+] Response: %i bytes \n\n%s\n",data->response->DataSize,data->response->Header);
-
+#ifdef _SPIDER_
 		if (ShowLinks)
 		{
 			api->doSpider(host,path,data->response);
@@ -344,6 +344,7 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 				free(LinkType);
 			}
 		}
+#endif
 		if (ShowResponse) printf("%s\n",data->response->Data);
 		delete data;
 	} else 
@@ -357,13 +358,13 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 }
 
 /*******************************************************************************/
-int CBLog(int cbType,HTTPAPI *api, HTTPHANDLE HTTPHandle, httpdata*  request, httpdata* response)
+int CBLog(int cbType,HTTPAPI *api, HTTPHANDLE HTTPHandle, HTTPRequest*  request, HTTPResponse* response)
 {
 	if ( (request) && (response))
 	{
-		char *data =request->GetRequestedURL();
+		HTTPCHAR *data =request->GetRequestedURL();
 		int status = response->GetStatus();
-		char *method =request->GetHTTPMethod();
+		HTTPCHAR *method =request->GetHTTPMethod();
 		if (method)
 		{
 			printf("%-6s %-40s %.4s %3.3i %5.i %s\n",method,api->GetHTTPConfig(HTTPHandle,ConfigHTTPHost),api->GetHTTPConfig(HTTPHandle,ConfigHTTPPort),status,response->DataSize, data);
@@ -379,8 +380,8 @@ int CBLog(int cbType,HTTPAPI *api, HTTPHANDLE HTTPHandle, httpdata*  request, ht
 
 void HTTPProxy(HTTPAPI *api)
 {
-	api->RegisterHTTPCallBack( CBTYPE_CLIENT_RESPONSE, (HTTP_IO_REQUEST_CALLBACK)CBLog,"HTTP Proxy Logger");
-	api->InitHTTPProxy("127.0.0.1","8080");
+	api->RegisterHTTPCallBack( CBTYPE_CLIENT_RESPONSE, (HTTP_IO_REQUEST_CALLBACK)CBLog,_T("HTTP Proxy Logger"));
+	api->InitHTTPProxy(_T("127.0.0.1"),_T("8080"));
 	printf("[+] Proxy running. Press any key to exit\n\n");
 
 	getchar();
@@ -398,6 +399,7 @@ int _tmain(int argc, _TCHAR *argv[]){
 
 	int ret;
 	HTTPAPI *api = new (HTTPAPI);
+
 	ret = LoadConfigurationFiles( api,argc,argv);
 	switch (ret) {
 		case 1:
@@ -443,7 +445,7 @@ int _tmain(int argc, _TCHAR *argv[]){
 
 	InitHTMLReport(ipfilepath,0,0,0,NULL,nthreads,1,FullUserList,1);
 
-	dump = fopen("ScannerIPS.log","a+");
+	dump = _tfopen("ScannerIPS.log","a+");
 
 	if (!csv) ("Option  Server         status Port password      Path Description/banner\n");
 
@@ -470,7 +472,7 @@ int _tmain(int argc, _TCHAR *argv[]){
 	}
 #endif
 	if (!csv)	{
-		printf("scan Finished\t\t\t\t\t\n");fflush(stdout);
+		printf(_T("scan Finished\t\t\t\t\t\n"));fflush(stdout);
 	} else fflush(stderr);
 
 	CloseHTMLReport();

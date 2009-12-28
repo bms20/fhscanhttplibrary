@@ -7,7 +7,7 @@
 int ParseNmapXMLFile(char *lpFilename);
 int ParseHosts( char *lphosts);
 int Parseipfile(FILE *ipfile);
-int ReadAndSanitizeInput(FILE *file, char *buffer,int len); 
+int ReadAndSanitizeInput(FILE *file, HTTPCHAR *buffer,int len); 
 
 typedef struct _targets {
 	unsigned long currentip;

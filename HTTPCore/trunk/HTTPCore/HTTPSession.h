@@ -1,7 +1,8 @@
-#ifndef __HTTP_RESPONSE_H_
-#define __HTTP_RESPONSE_H_
+#ifndef __HTTP_SESSION_H_
+#define __HTTP_SESSION_H_
 
-#include "HTTPData.h"
+#include "HTTPRequest.h"
+#include "HTTPResponse.h"
 
 /*!\STRUCT HTTPSession*
   \brief This struct handles information related to and http response and includes information about client request, server response, url, server version .returned by an HTTP Server
@@ -20,9 +21,9 @@ public:
    /*!< path to the file or directory requested */
    HTTPSTR Parameters;
    /*!< Request Parameters */
-   httpdata* request;
+   HTTPRequest* request;
    /*!< Information related to the HTTP Request. This struct contains both client headers and postdata */
-   httpdata* response;
+   HTTPResponse* response;
    /*!< Information related to the HTTP response. This struct contains both server headers and data */
    HTTPSTR server;
    /*!< pointer to a string that contains the server banner from the remote http server */
@@ -38,7 +39,7 @@ public:
    int IsValidHTTPResponse(void);
    int HasResponseHeader(void);
    int HasResponseData(void);
-   void ParseReturnedBuffer(struct httpdata *HTTPrequest, struct httpdata *HTTPresponse);} ;
+   void ParseReturnedBuffer(HTTPRequest* HTTPrequest, HTTPResponse* HTTPresponse);} ;
 
 
 #endif

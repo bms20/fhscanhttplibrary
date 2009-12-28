@@ -212,7 +212,7 @@ int CookieStatus::check_domain_match (HTTPCSTR cookie_domain, HTTPCSTR host)
 		return 0;
 
 	/* For the sake of efficiency, check for exact match first. */
-	if (!stricmp (cookie_domain, host))
+	if (!_tcsicmp (cookie_domain, host))
 		return 1;
 
 	/* In rfc2109 terminology, HOST needs domain-match COOKIE_DOMAIN.
@@ -244,7 +244,7 @@ int CookieStatus::check_domain_match (HTTPCSTR cookie_domain, HTTPCSTR host)
 	tail = host + headlen;
 
 	/* (1) */
-	if (stricmp (tail, cookie_domain))
+	if (_tcsicmp (tail, cookie_domain))
 		return 0;
 
 	/* Test (2) is not part of the "domain-match" itself, but is
@@ -415,7 +415,7 @@ int CookieStatus::ParseCookieData(HTTPCHAR *lpCookieData, HTTPCSTR lpPath, HTTPC
 			} else if IS_MAXAGE(start)
 			{
 				time_t maxage = -1;
-				sscanf (end, "%i", &maxage);
+				_stscanf (end, _T("%i"), &maxage);
 				if (maxage !=-1)
 				{
 					if (maxage==0)
@@ -485,7 +485,7 @@ int CookieStatus::ParseCookieData(HTTPCHAR *lpCookieData, HTTPCSTR lpPath, HTTPC
 #endif
 			}
 		}
-		p=strtok(NULL,";");
+		p=_tcstok(NULL,_T(";"));
 
 	}
 
@@ -585,8 +585,8 @@ int CookieStatus::RemoveCookieFromList(struct CookieList *List,HTTPCHAR *path,HT
 	for(int i=0;i<List->nCookies;i++)
 	{
 		if ( (List->CookieElement[i]->path_matches(path)) && 			  /*Match path */
-		   ( strcmp(List->CookieElement[i]->GetCookieName(),name)==0) && /* Match Cookie Name */
-		   ( strcmp(List->CookieElement[i]->GetCookieDomain(),lpDomain)==0 ) ) /* Match target domain */
+		   ( _tcscmp(List->CookieElement[i]->GetCookieName(),name)==0) && /* Match Cookie Name */
+		   ( _tcscmp(List->CookieElement[i]->GetCookieDomain(),lpDomain)==0 ) ) /* Match target domain */
 		{
 			delete List->CookieElement[i];
 			List->CookieElement[i] = List->CookieElement[List->nCookies-1];

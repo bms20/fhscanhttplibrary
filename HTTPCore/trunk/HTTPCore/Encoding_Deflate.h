@@ -7,7 +7,7 @@
 	#include "zlib.h"
 	#include "zconf.h"
 	typedef int (*INFLATE_FUNC)(z_streamp ,int);
-	typedef int (*INFLATEINIT_FUNC)(z_streamp,HTTPCSTR , int);
+	typedef int (*INFLATEINIT_FUNC)(z_streamp,char* , int);
 	typedef int (*INFLATEEND_FUNC)(z_streamp);
 	typedef int (*INFLATEINIT2_FUNC)(z_streamp,int,const char*,int);
 	extern INFLATE_FUNC				INFLATE;
@@ -28,7 +28,7 @@
 #define GZIP_DATA 	 1
 #define DEFLATE_DATA 2
 
-int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,httpdata* request,httpdata* response);
+int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPRequest* request,HTTPResponse* response);
 
 #endif
 #endif
