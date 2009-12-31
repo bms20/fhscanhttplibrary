@@ -178,6 +178,7 @@ size_t HTTPRequest::GetDataSize(void)
 void HTTPRequest::SetData(HTTPCHAR *lpData)
 {
 	Data = lpData;
+	DataSize = _tcslen(Data);
 }
 /*******************************************************************************************************/
 #ifdef _UNICODE

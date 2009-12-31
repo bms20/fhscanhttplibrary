@@ -43,9 +43,9 @@ SUCH DAMAGE.
 #pragma comment(lib,"ws2_32.lib")
 #endif
 
-#include <iostream>
-#include <string>
-using namespace std;
+//#include <iostream>
+//#include <string>
+//using namespace std;
 
 
 #define PURGETIME						25  //25 secconds
@@ -409,7 +409,7 @@ HTTPRequest* HTTPAPI::BuildHTTPRequest(
 									HTTPCSTR VHost,
 									HTTPCSTR HTTPMethod,
 									HTTPCSTR url,
-									HTTPCSTR PostData,
+									HTTPSTR PostData,
 									size_t PostDataSize)
 {
 	if ( (!url) || (*url!=_T('/')) )
@@ -419,30 +419,24 @@ HTTPRequest* HTTPAPI::BuildHTTPRequest(
 
 	HTTPCHAR		tmp[MAX_HEADER_SIZE];
 	tmp[MAX_HEADER_SIZE-1]=0;
-
 			
 
 	if ( (GetHTTPConfig(HTTPHandle,ConfigProxyHost)) && (!GetHTTPConfig(HTTPHandle,ConfigSSLConnection)) )
 	{
-		_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("%s http://%s:%s%s HTTP/1.%s\r\n"),HTTPMethod,GetHTTPConfig(HTTPHandle,ConfigHTTPHost),GetHTTPConfig(HTTPHandle,ConfigHTTPPort),url,GetHTTPConfig(HTTPHandle,ConfigProtocolversion));
+		_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("%s http://%s:%s%s HTTP/1.%s\r\n\r\n"),HTTPMethod,GetHTTPConfig(HTTPHandle,ConfigHTTPHost),GetHTTPConfig(HTTPHandle,ConfigHTTPPort),url,GetHTTPConfig(HTTPHandle,ConfigProtocolversion));
 	} else
 	{
 		if ( (_tcsnccmp(HTTPMethod,_T("GET"),3)!=0) || (!PostDataSize) )
 		{
-			_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("%s %s HTTP/1.%s\r\n"),HTTPMethod,url,GetHTTPConfig(HTTPHandle,ConfigProtocolversion));
+			_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("%s %s HTTP/1.%s\r\n\r\n"),HTTPMethod,url,GetHTTPConfig(HTTPHandle,ConfigProtocolversion));
 		} else
 		{
-			_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("GET %s?%s HTTP/1.%s\r\n"),url,PostData,GetHTTPConfig(HTTPHandle,ConfigProtocolversion));
+			_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("GET %s?%s HTTP/1.%s\r\n\r\n"),url,PostData,GetHTTPConfig(HTTPHandle,ConfigProtocolversion));
 		}
 	}
-#ifdef _UNICODE
-	wstring rb = tmp;
-#else
-	string rb = tmp;
-#endif
+	HTTPRequest *request = new HTTPRequest;
+	request->InitHTTPHeaders(tmp);
 
-
-	/* Append the Host header */
 	if (VHost)
 	{
 		_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("Host: %s\r\n"),VHost);
@@ -450,7 +444,7 @@ HTTPRequest* HTTPAPI::BuildHTTPRequest(
 	{
 		_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("Host: %s\r\n"),GetHTTPConfig(HTTPHandle,ConfigHTTPHost));
 	}
-	rb+=tmp;
+	request->AddHeader(tmp);
 
 	/* Append FHSCAN User Agent */
 	if (GetHTTPConfig(HTTPHandle,ConfigUserAgent))
@@ -460,13 +454,13 @@ HTTPRequest* HTTPAPI::BuildHTTPRequest(
 	{
 		_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("User-Agent: %s\r\n"),FHScanUserAgent);
 	}
-	rb += tmp;
+	request->AddHeader(tmp);
 
 	/* Append Custom user headers */
 	
 	if (GetHTTPConfig(HTTPHandle,ConfigAdditionalHeader))
 	{
-		rb += GetHTTPConfig(HTTPHandle,ConfigAdditionalHeader);
+		request->AddHeader(GetHTTPConfig(HTTPHandle,ConfigAdditionalHeader) );
 	}
 
 	if (GetHTTPConfig(HTTPHandle,ConfigCookieHandling))
@@ -476,9 +470,8 @@ HTTPRequest* HTTPAPI::BuildHTTPRequest(
 		free(lpPath);
 		if (ServerCookie)
 		{
-			rb+=_T("Cookie: ");
-			rb+=ServerCookie;
-			rb+=_T("\r\n");
+			_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("Cookie: %s\r\n"),ServerCookie);
+			request->AddHeader(tmp);
 			free(ServerCookie);
 		}
 	}
@@ -486,25 +479,21 @@ HTTPRequest* HTTPAPI::BuildHTTPRequest(
 	if (GetHTTPConfig(HTTPHandle,ConfigCookie))
 	{ /* Append additional cookies provided by the user - This code should be updated - TODO*/
 		_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("%s\r\n"),GetHTTPConfig(HTTPHandle,ConfigCookie));
-		rb+=tmp;
+		request->AddHeader(tmp);
 	}
 
 	if ( (GetHTTPConfig(HTTPHandle,ConfigProxyHost)) && (!GetHTTPConfig(HTTPHandle,ConfigProxyInitialized)) )
-		{   /* Add Keep Alive Headers */
-		rb+=_T("Proxy-Connection: Keep-Alive\r\n");
+	{   /* Add Keep Alive Headers */
+		request->AddHeader(_T("Proxy-Connection: Keep-Alive\r\n"));
 		if ( GetHTTPConfig(HTTPHandle,ConfigProxyUser) )
 		{   /* Add Proxy Autentication Headers */
 			BuildBasicAuthHeader(_T("Proxy-Authorization"),GetHTTPConfig(HTTPHandle,ConfigProxyUser),GetHTTPConfig(HTTPHandle,ConfigProxyPass),tmp,sizeof(tmp));
-			rb+=tmp;
+			request->AddHeader(tmp);
 		}
 	} else
 	{
-		rb+=_T("Connection: Keep-Alive\r\n");
+		request->AddHeader(_T("Connection: Keep-Alive\r\n"));
 	}
-
-	rb+=_T("\r\n");
-	HTTPRequest *request = new HTTPRequest;
-	request->InitHTTPRequest((HTTPCHAR*)rb.c_str(),(HTTPCHAR*)PostData,PostDataSize);
 
 	if  (  (_tcsnccmp(HTTPMethod,_T("GET"),3)!=0) && ((PostDataSize) ||  (_tcsnccmp(HTTPMethod,_T("POST"),4)==0)))
 	{   /* Set the Content-Type header and inspect if have already been added to avoid dups*/
@@ -518,8 +507,8 @@ HTTPRequest* HTTPAPI::BuildHTTPRequest(
 			_sntprintf(tmp,MAX_HEADER_SIZE-1,_T("Content-Type: application/x-www-form-urlencoded\r\nContent-Length: %i\r\n"),PostDataSize);
 		}
 		request->AddHeader(tmp);
+		request->SetData(PostData);
 	}
-	
 
 	return (request);
 }
@@ -535,9 +524,7 @@ HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPRequest* request
 	HTTPCHAR *HTTPMethod = request->GetHTTPMethod();
 	HTTPCHAR *url =  request->GetRequestedURL();
 
-	//HTTPCHAR *HTTPMethod = request->GetHTTPMethod()
-	//HTTPCHAR url[4096];
-//	HTTPCHAR *p,*q;
+
 	int AuthMethod = 0;
 	HTTPSTR AuthenticationHeader;
 
@@ -689,7 +676,7 @@ HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,
 	return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,NULL,0,NULL,NULL);
 }
 /*******************************************************************************************/
-HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData)
+HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPSTR PostData)
 {
 	if  (PostData)
 	{
@@ -700,12 +687,12 @@ HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,
 	}
 }
 /*******************************************************************************************/
-HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
+HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
 {
 	return SendHttpRequest(HTTPHandle,NULL,HTTPMethod,lpPath,PostData,_tcslen(PostData),lpUsername,lpPassword);	
 }
 /*******************************************************************************************/
-HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,size_t PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
+HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPSTR PostData,size_t PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword)
 {
 
 	if (GetHTTPConfig(HTTPHandle,ConfigProxyHost) && (GetHTTPConfig(HTTPHandle,ConfigSSLConnection)) && (!GetHTTPConfig(HTTPHandle,ConfigProxyInitialized)) )
@@ -841,7 +828,7 @@ HTTPSession*	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
 
 
 /*******************************************************************************************/
-HTTPSession* HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, HTTPCSTR postdata, size_t PostDataSize)
+HTTPSession* HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, HTTPSTR postdata, size_t PostDataSize)
 {
 	HTTPRequest* request= new HTTPRequest;
 	request->InitHTTPRequest((HTTPSTR)headers,(HTTPSTR)postdata, PostDataSize);

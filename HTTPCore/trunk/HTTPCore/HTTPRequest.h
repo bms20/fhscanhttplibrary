@@ -68,7 +68,7 @@ public:
 	size_t GetDataSize(void);
 void SetData(HTTPCHAR *lpData);
 #ifdef _UNICODE
-void HTTPRequest::SetData(char *lpData);
+void SetData(char *lpData);
 #endif
 void SetDataSize(size_t datasize);
 

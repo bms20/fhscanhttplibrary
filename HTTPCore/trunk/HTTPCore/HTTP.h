@@ -124,7 +124,7 @@ class HTTPAPI : public encoders
 	void  SendHTTPProxyErrorMessage( ConnectionHandling* connection,int connectionclose, int status,HTTPCSTR protocol, HTTPCSTR title, HTTPCSTR extra_header, HTTPCSTR text );
 	void  ExtractCookiesFromResponseData( HTTPResponse* response, HTTPCSTR path, HTTPCSTR TargetDNS);
 	HTTPCHAR  *BuildCookiesFromStoredData( HTTPCSTR TargetDNS, HTTPCSTR path, int secure);
-	HTTPRequest* BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,size_t PostDataSize);
+	HTTPRequest* BuildHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPSTR PostData,size_t PostDataSize);
 	HTTPCHAR  *GetPathFromURL(HTTPCSTR url);
 	HTTPCHAR  *GetPathFromLocationHeader(HTTPResponse* response, int ssl, const HTTPCHAR* domain);
 	enum AuthenticationType GetSupportedAuthentication(HTTPResponse *response);
@@ -142,14 +142,14 @@ public:
 	HTTPSTR    GetHTTPConfig(HTTPHANDLE HTTPHandle, enum HttpOptions opt);
 		
 	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath);
-	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData);
-	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
-	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPCSTR PostData,size_t PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);	
+	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPSTR PostData);
+	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
+	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPSTR PostData,size_t PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPRequest* request);
 	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPRequest* request,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	HTTPSession*   SendHttpRequest(HTTPCSTR Fullurl);
 	
-	HTTPSession*   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, HTTPCSTR PostData, size_t PostDataSize);		
+	HTTPSession*   SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, HTTPSTR PostData, size_t PostDataSize);
 
 	int        InitHTTPProxy(HTTPCSTR hostname, unsigned short port);
 	int        InitHTTPProxy(HTTPCSTR hostname, HTTPCSTR port);

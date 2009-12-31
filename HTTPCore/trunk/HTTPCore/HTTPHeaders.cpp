@@ -43,7 +43,7 @@ SUCH DAMAGE.
 HTTPHeaders::HTTPHeaders()
 {
 	Header = NULL;
-	HeaderSize = 0;	
+	HeaderSize = 0;
 
 }
 /*******************************************************************************************************/

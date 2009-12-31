@@ -41,6 +41,7 @@ HTTPResponse::HTTPResponse()
 {
 	Data = NULL;
 	DataSize = 0;
+	HTTPIOMappingData = NULL;
 	StatusCode = 0;
 
 }
@@ -66,6 +67,8 @@ void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize
 	Header = (HTTPCHAR*)malloc(HTTPHeaderSize+1);
 	memcpy(Header,HTTPHeaders,HTTPHeaderSize);
 	Header[HTTPHeaderSize]=0;
+	HeaderSize = HTTPHeaderSize;
+
 	Data = (HTTPCHAR*)malloc(HTTPDataSize);
 	memcpy(Data,HTTPData,HTTPDataSize);
 	DataSize = HTTPDataSize;
@@ -150,8 +153,10 @@ void HTTPResponse::UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping
 	   delete HTTPIOMappingData;
 	   HTTPIOMappingData = NULL;
 	} else {
-		if (Data) free(Data);
-		Data = NULL;
+		if (Data) {
+			free(Data);
+			Data = NULL;
+        }
 		DataSize = 0;
 	}
 	

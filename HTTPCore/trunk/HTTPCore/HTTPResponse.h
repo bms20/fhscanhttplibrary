@@ -53,19 +53,18 @@ public:
 	HTTPResponse();
 	~HTTPResponse();
 	HTTPSTR GetServerVersion();
-	int   GetStatus();
-	void  UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping);
-	char* Datastrstr(char* searchdata);
-
-	void* GetData(void) { return(Data); }
-	size_t GetDataSize(void) { return(DataSize); }
-	void SetData(void *lpData);
-	void SetDataSize(size_t datasize);
 	void InitHTTPResponseA(char *lpBuffer,size_t HTTPHeaderSize, void *HTTPData, size_t HTTPDataSize);
 	void InitHTTPResponse(HTTPCHAR *HTTPHeaders, HTTPCHAR *HTTPData);
 	void InitHTTPResponse(HTTPCHAR *HTTPHeaders, void* HTTPData, size_t HTTPDataSize);
 	void InitHTTPResponse(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize, void* HTTPData, size_t HTTPDataSize);
-
+	
+	int   GetStatus();
+	void  UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping);
+	char* Datastrstr(char* searchdata);
+	void* GetData(void) { return(Data); }
+	size_t GetDataSize(void) { return(DataSize); }
+	void SetData(void *lpData);
+	void SetDataSize(size_t datasize);
 
 };
 #endif
