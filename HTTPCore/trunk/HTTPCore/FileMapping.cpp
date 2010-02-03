@@ -41,10 +41,12 @@ SUCH DAMAGE.
 /******************************************************************************/
 HTTPIOMapping::HTTPIOMapping()
 {
+/* Initializes a filemapping struct */
 	assigned = 0;
 	BufferedPtr = NULL;
 	MemoryLength = 0;
 	*BufferedFileName=0;
+	KeepFile = 0;
 #ifdef __WIN32__RELEASE__
 	hMapping = NULL;
 	hTmpFilename = INVALID_HANDLE_VALUE;
@@ -63,23 +65,10 @@ HTTPIOMapping::HTTPIOMapping()
 		CREATE_ALWAYS,
 		FILE_ATTRIBUTE_TEMPORARY,
 		NULL);
-/*	if ( hTmpFilename == INVALID_HANDLE_VALUE) 
-	{
-		MemoryLength = 0;
-		assigned= 0;				
-	}
-	*/
+
 #else
 	strcpy(BufferedFileName,"/tmp/Fhscan.XXXXXX");
 	hTmpFilename = mkstemp(BufferedFileName);
-/*
-	if (hTmpFilename<0)
-	{
-		printf("Unable to create Filemapping\n");
-		MemoryLength = 0;
-		assigned= 0;
-	}
-	*/
 #endif
 }
 /******************************************************************************/
@@ -99,13 +88,17 @@ HTTPIOMapping::~HTTPIOMapping()
 	if (hTmpFilename)
 	{
 		CloseHandle(hTmpFilename);
-		DeleteFileA(BufferedFileName);
+		if (!KeepFile) {
+			DeleteFileA(BufferedFileName);
+		}
 	}
 	#else
 	if (hTmpFilename>=0)
 	{
 		close(hTmpFilename);
-		remove(BufferedFileName);
+		if (!KeepFile) {
+			remove(BufferedFileName);
+		}
 	}
 	#endif
 
@@ -116,8 +109,63 @@ HTTPIOMapping::~HTTPIOMapping()
 }
 /******************************************************************************/
 
+size_t HTTPIOMapping::OpenFile(HTTPCHAR *lpFileName)
+{
+/* Maps a file into memory */
+	#ifdef __WIN32__RELEASE__
+	if (hTmpFilename)
+	{
+		CloseHandle(hTmpFilename);
+		if (!KeepFile) {
+			DeleteFileA(BufferedFileName);
+		}
+	}
+	#else
+	if (hTmpFilename>=0)
+	{
+		close(hTmpFilename);
+		if (!KeepFile) {
+			remove(BufferedFileName);
+		}
+	}
+	#endif
+	_tcscpy(BufferedFileName,lpFileName);
+	KeepFile = 1;
+
+
+  #ifdef __WIN32__RELEASE__
+
+	hTmpFilename = CreateFileA ( BufferedFileName,
+		GENERIC_WRITE | GENERIC_READ,
+		FILE_SHARE_WRITE,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);
+	if (hTmpFilename>0)
+	{
+		MemoryLength = GetFileSize(hTmpFilename,NULL);
+	}
+  #else
+  hTmpFilename =  open(BufferedFileName,O_RDWR);
+  if (hTmpFilename)
+  {
+	struct stat buf;
+	stat(BufferedFileName,&buf);
+	MemoryLength = statbuf.st_size;
+  }
+
+  #endif
+
+  return ( GetMappingSize());
+}
+
+
+/******************************************************************************/
+
 size_t HTTPIOMapping::GetMappingSize(void)
 {
+/* returns the size of the memory mapping */
 	#ifdef __WIN32__RELEASE__
 	if ((!BufferedPtr) && (hTmpFilename>0) )
 	#else
@@ -131,6 +179,7 @@ size_t HTTPIOMapping::GetMappingSize(void)
 /******************************************************************************/
 char *HTTPIOMapping::GetMappingData(void)
 {
+/* returns a pointer to the mapped memory */
 	#ifdef __WIN32__RELEASE__
 	if ((!BufferedPtr) && (hTmpFilename>0) )
 	#else

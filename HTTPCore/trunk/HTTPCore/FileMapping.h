@@ -75,12 +75,14 @@ class HTTPIOMapping
   #else
    int			  hTmpFilename;
   #endif
+  int 			   KeepFile; /* Do not delete file */
      
    char *UpdateFileMapping(); //Mapea los datos del fichero con bufferptr
 public:
    HTTPIOMapping();   
    ~HTTPIOMapping();   
    size_t        WriteMappingData(size_t , char *lpData); //escribe los datos y llama a updatefileMapping() si es necesario.
+   size_t HTTPIOMapping::OpenFile(HTTPCHAR *lpFileName);
    size_t        GetMappingSize(void);
    char*		 GetMappingData(void);
    int			 IsAssigned(void);
