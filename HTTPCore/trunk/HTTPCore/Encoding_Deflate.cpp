@@ -57,9 +57,34 @@ SUCH DAMAGE.
 	INFLATEINIT_FUNC			INFLATEINIT;
 	INFLATEEND_FUNC				INFLATEEND;
 	INFLATEINIT2_FUNC			INFLATEINIT2;
+	INFLATESETDICTIONARY_FUNC 	INFLATESETDICTIONARY;
+
+	DEFLATEINIT_FUNC 			DEFLATEINIT;
+	DEFLATE_FUNC				DEFLATE;
+	DEFLATEEND_FUNC				DEFLATEEND;
+	DEFLATESETDICTIONARY_FUNC 	DEFLATESETDICTIONARY;
  #endif
 
 #define CHUNK 16384
+
+/* Adding some preliminary stuff to support SPDY protocol.
+   References: http://dev.chromium.org/spdy-protocol/spdy-protocol-draft2
+*/
+const char SPDYDictionary[] =
+"optionsgetheadpostputdeletetraceacceptaccept-charsetaccept-encodingaccept-"
+"languageauthorizationexpectfromhostif-modified-sinceif-matchif-none-matchi"
+"f-rangeif-unmodifiedsincemax-forwardsproxy-authorizationrangerefererteuser"
+"-agent10010120020120220320420520630030130230330430530630740040140240340440"
+"5406407408409410411412413414415416417500501502503504505accept-rangesageeta"
+"glocationproxy-authenticatepublicretry-afterservervarywarningwww-authentic"
+"ateallowcontent-basecontent-encodingcache-controlconnectiondatetrailertran"
+"sfer-encodingupgradeviawarningcontent-languagecontent-lengthcontent-locati"
+"oncontent-md5content-rangecontent-typeetagexpireslast-modifiedset-cookieMo"
+"ndayTuesdayWednesdayThursdayFridaySaturdaySundayJanFebMarAprMayJunJulAugSe"
+"pOctNovDecchunkedtext/htmlimage/pngimage/jpgimage/gifapplication/xmlapplic"
+"ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1"
+".1statusversionurl";
+
 /******************************************************************************/
 //! This function extracts one byte from a gzip stream.
 /*!
@@ -78,6 +103,75 @@ __inline static int get_byte(z_stream *strm)
 }
 
 /******************************************************************************/
+//! Compress data buffer with gzip/deflate and returns a pointer to the compressed data.
+/*!
+	\param in pointer to the buffer containing the uncompressed raw stream.
+	\param inSize length of in buffer
+	\param what type of compression. This value can be DEFLATE_DATA or GZIP_DATA). (unused yet)
+	\return Pointer to an HTTPIOMapping class that contains the compressed buffer.
+	\note If the function fails  NULL is returned instead.
+*/
+/******************************************************************************/
+HTTPIOMapping *gzip(void *in, size_t inSize, int what)
+{
+	if ( (!inSize) || (!in) ) {
+		return(NULL);
+	}
+	HTTPIOMapping *HTTPIoMapping = NULL;
+
+	z_stream strm;
+	int ret;
+	unsigned char out[CHUNK];
+	unsigned have;
+
+	/* allocate inflate state */
+	strm.zalloc = Z_NULL;
+	strm.zfree =  Z_NULL;
+	strm.opaque = Z_NULL;
+    strm.avail_in = strm.avail_out = 0;
+	strm.next_in  = strm.next_out  = 0;
+
+	ret = DEFLATEINIT(&strm, Z_DEFAULT_COMPRESSION,ZLIB_VERSION,sizeof(z_stream));
+	if (ret != Z_OK) return(NULL);
+
+	strm.next_in = (Bytef*)in;    /*uncompressed data */
+	strm.avail_in = (uInt)inSize; /* uncompressed data size */
+
+	do {
+			strm.avail_out = CHUNK;
+			strm.next_out = out;
+            ret = DEFLATE(&strm, Z_FULL_FLUSH);
+            assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
+            switch (ret) {
+            case Z_NEED_DICT:
+                ret = Z_DATA_ERROR;     /* and fall through */
+            case Z_DATA_ERROR:
+			case Z_MEM_ERROR:
+				(void)DEFLATEEND(&strm);
+				if (HTTPIoMapping)
+				{
+					delete HTTPIoMapping;
+				}
+				return(NULL);
+			}
+			have = CHUNK - strm.avail_out;
+			if (have>0)
+			{
+
+				if (!HTTPIoMapping)
+				{
+					HTTPIoMapping = new HTTPIOMapping;
+				}
+				HTTPIoMapping->WriteMappingData(have,(char*)out);
+			}
+	} while (strm.avail_out == 0);
+	(void)DEFLATEEND(&strm);
+
+	return(HTTPIoMapping);
+}
+
+
+/******************************************************************************/
 //! Decompress from gziped/deflated buffer and returns a pointer to the gunziped data.
 /*!
 	\param in pointer to the buffer containing the compressed stream.
@@ -90,16 +184,15 @@ __inline static int get_byte(z_stream *strm)
 /******************************************************************************/
 HTTPIOMapping *gunzip(void *in, size_t inSize, int what)
 {
-	int ret;
-    unsigned have;
-	z_stream strm;
-	unsigned char out[CHUNK];
-	HTTPIOMapping *HTTPIoMapping = NULL;
-
-
 	if ( (!inSize) || (!in) ) {
 		return(NULL);
 	}
+
+	int ret;
+	unsigned have;
+	z_stream strm;
+	unsigned char out[CHUNK];
+	HTTPIOMapping *HTTPIoMapping = NULL;
 
 	/* allocate inflate state */
 	strm.zalloc = Z_NULL;
@@ -147,7 +240,7 @@ HTTPIOMapping *gunzip(void *in, size_t inSize, int what)
 		#ifdef _DBG_
 			printf("gunzip(): Method or flags error: %i - %i\n",method,flags);
 		#endif
-        	INFLATEEND(&strm);
+			INFLATEEND(&strm);
 			return NULL;
 		}
 		/* Discard time, xflags and OS code: */
@@ -241,7 +334,15 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPRequest* r
 		INFLATEEND          = (INFLATEEND_FUNC)GetProcAddress(f_hLIBZ,  "inflateEnd");
 		INFLATEINIT2        = (INFLATEINIT2_FUNC)GetProcAddress(f_hLIBZ,"inflateInit2_");
 
-		if (!INFLATE || !INFLATEINIT || !INFLATEEND || !INFLATEINIT2)
+		DEFLATE				= (DEFLATE_FUNC)GetProcAddress(f_hLIBZ,		"deflate");
+		DEFLATEINIT         = (DEFLATEINIT_FUNC)GetProcAddress(f_hLIBZ, "deflateInit_");
+		DEFLATEEND          = (DEFLATEEND_FUNC)GetProcAddress(f_hLIBZ,  "deflateEnd");
+		INFLATESETDICTIONARY          = (INFLATESETDICTIONARY_FUNC)GetProcAddress(f_hLIBZ,  "inflateSetDictionary");
+		DEFLATESETDICTIONARY          = (DEFLATESETDICTIONARY_FUNC)GetProcAddress(f_hLIBZ,  "deflateSetDictionary");
+
+
+		if (!INFLATE || !INFLATEINIT || !INFLATEEND || !INFLATEINIT2 ||
+			!DEFLATE || !DEFLATEINIT || !DEFLATEEND || !INFLATESETDICTIONARY || !DEFLATESETDICTIONARY )
 		{
 			printf("## FATAL - ZLIB LIBRARY IMPORTS ERROR\n");
 		}
