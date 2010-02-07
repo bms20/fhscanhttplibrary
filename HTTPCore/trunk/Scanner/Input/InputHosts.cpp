@@ -11,6 +11,13 @@ unsigned int		ntargets = 0;
 extern int          nports;
 extern struct       _ports ports[MAX_PORTS];
 
+#ifdef  __WIN32__RELEASE__
+# if defined(_MSC_VER)
+# else
+#define _feof(a) ( (a->flags & _F_EOF) )
+#define feof _feof
+#endif
+#endif
 /******************************************************************************/
 int AddNewTarget(unsigned long ip,unsigned long endip, HTTPCHAR *hostname, int port, int ssl)
 {
@@ -117,17 +124,17 @@ int Parseipfile(FILE *ipfile)
 	HTTPCHAR line[512];
 	while (!feof(ipfile))
 	{
-		memset(line,'\0',sizeof(line));
-		if ( ReadAndSanitizeInput(ipfile,line,sizeof(line)) )
+		memset(line,_T('\0'),sizeof(line));
+		if ( ReadAndSanitizeInput(ipfile,line,sizeof(line)/sizeof(HTTPCHAR)) )
 		{
-			p=strchr(line,':'); //search if the host has also an associated port
-			if (!p) p=strchr(line,' ');
-			if (!p) p=strchr(line,'\t');
-			if (!p) p=strchr(line,0x09);
+			p=_tcschr(line,_T(':')); //search if the host has also an associated port
+			if (!p) p=_tcschr(line,_T(' '));
+			if (!p) p=_tcschr(line,_T('\t'));
+			if (!p) p=_tcschr(line,0x09);
 
 			if (p)
 			{
-				while ((*p==' ') || (*p==':') || (*p=='\t') || (*p==0x09) )
+				while ((*p==_T(' ')) || (*p==_T(':')) || (*p==_T('\t')) || (*p==0x09) )
 				{
 					*p=0;
 					p++;
@@ -162,13 +169,13 @@ int ParseHosts( HTTPCHAR *lphosts)
 	int total = 0;
 
 
-	HTTPCHAR *chunk = _tcstok(lphosts,",");
+	HTTPCHAR *chunk = _tcstok(lphosts,_T(","));
 
 	while (chunk!=NULL)
 	{
 		ipaddr = 0;
 		endipaddr = 0;
-		i = sscanf(chunk, "%d.%d.%d.%d", &IP1[0], &IP1[1], &IP1[2], &IP1[3]);
+		i = _stscanf(chunk, _T("%d.%d.%d.%d"), &IP1[0], &IP1[1], &IP1[2], &IP1[3]);
 		if (i != 4) { //assume its a hostname
 			for(int k=0;k<nports;k++)
 			{
@@ -185,10 +192,10 @@ int ParseHosts( HTTPCHAR *lphosts)
 				}  
 				ipaddr |= IP1[i] << 8*(3-i);
 			} 
-			p=strchr(chunk, '-');
+			p=_tcschr(chunk, _T('-'));
 			if (p)
 			{
-				i = sscanf(p+1, "%d.%d.%d.%d", &IP2[0], &IP2[1], &IP2[2], &IP2[3]);
+				i = _stscanf(p+1, _T("%d.%d.%d.%d"), &IP2[0], &IP2[1], &IP2[2], &IP2[3]);
 				switch (i)
 				{
 				case 0:
@@ -243,7 +250,7 @@ int ParseHosts( HTTPCHAR *lphosts)
 				}
 			}
 		}
-		chunk=_tcstok(NULL,",");
+		chunk=_tcstok(NULL,_T(","));
 	}
 	return(total);
 
@@ -254,12 +261,13 @@ int ParseHosts( HTTPCHAR *lphosts)
 int ReadAndSanitizeInput(FILE *file, HTTPCHAR *buffer,int len) {
 	//read a line from a file stream, and removes '\r' and '\n'
 	//if the line is not a comment, true is returned
-	fgets(buffer,len,file);
-	buffer[len-1]='\0';
-	size_t bufferSize =  strlen(buffer);
-	if ( (bufferSize>3) && buffer[0]!='#'  && buffer[0]!=';'  ) {
+	_fgetts(buffer,len,file);
+
+	buffer[len-1]=_T('\0');
+	size_t bufferSize =  _tcslen(buffer);
+	if ( (bufferSize>3) && buffer[0]!=_T('#')  && buffer[0]!=_T(';')  ) {
 		HTTPCHAR *p=buffer+bufferSize-1;
-		while ( (*p=='\r' ) || (*p=='\n') || (*p==' ') ) { p[0]='\0'; --p; }
+		while ( (*p==_T('\r') ) || (*p==_T('\n')) || (*p==_T(' ')) ) { p[0]=_T('\0'); --p; }
 		return(1);
 	}
 	return(0);

@@ -44,7 +44,8 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 
 	return 0;
 }
-#if defined(_MSC_VER)
+//#if defined(_MSC_VER)
+#ifdef __WIN32__RELEASE__
 
 /*
  * Copyright (c) 1999 Kungliga Tekniska Högskolan
@@ -83,7 +84,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 #endif
 #include "Build.h"
 #include <ctype.h>
-#include <time.h>
+//#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -252,7 +253,7 @@ static void set_week_number_mon4 (struct tm *timeptr, int wnum)
  *
  */
 
-HTTPCHAR *strptime (HTTPCSTR buf, HTTPCSTR format, struct tm *timeptr)
+HTTPCHAR *__strptime (HTTPCSTR buf, HTTPCSTR format, struct tm *timeptr)
 {
     HTTPCHAR c;
 
@@ -303,7 +304,7 @@ HTTPCHAR *strptime (HTTPCSTR buf, HTTPCSTR format, struct tm *timeptr)
             case _T('c') :
                 abort ();
             case _T('D') :          /* %m/%d/%y */
-                s = strptime (buf, _T("%m/%d/%y"), timeptr);
+                s = __strptime (buf, _T("%m/%d/%y"), timeptr);
                 if (s == NULL)
                     return NULL;
                 buf = s;
@@ -373,13 +374,13 @@ HTTPCHAR *strptime (HTTPCSTR buf, HTTPCSTR format, struct tm *timeptr)
                     timeptr->tm_hour += 12;
                 break;
             case _T('r') :          /* %I:%M:%S %p */
-                s = strptime (buf, _T("%I:%M:%S %p"), timeptr);
+                s = __strptime (buf, _T("%I:%M:%S %p"), timeptr);
                 if (s == NULL)
                     return NULL;
                 buf = s;
                 break;
             case _T('R') :          /* %H:%M */
-                s = strptime (buf, _T("%H:%M"), timeptr);
+                s = __strptime (buf, _T("%H:%M"), timeptr);
                 if (s == NULL)
                     return NULL;
                 buf = s;
@@ -399,7 +400,7 @@ HTTPCHAR *strptime (HTTPCSTR buf, HTTPCSTR format, struct tm *timeptr)
                 break;
             case _T('T') :          /* %H:%M:%S */
             case _T('X') :
-                s = strptime (buf, _T("%H:%M:%S"), timeptr);
+                s = __strptime (buf, _T("%H:%M:%S"), timeptr);
                 if (s == NULL)
                     return NULL;
                 buf = s;
@@ -440,7 +441,7 @@ HTTPCHAR *strptime (HTTPCSTR buf, HTTPCSTR format, struct tm *timeptr)
                 buf = s;
                 break;
             case _T('x') :
-                s = strptime (buf, _T("%Y:%m:%d"), timeptr);
+                s = __strptime (buf, _T("%Y:%m:%d"), timeptr);
                 if (s == NULL)
                     return NULL;
                 buf = s;

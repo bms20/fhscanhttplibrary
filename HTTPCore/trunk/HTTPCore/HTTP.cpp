@@ -290,7 +290,7 @@ void  HTTPAPI::CleanConnectionTable(LPVOID *unused)
 				{
 
 #ifdef _DBG_
-					printf("DBG: Removing connection %3.3i against %s:%i \n",i,Connection_Table[i]->GettargetDNS(),Connection_Table[i]->GetPort());
+					_tprintf(_T("DBG: Removing connection %3.3i against %s:%i \n"),i,Connection_Table[i]->GettargetDNS(),Connection_Table[i]->GetPort());
 #endif
 					Connection_Table[i]->Disconnect(1);
 				}
@@ -318,7 +318,7 @@ class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTP
 		{
 			TableIndex = i;
 			#ifdef _DBG_
-				printf("[DBG]: %i Reuse Connection %3.3i against %s\n",HTTPHandle->GetThreadID(),FirstIdleSlot,HTTPHandle->GettargetDNS());
+				_tprintf(_T("[DBG]: %i Reuse Connection %3.3i against %s\n"),HTTPHandle->GetThreadID(),FirstIdleSlot,HTTPHandle->GettargetDNS());
 			#endif
 			break;
 		}
@@ -333,7 +333,7 @@ class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTP
 			{
 				TableIndex = i;
 				#ifdef _DBG_
-					printf("[DBG]: %i New   Connection %3.3i against %s\n",HTTPHandle->GetThreadID(),FirstIdleSlot,HTTPHandle->GettargetDNS());
+					_tprintf(_T("[DBG]: %i New   Connection %3.3i against %s\n"),HTTPHandle->GetThreadID(),FirstIdleSlot,HTTPHandle->GettargetDNS());
 				#endif
 				break;
 			}
@@ -347,7 +347,7 @@ class ConnectionHandling *HTTPAPI::GetSocketConnection(class HTTPAPIHANDLE *HTTP
 	}
 	/*Connection table full. Try Again Later*/
 #ifdef _DBG_
-		printf("[DBG]: Unable to get a free Socket connection against target. Maybe your application is too aggresive\nUNABLE TO GET FREE SOCKET!!!\n");
+		_tprintf(_T("[DBG]: Unable to get a free Socket connection against target. Maybe your application is too aggresive\nUNABLE TO GET FREE SOCKET!!!\n"));
 #endif
 		ConnectionTablelock.UnLockMutex();
 		return(NULL);
@@ -932,9 +932,9 @@ void *HTTPAPI::ListenConnection(void *foo)
 	if ((ListenSocket=socket(PF_INET,SOCK_STREAM,IPPROTO_TCP))==INVALID_SOCKET)
 	{
 #ifdef __WIN32__RELEASE__
-		printf("HTTPPROXY::ListenConnection(): socket() error: %d\n", WSAGetLastError());
+		_tprintf(_T("HTTPPROXY::ListenConnection(): socket() error: %d\n"), WSAGetLastError());
 #else
-		printf("HTTPPROXY::ListenConnection(): socket() error: %d\n", 0);
+		_tprintf(_T("HTTPPROXY::ListenConnection(): socket() error: %d\n"), 0);
 
 #endif
 		return (NULL);
@@ -944,7 +944,13 @@ void *HTTPAPI::ListenConnection(void *foo)
 	sin.sin_port = (u_short)htons(BindPort);
 	if (*BindIpAdress)
 	{
+#ifdef _UNICODE
+		char BindIpAdressA[15];
+		sprintf(BindIpAdressA,"%S",BindIpAdress);
+		sin.sin_addr.s_addr  = inet_addr(BindIpAdressA);
+#else
 		sin.sin_addr.s_addr  = inet_addr(BindIpAdress);
+#endif
 	} else
 	{
 		sin.sin_addr.s_addr = INADDR_ANY;
@@ -952,16 +958,16 @@ void *HTTPAPI::ListenConnection(void *foo)
 	if (ListenSocket==SOCKET_ERROR) return(0);
 	if ( bind(ListenSocket, (struct sockaddr *) &sin, sizeof(sin)) == SOCKET_ERROR )
 	{
-		printf("HTTPPROXY::WaitForRequests(): bind() error\n");
+		_tprintf(_T("HTTPPROXY::WaitForRequests(): bind() error\n"));
 		return(NULL);
 	}
 	if ( listen(ListenSocket, HTTP_MAX_CONNECTIONS) == SOCKET_ERROR )
 	{
-		printf("HTTPPROXY::WaitForRequests(): listen() error\n");
+		_tprintf(_T("HTTPPROXY::WaitForRequests(): listen() error\n"));
 		return(NULL);
 	}
 #ifdef _DBG_
-	printf("WaitForRequests(): Waiting for new connections\n");
+	_tprintf(_T("WaitForRequests(): Waiting for new connections\n"));
 #endif
 
 	/*This is our trick to call a class function and send them params */
@@ -971,7 +977,7 @@ void *HTTPAPI::ListenConnection(void *foo)
 		ConnectionHandling *connection = new ConnectionHandling;
 		connection->Acceptdatasock( ListenSocket );
 #ifdef _DBG_
-		printf("WaitForRequests(): New Connection accepted from %s\n",connection->GettargetDNS());
+		_tprintf(_T("WaitForRequests(): New Connection accepted from %s\n"),connection->GettargetDNS());
 #endif
 		/* Waiting for incoming connections */
 		struct params *param = (struct params *)malloc (sizeof(struct params));
@@ -1327,9 +1333,9 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 								if ( (data->response) && (data->response->GetHeaderSize()!=0) )
 								{
 #ifdef _DBG_
-									printf("[%3.3i] HandleRequest() - Leida respuesta del servidor Web. Headers Len: %i bytes - Datos: %i bytes\n",ClientConnection->id,data->response->HeaderSize,data->response->DataSize);
-									printf("Headers: !%s!\n",data->response->Header);
-									if (data->response->DataSize) printf("!%s!\n",data->response->Data);
+									_tprintf(_T("[%3.3i] HandleRequest() - Leida respuesta del servidor Web. Headers Len: %i bytes - Datos: %i bytes\n"),ClientConnection->id,data->response->HeaderSize,data->response->DataSize);
+									_tprintf(_T("Headers: !%s!\n"),data->response->Header);
+									if (data->response->DataSize) _tprintf(_T("!%s!\n"),data->response->Data);
 #endif
 									data->response->RemoveHeader(_T("Connection:"));
 									data->response->AddHeader(_T("Proxy-Connection: keep-alive"));
@@ -1401,7 +1407,7 @@ int HTTPAPI::DispatchHTTPProxyRequest(void *ListeningConnection)
 		ProxyRequest = NULL;
 	}
 #ifdef _DBG_
-	printf("[%3.3i] HandleRequest(): DESCONEXION del Cliente...\n",ClientConnection->id);
+	_tprintf(_T("[%3.3i] HandleRequest(): DESCONEXION del Cliente...\n"),ClientConnection->id);
 #endif
 	delete ClientConnection;
 
@@ -1577,7 +1583,9 @@ void HTTPAPI::SetHTTPProxyConfig(enum HttpProxyoptions  opt,int parameter)
 HTTPCHAR *HTTPAPI::GetPathFromURL(HTTPCSTR url)
 { /* Its assumed that *url == '/' */
 
-	HTTPSTR FullURL=_tcsdup(url);
+	HTTPCHAR *FullURL = NULL;
+	FullURL=(HTTPCHAR*)malloc(sizeof(HTTPCHAR)*(_tcslen(url)+1));
+	_tcscpy(FullURL,url);
 	HTTPSTR p=FullURL;
 	HTTPSTR end = NULL;
 
@@ -1591,8 +1599,8 @@ HTTPCHAR *HTTPAPI::GetPathFromURL(HTTPCSTR url)
 		case _T('?'):
 		case _T('&'):
 		case _T(';'):
-			/* We can be sure that there is not parameters at the url so its recommended to check
-			if they exist and avoid them to give us wrong data */
+			/* We can't be sure that there are no parameters at the url so its
+			recommended to check if they exist and avoid them to give us wrong data */
 			if (end)
 			{
 				end[1] =0;
@@ -1682,20 +1690,20 @@ int HTTPAPI::InitProxyCTX(void)
 	ctx=SSL_CTX_NEW(meth);
 	if(!(SSL_CTX_USE_CERTIFICATE_CHAIN_FILE((SSL_CTX*)ctx, KEYFILE)))
 	{
-		printf("# SSL PROXY FATAL ERROR: Unable to read Certificate File\n");
+		_tprintf(_T("# SSL PROXY FATAL ERROR: Unable to read Certificate File\n"));
 		return(0);
 	}
 	SSL_CTX_SET_DEFAULT_PASSWD_CB((SSL_CTX*)ctx, password_cb);
 	if(!(SSL_CTX_USE_PRIVATEKEY_FILE((SSL_CTX*)ctx,KEYFILE,SSL_FILETYPE_PEM)))
 	{
-		printf("# SSL PROXY FATAL ERROR: Unable to read key File\n");
+		_tprintf(_T("# SSL PROXY FATAL ERROR: Unable to read key File\n"));
 		return(0);
 	}
 
 	/* Load the CAs we trust*/
 	if(!(SSL_CTX_LOAD_VERIFY_LOCATIONS((SSL_CTX*)ctx, CA_LIST,0)))
 	{
-		printf("# SSL PROXY FATAL ERROR: Unable to read CA LIST\n");
+		_tprintf(_T("# SSL PROXY FATAL ERROR: Unable to read CA LIST\n"));
 		return(0);
 	}
 #if (OPENSSL_VERSION_NUMBER < 0x00905100L)
@@ -1708,7 +1716,7 @@ int HTTPAPI::InitProxyCTX(void)
 
 	if ((bio=BIO_NEW_FILE(DHFILE,"r")) == NULL)
 	{
-		printf("# SSL PROXY FATAL ERROR: Unable to open DH file\n");
+		_tprintf(_T("# SSL PROXY FATAL ERROR: Unable to open DH file\n"));
 
 		return(0);
 	}
@@ -1719,7 +1727,7 @@ int HTTPAPI::InitProxyCTX(void)
 
 	if(SSL_CTX_SET_TMP_DH((SSL_CTX*)ctx,ret)<0)
 	{
-		printf("# SSL PROXY FATAL ERROR: Unable to set DH parameters\n");
+		_tprintf(_T("# SSL PROXY FATAL ERROR: Unable to set DH parameters\n"));
 
 		return(0);
 	}
@@ -1767,6 +1775,4 @@ enum AuthenticationType HTTPAPI::GetSupportedAuthentication(HTTPResponse *respon
 	}
 	return(NO_AUTH);
 	
-
-
 }

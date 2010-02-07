@@ -108,7 +108,7 @@ HTTPCHAR *FixUrlTransversal(HTTPCHAR *path) {
 		{
 			if (p[1]==_T('/')) {
 				size_t n= _tcslen(p+1);
-				memcpy(p,p+1,n);
+				memcpy(p,p+1,n*sizeof(HTTPCHAR));
 				p[n]=0;
 			} else if (p[1]==_T('.'))
 			{
@@ -117,18 +117,18 @@ HTTPCHAR *FixUrlTransversal(HTTPCHAR *path) {
 					memcpy(p,p+2,n);
 					p[n]=0;
 					fix=1;
-				} else if (memcmp(p+1,_T(".../"),4)==0)
+				} else if (memcmp(p+1,_T(".../"),4*sizeof(HTTPCHAR))==0)
 				{
 					size_t n=_tcslen(p+4);
-					memcpy(p,p+4,n);
+					memcpy(p,p+4,n*sizeof(HTTPCHAR));
 					p[n]=0;
-				} else if (memcmp(p+1,_T("../"),3)==0)
+				} else if (memcmp(p+1,_T("../"),3*sizeof(HTTPCHAR))==0)
 				{
 					size_t n=_tcslen(p+3);
 					if (*last==_T('/')) {
-						memcpy(last,p+3,n);
+						memcpy(last,p+3,n*sizeof(HTTPCHAR));
 					} else {
-						memcpy(last,p+4,n);
+						memcpy(last,p+4,n*sizeof(HTTPCHAR));
 						n++;
 					}
 					last[n]=0;
@@ -146,12 +146,12 @@ HTTPCHAR *FixUrlTransversal(HTTPCHAR *path) {
 		{
 			if (memcmp(p,_T("./"),2)==0) {
 				size_t n=_tcslen(p+2);
-				memcpy(p,p+2,n);
+				memcpy(p,p+2,n*sizeof(HTTPCHAR));
 				p[n]=0;
 			} else if (memcmp(p,_T(".../"),4)==0)
 			{
 				size_t n=_tcslen(p+4);
-				memcpy(p,p+4,n);
+				memcpy(p,p+4,n*sizeof(HTTPCHAR));
 				p[n]=0;
 			} else 	p++;
 		} else p++;
@@ -282,7 +282,7 @@ static void test_mapper (struct taginfo *taginfo, void *arg, HTTPCHAR *lpHostnam
 						{
                             size_t l = _tcslen(p);
 							HTTPCHAR *x = (HTTPCHAR*)malloc(l+2);
-							memcpy(x,p,l);
+							memcpy(x,p,l*sizeof(HTTPCHAR));
 							x[l]=_T('/');
 							x[l+1]=0;
 							response->AddUrlCrawled(x,tags);

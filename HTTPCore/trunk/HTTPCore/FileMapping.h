@@ -67,7 +67,7 @@ class HTTPIOMapping
    int			   assigned;
    char			  *BufferedPtr;
    size_t			MemoryLength;
-   char			   BufferedFileName[MAX_PATH];
+   HTTPCHAR		   BufferedFileName[MAX_PATH];
   #ifdef __WIN32__RELEASE__
    HANDLE		   hTmpFilename;
    HANDLE          hMapping;
@@ -76,15 +76,16 @@ class HTTPIOMapping
    int			  hTmpFilename;
   #endif
   int 			   KeepFile; /* Do not delete file */
+  int			   BinaryData;
      
-   char *UpdateFileMapping(); //Mapea los datos del fichero con bufferptr
+   HTTPCHAR *UpdateFileMapping(); //Mapea los datos del fichero con bufferptr
 public:
    HTTPIOMapping();   
    ~HTTPIOMapping();   
    size_t        WriteMappingData(size_t , char *lpData); //escribe los datos y llama a updatefileMapping() si es necesario.
-   size_t HTTPIOMapping::OpenFile(HTTPCHAR *lpFileName);
+   size_t 		 OpenFile(HTTPCHAR *lpFileName);
    size_t        GetMappingSize(void);
-   char*		 GetMappingData(void);
+   HTTPCHAR*	 GetMappingData(void);
    int			 IsAssigned(void);
 
 };

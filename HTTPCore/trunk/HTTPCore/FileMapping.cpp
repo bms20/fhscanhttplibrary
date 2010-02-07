@@ -47,6 +47,7 @@ HTTPIOMapping::HTTPIOMapping()
 	MemoryLength = 0;
 	*BufferedFileName=0;
 	KeepFile = 0;
+	BinaryData = 0;
 #ifdef __WIN32__RELEASE__
 	hMapping = NULL;
 	hTmpFilename = INVALID_HANDLE_VALUE;
@@ -55,10 +56,10 @@ HTTPIOMapping::HTTPIOMapping()
 #endif
 
 #ifdef __WIN32__RELEASE__
-	char szTmpFile[256];
-	GetTempPathA (256, szTmpFile);
-	GetTempFileNameA (szTmpFile, "FHScan",0,BufferedFileName);
-	hTmpFilename = CreateFileA ( BufferedFileName,
+	HTTPCHAR szTmpFile[256];
+	GetTempPath (256, szTmpFile);
+	GetTempFileName (szTmpFile, _T("FHScan"),0,BufferedFileName);
+	hTmpFilename = CreateFile ( BufferedFileName,
 		GENERIC_WRITE | GENERIC_READ,
 		FILE_SHARE_WRITE,
 		NULL,
@@ -89,7 +90,7 @@ HTTPIOMapping::~HTTPIOMapping()
 	{
 		CloseHandle(hTmpFilename);
 		if (!KeepFile) {
-			DeleteFileA(BufferedFileName);
+			DeleteFile(BufferedFileName);
 		}
 	}
 	#else
@@ -105,6 +106,7 @@ HTTPIOMapping::~HTTPIOMapping()
 	assigned=0;
 	MemoryLength=0;
 	BufferedPtr = NULL;
+	BinaryData = 0;
 
 }
 /******************************************************************************/
@@ -117,7 +119,7 @@ size_t HTTPIOMapping::OpenFile(HTTPCHAR *lpFileName)
 	{
 		CloseHandle(hTmpFilename);
 		if (!KeepFile) {
-			DeleteFileA(BufferedFileName);
+			DeleteFile(BufferedFileName);
 		}
 	}
 	#else
@@ -135,7 +137,7 @@ size_t HTTPIOMapping::OpenFile(HTTPCHAR *lpFileName)
 
   #ifdef __WIN32__RELEASE__
 
-	hTmpFilename = CreateFileA ( BufferedFileName,
+	hTmpFilename = CreateFile ( BufferedFileName,
 		GENERIC_WRITE | GENERIC_READ,
 		FILE_SHARE_WRITE,
 		NULL,
@@ -177,7 +179,7 @@ size_t HTTPIOMapping::GetMappingSize(void)
 	return(MemoryLength);
 }
 /******************************************************************************/
-char *HTTPIOMapping::GetMappingData(void)
+HTTPCHAR *HTTPIOMapping::GetMappingData(void)
 {
 /* returns a pointer to the mapped memory */
 	#ifdef __WIN32__RELEASE__
@@ -188,7 +190,7 @@ char *HTTPIOMapping::GetMappingData(void)
 	{
 		UpdateFileMapping();
 	}
-	return(BufferedPtr);
+	return((HTTPCHAR*)BufferedPtr);
 }
 /******************************************************************************/
 int HTTPIOMapping::IsAssigned(void)
@@ -197,7 +199,7 @@ int HTTPIOMapping::IsAssigned(void)
 }
 /******************************************************************************/
 
-char *HTTPIOMapping::UpdateFileMapping()
+HTTPCHAR *HTTPIOMapping::UpdateFileMapping()
 {
 	if (MemoryLength==0)
 	{
@@ -223,7 +225,7 @@ char *HTTPIOMapping::UpdateFileMapping()
 	BufferedPtr = (char*) mmap (0, MemoryLength + (MemoryLength - MemoryLength%4096 ), PROT_READ | PROT_WRITE, MAP_SHARED, hTmpFilename, 0);
 	if (BufferedPtr == (void*)-1)
 	{
-		printf("mmap Error - Memory Length: %i - File(%i) %s\n",MemoryLength,hTmpFilename,BufferedFileName);
+		_tprintf(_T("mmap Error - Memory Length: %i - File(%i) %s\n"),MemoryLength,hTmpFilename,BufferedFileName);
 		perror("mmap");
 	#endif
 		BufferedPtr = NULL;
@@ -232,8 +234,63 @@ char *HTTPIOMapping::UpdateFileMapping()
 	}
 
 	assigned = 1;
-	return(BufferedPtr);
+	return((HTTPCHAR*)BufferedPtr);
 }
+/******************************************************************************/
+#ifdef _UNICODE
+size_t HTTPIOMapping::WriteMappingData(size_t length, char *lpData )
+{
+#ifdef __WIN32__RELEASE__
+	if (hTmpFilename==INVALID_HANDLE_VALUE)
+#else
+if (hTmpFilename<0)
+#endif
+	{
+		return (0);
+	} else
+	{
+		if ((lpData) && (length))
+		{
+			#ifdef __WIN32__RELEASE__
+#ifdef _UNICODE
+			HTTPCHAR lpDataW[4096];
+			int ret = MultiByteToWideChar(CP_UTF8, 0, lpData, length, lpDataW, 4096);  //direccion
+			if (ret==0)
+			{
+				BinaryData = 1;
+				WriteFile(hTmpFilename,(unsigned char*)lpData,length,&lpBufferSize,NULL);
+			} else {
+				WriteFile(hTmpFilename,(unsigned char*)lpDataW,ret,&lpBufferSize,NULL);
+			}
+#else
+				WriteFile(hTmpFilename,(unsigned char*)lpData,length,&lpBufferSize,NULL);
+#endif
+			#else
+				int ret;
+				int err = 0;
+				do {
+					ret = write(hTmpFilename,lpData,length);
+					if (ret==-1)
+					{
+#ifdef _DBG_
+						perror("Write failed - retry..");
+#endif
+                    	err++;
+						Sleep(100);
+						if (err>20)
+						{
+                         	return(0); /* No more waiting */
+						}
+					}
+				} while (ret == -1);
+			#endif
+			MemoryLength += length;
+			return(MemoryLength);
+		}
+	}
+	return(0);
+}
+#else
 /******************************************************************************/
 size_t HTTPIOMapping::WriteMappingData(size_t length, char *lpData )
 {
@@ -275,4 +332,5 @@ if (hTmpFilename<0)
 	}
 	return(0);
 }
+#endif
 /*******************************/

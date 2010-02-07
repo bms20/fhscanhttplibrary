@@ -16,28 +16,28 @@ int nvlist = 0;
 
 HTTPSession* DuplicateData(HTTPSession* data);
 /******************************************************************************/
-char *Directories[50];
-char *Files[50];
-char *Extensions[10];
+HTTPCHAR *Directories[50];
+HTTPCHAR *Files[50];
+HTTPCHAR *Extensions[10];
 /******************************************************************************/
-void BruteForceDirectory(HTTPAPI *api,HTTPHANDLE HTTPHandle, char *base)
+void BruteForceDirectory(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPCHAR *base)
 {
 	unsigned int i, j;
 
-	char path[512];
-	char tmp[512];
+	HTTPCHAR path[512];
+	HTTPCHAR tmp[512];
 	HTTPSession* response;
 
 	i = 0;
 	while (Directories[i][0])
 	{
-		sprintf(path, "%s%s/", base, Directories[i]);
+		_stprintf(path, _T("%s%s/"), base, Directories[i]);
 		response = api->SendRawHTTPRequest(HTTPHandle, tmp, NULL,0);
 		if (response)
 		{
 			if ( (response->IsValidHTTPResponse()) && (response->status == 200) )
 			{
-				printf("PATH Encontrado: %s\n", path);
+				_tprintf(_T("PATH Encontrado: %s\n"), path);
 				BruteForceDirectory(api,HTTPHandle, base);
 			}
 			delete response;
@@ -51,12 +51,12 @@ void BruteForceDirectory(HTTPAPI *api,HTTPHANDLE HTTPHandle, char *base)
 		j = 0;
 		while (Extensions[j++][0])
 		{
-			sprintf(path, "%s/%s.%s", base, Files[i], Extensions[j]);
+			_stprintf(path, _T("%s/%s.%s"), base, Files[i], Extensions[j]);
 			response = api->SendRawHTTPRequest (HTTPHandle, tmp, NULL,0);
 			if (response) {
 				if ( (response->IsValidHTTPResponse()) && (response->status == 200) )
 				{
-					printf("FILE Encontrado: %s\n", path);
+					_tprintf(_T("FILE Encontrado: %s\n"), path);
 				}
 				delete response;
 			}
@@ -69,11 +69,11 @@ void BruteForceDirectory(HTTPAPI *api,HTTPHANDLE HTTPHandle, char *base)
 /******************************************************************************/
 static BOOL CheckForWrongHTTPStatusCode(HTTPAPI *api,HTTPHANDLE HTTPHandle, unsigned int status)
 {
-	char tmp[512];
+	HTTPCHAR tmp[512];
 
 	HTTPSession* new_response;
-	snprintf(tmp, sizeof(tmp) - 1, "/FastHTTPAuthScanner%itest/", status);
-	new_response = api->SendHttpRequest(HTTPHandle, NULL,"GET", tmp, NULL,0,NULL,NULL);
+	_sntprintf(tmp, sizeof(tmp) - 1, _T("/FastHTTPAuthScanner%itest/"), status);
+	new_response = api->SendHttpRequest(HTTPHandle, NULL,_T("GET"), tmp, NULL,0,NULL,NULL);
 	if (new_response)
 	{
 		if (!new_response->IsValidHTTPResponse())
@@ -98,7 +98,7 @@ int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* data,i
 	HTTPSession* response;
 	HTTPSession* bruteforce;
 	unsigned int vulns = 0;
-	char tmp[512];
+	HTTPCHAR tmp[512];
 	int i, j, k;
 
 	int Checked401 = 0, Ignore401 = 0;
@@ -106,20 +106,20 @@ int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* data,i
 	int Checked301 = 0, Ignore301 = 0;
 	int Checked200 = 0, Ignore200 = 0;
 	int PasswordLocated = 0;
-	char *lpUserName = NULL;
-	char *lpPassword = NULL;
+	HTTPCHAR *lpUserName = NULL;
+	HTTPCHAR *lpPassword = NULL;
 
 
 	for (i = 0; i < nvlist; i++)
 	{
-		if ((strlen(vlist[i].server) == 0) || ((data->server != NULL) && (strnicmp(data->server, vlist[i].server, strlen(vlist[i].server)) == 0)))
+		if ((_tcslen(vlist[i].server) == 0) || ((data->server != NULL) && (_tcsncicmp(data->server, vlist[i].server, _tcslen(vlist[i].server)) == 0)))
 		{
 			if (_tcscmp(vlist[i].url, data->url) == 0)
 			{
 				response = DuplicateData(data);
 			} else
 			{
-				response = api->SendHttpRequest(HTTPHandle, NULL,"GET",vlist[i].url, NULL,0,lpUserName, lpPassword);
+				response = api->SendHttpRequest(HTTPHandle, NULL,_T("GET"),vlist[i].url, NULL,0,lpUserName, lpPassword);
 			}
 			if ((response) && (!response->IsValidHTTPResponse()) )
 			{
@@ -148,9 +148,9 @@ int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* data,i
 				}
 
 				/* Posible bug */
-				if ( (response->HasResponseData()) && (response->response->Datastrstr("<h1>Index of")))
+				if ( (response->HasResponseData()) && (response->response->Datastrstr(_T("<h1>Index of"))))
 				{
-					UpdateHTMLReport(response,MESSAGE_WEBSERVER_VULNERABILITY,NULL,NULL,vlist[i].url, "(Directory Listing)");
+					UpdateHTMLReport(response,MESSAGE_WEBSERVER_VULNERABILITY,NULL,NULL,vlist[i].url, _T("(Directory Listing)"));
 				}
 
 				switch (response->status) {
@@ -193,7 +193,7 @@ int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* data,i
 					for (k = 0; k < nUsers; k++)
 					{
 						//bruteforce = api->SendHttpRequest(HTTPHandle, NULL,"GET",vlist[i].url, NULL,0,userpass[k].UserName,userpass[k].Password, response->challenge); /* Buy a monitor with better resolution :p */
-						bruteforce = api->SendHttpRequest(HTTPHandle, NULL,"GET",vlist[i].url, NULL,0,userpass[k].UserName,userpass[k].Password); /* Buy a monitor with better resolution :p */
+						bruteforce = api->SendHttpRequest(HTTPHandle, NULL,_T("GET"),vlist[i].url, NULL,0,userpass[k].UserName,userpass[k].Password); /* Buy a monitor with better resolution :p */
 						if ((bruteforce) && (!bruteforce->IsValidHTTPResponse()))
 						{
 							delete bruteforce; bruteforce = NULL;
@@ -208,7 +208,7 @@ int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* data,i
 								lpUserName=userpass[k].UserName;
 								lpPassword = userpass[k].Password;
 								vulns++;
-								snprintf(tmp, sizeof(tmp) - 1, "%s %s",vlist[i].vulnerability,"(Password Found)");
+								_sntprintf(tmp, sizeof(tmp) - 1, _T("%s %s"),vlist[i].vulnerability,_T("(Password Found)"));
 								bruteforce->status=401;
 								UpdateHTMLReport(bruteforce,MESSAGE_WEBSERVER_PASSFOUND,userpass[k].UserName,userpass[k].Password, vlist[i].url, tmp);//, "(Password Found)");
 								delete bruteforce;
@@ -224,8 +224,8 @@ int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* data,i
 					}
 					if (!PasswordLocated)
 					{
-						snprintf(tmp, sizeof(tmp) - 1, "%s %s",vlist[i].vulnerability, "(Need Auth)");
-						UpdateHTMLReport(response,MESSAGE_WEBSERVER_PASSFOUND,"", "",vlist[i].url, tmp);
+						_sntprintf(tmp, sizeof(tmp) - 1, _T("%s %s"),vlist[i].vulnerability, _T("(Need Auth)"));
+						UpdateHTMLReport(response,MESSAGE_WEBSERVER_PASSFOUND,_T(""), _T(""),vlist[i].url, tmp);
 					}
 
 					break;
@@ -267,8 +267,8 @@ int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* data,i
 #ifdef _FULLDBG_
 								printf("verificando nmatch[%i]: %s\n",j,vlist[i].Match[j].description);
 #endif
-								if ( (strlen(vlist[i].Match[j].Ignorestring)== 0) ||
-									((strlen(vlist[i].Match[j].Ignorestring)!= 0) &&
+								if ( (_tcslen(vlist[i].Match[j].Ignorestring)== 0) ||
+									((_tcslen(vlist[i].Match[j].Ignorestring)!= 0) &&
 									(response->response->Datastrstr(vlist[i].Match[j].Ignorestring)== NULL)))
 									{
 									for (int k = 0; k< vlist[i].Match[j].nstrings; k++)
@@ -279,7 +279,7 @@ int CheckVulnerabilities(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* data,i
 										if (response->response->Datastrstr(vlist[i].Match[j].Validatestring[k])!= NULL)
 										{
 											vulns++;
-											snprintf(tmp,sizeof(tmp) - 1,"%s %s",vlist[i].vulnerability,vlist[i].Match[j].description);
+											_sntprintf(tmp,sizeof(tmp) - 1,_T("%s %s"),vlist[i].vulnerability,vlist[i].Match[j].description);
 											UpdateHTMLReport(response,MESSAGE_WEBSERVER_VULNERABILITY,NULL,NULL,vlist[i].url, tmp);
 											break;
 										}

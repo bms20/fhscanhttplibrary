@@ -45,7 +45,13 @@ private:
 	HTTPIOMapping *HTTPIOMappingData;
 	unsigned short StatusCode;
 public:
-	char* Data;
+	HTTPCHAR* Data;
+
+#ifdef _UNICODE
+	char *RawData;
+	int BinaryData;
+#endif
+
     /*!< Pointer to a null terminated string that stores the HTTP Data. */
 	size_t DataSize;
     /*!< Size of the HTTP Data. */
@@ -60,7 +66,7 @@ public:
 	
 	int   GetStatus();
 	void  UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping);
-	char* Datastrstr(char* searchdata);
+	HTTPCHAR* Datastrstr(HTTPCHAR* searchdata);
 	void* GetData(void) { return(Data); }
 	size_t GetDataSize(void) { return(DataSize); }
 	void SetData(void *lpData);

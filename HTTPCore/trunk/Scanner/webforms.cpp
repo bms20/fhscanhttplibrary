@@ -113,11 +113,11 @@ static void GenerateAuth(HTTPCHAR *scheme, HTTPCHAR *output, HTTPCHAR *username,
 					_tcsncat(output,password,MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 2:
-					HTTPEncoder.encodebase64((char *)tmp,(HTTPCSTR )username,_tcslen(username));
+					HTTPEncoder.encodebase64(tmp,(HTTPCSTR )username,_tcslen(username));
 					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 3:
-					HTTPEncoder.encodebase64((char *)tmp,(HTTPCSTR )password,_tcslen(password));
+					HTTPEncoder.encodebase64(tmp,(HTTPCSTR )password,_tcslen(password));
 					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 4:
@@ -131,10 +131,11 @@ static void GenerateAuth(HTTPCHAR *scheme, HTTPCHAR *output, HTTPCHAR *username,
 				case 6:
 					struct sockaddr_in server;
 					server.sin_addr.s_addr=ip;
-					_tcsncat(output,inet_ntoa(server.sin_addr),MAX_POST_LENGTH-_tcslen(output));
+					_stprintf(tmp,_T("%S"),inet_ntoa(server.sin_addr));					
+					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 					break;
 				case 7:
-					snprintf(tmp,sizeof(tmp)-1,"%i",port);
+					_sntprintf(tmp,sizeof(tmp)-1,_T("%i"),port);
 					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 					break;
 
@@ -143,9 +144,9 @@ static void GenerateAuth(HTTPCHAR *scheme, HTTPCHAR *output, HTTPCHAR *username,
 					ftime(&localTime);
 					//               printf("fecha: %ld\n",localTime.time);               
 					//               printf("fecha: %ld\n",localTime.millitm);
-					snprintf(tmp,sizeof(tmp)-1,"%i",localTime.time);
+					_sntprintf(tmp,sizeof(tmp)-1,_T("%i"),localTime.time);
 					_tcsncat(output,tmp+4,MAX_POST_LENGTH-_tcslen(output));
-					snprintf(tmp,sizeof(tmp)-1,"%i",localTime.millitm);
+					_sntprintf(tmp,sizeof(tmp)-1,_T("%i"),localTime.millitm);
 					_tcsncat(output,tmp,MAX_POST_LENGTH-_tcslen(output));
 
 
@@ -167,10 +168,10 @@ static void GenerateAuth(HTTPCHAR *scheme, HTTPCHAR *output, HTTPCHAR *username,
 					//printf("analizando: -%s-\n",where);
 					p= _tcsstr(opt+8,_T(")!!!"));
 					if  (p) {
-						char encodedpacket[512];
-						char decodedpacket[MAX_POST_LENGTH];
+						HTTPCHAR encodedpacket[512];
+						HTTPCHAR decodedpacket[MAX_POST_LENGTH];
 						memset(encodedpacket,0,sizeof(encodedpacket));
-						memcpy(encodedpacket,opt+8,p-opt+8);
+						memcpy(encodedpacket,opt+8,p-opt+8*sizeof(HTTPCHAR));
 
 						p=_tcsstr(encodedpacket,_T(")!!!"));
 						if (p) *p=0;
@@ -262,7 +263,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 		do {
 			if (AdditionalHeader[0]!=0) api->SetHTTPConfig(HTTPHandle,ConfigCookie,AdditionalHeader);
 			new_data=api->SendHttpRequest(HTTPHandle,NULL,WEBFORMS[webform].authmethod,WEBFORMS[webform].authurl,post, _tcslen(post),NULL,NULL);
-			if (AdditionalHeader[0]!=0) api->SetHTTPConfig(HTTPHandle,ConfigCookie,(const char*)NULL);
+			if (AdditionalHeader[0]!=0) api->SetHTTPConfig(HTTPHandle,ConfigCookie,NULL);
 
 			if ( (!new_data) || (!new_data->IsValidHTTPResponse()) )
 			{
@@ -285,7 +286,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 		{
 			if  ( (new_data->status==404) ||
 				  (!new_data->HasResponseData()) ||
-				  (new_data->response->Datastrstr("CGI process file does not exist")) )
+				  (new_data->response->Datastrstr(_T("CGI process file does not exist"))) )
 			{
 				delete new_data;
 				return(-2); //Invalid auth schema
@@ -310,7 +311,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 						if (WEBFORMS[webform].requireloginandpass){
 							UpdateHTMLReport(new_data,MESSAGE_WEBFORM_PASSFOUND,UserName,Password, WEBFORMS[webform].authurl,WEBFORMS[webform].model);
 						} else {
-							UpdateHTMLReport(new_data,MESSAGE_WEBFORM_PASSFOUND,UserName,"", WEBFORMS[webform].authurl,WEBFORMS[webform].model);
+							UpdateHTMLReport(new_data,MESSAGE_WEBFORM_PASSFOUND,UserName,_T(""), WEBFORMS[webform].authurl,WEBFORMS[webform].model);
 						}
 						//new_data=(HTTPSession*)FreeRequest(new_data);
 						delete new_data;
@@ -337,7 +338,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 							if (WEBFORMS[webform].requireloginandpass) {
 								UpdateHTMLReport(new_data,MESSAGE_WEBFORM_PASSFOUND,UserName,Password, WEBFORMS[webform].authurl,WEBFORMS[webform].model);
 							} else {
-								UpdateHTMLReport(new_data,MESSAGE_WEBFORM_PASSFOUND,UserName,"", WEBFORMS[webform].authurl,WEBFORMS[webform].model);
+								UpdateHTMLReport(new_data,MESSAGE_WEBFORM_PASSFOUND,UserName,_T(""), WEBFORMS[webform].authurl,WEBFORMS[webform].model);
 							}
 							//new_data=(HTTPSession*)FreeRequest(new_data);
 							delete new_data;
@@ -363,7 +364,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 			new_data = NULL;
 			if (WEBFORMS[webform].LoadAdditionalUrl[0]!='\0')
 			{
-				new_data=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[webform].LoadAdditionalUrl,NULL,0,NULL,NULL);
+				new_data=api->SendHttpRequest(HTTPHandle,NULL,_T("GET"),WEBFORMS[webform].LoadAdditionalUrl,NULL,0,NULL,NULL);
 				if (new_data)
 				{
 					delete new_data;
@@ -376,7 +377,7 @@ static int TryHTTPWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle, HTTPSession* r
 	memset(tmp,'\0',sizeof(tmp));
 	//snprintf(tmp,sizeof(tmp)-1,"%s %s",WEBFORMS[webform].model,"(No password Matches)");
 	//if ( !IsKnownWebServer(data->server,nKnownWebservers,KnownWebservers) 
-	UpdateHTMLReport(request,MESSAGE_WEBFORMS_PASSNOTFOUND,"NOTFOUND","NOTFOUND", WEBFORMS[webform].authurl,WEBFORMS[webform].model);
+	UpdateHTMLReport(request,MESSAGE_WEBFORMS_PASSNOTFOUND,_T("NOTFOUND"),_T("NOTFOUND"), WEBFORMS[webform].authurl,WEBFORMS[webform].model);
 	return(-1);
 }
 
@@ -432,7 +433,7 @@ int CheckWebformAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data, int p
 						sprintf(image,"GET %s HTTP/1.0\r\nHost: %s\r\n\r\n",WEBFORMS[i].ValidateImage,data->ipaddress);
 						HTTPSession*new_data=(HTTPSession*)conecta(data->ip,data->port, data->ssl,image);
 						*/
-						HTTPSession* new_data=api->SendHttpRequest(HTTPHandle,NULL,"GET",WEBFORMS[i].ValidateImage,NULL,0,NULL,NULL);
+						HTTPSession* new_data=api->SendHttpRequest(HTTPHandle,NULL,_T("GET"),WEBFORMS[i].ValidateImage,NULL,0,NULL,NULL);
 						if (new_data)
 						{
 							///if ( (new_data->status==200) && (strstr(new_data->resultado,"Content-Type: image/")!=NULL) ) {

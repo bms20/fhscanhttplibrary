@@ -99,10 +99,22 @@ HTTPAPIHANDLE::HTTPAPIHANDLE(void)
 int HTTPAPIHANDLE::InitHandle(HTTPSTR hostname,unsigned short HTTPPort,int ssl)
 {
 	struct sockaddr_in remote;
+#ifdef _UNICODE
+		char hostnameA[256];
+		sprintf(hostnameA,"%S",hostname);
+		remote.sin_addr.s_addr = inet_addr(hostnameA);
+#else
 	remote.sin_addr.s_addr = inet_addr(hostname);
+#endif
+
+	
 	if (remote.sin_addr.s_addr == INADDR_NONE)
 	{
+#ifdef _UNICODE
+		struct hostent *hostend=gethostbyname(hostnameA);
+#else
 		struct hostent *hostend=gethostbyname(hostname);
+#endif
 		if (!hostend)
 		{
 			return(0);
@@ -316,10 +328,10 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 		if ( (parameter) && (*parameter) && (_tcschr(parameter,_T(':'))) ) 
 		{
 			int len2 = (int) _tcslen(parameter);
-			if (memcmp(parameter+len2 -2,"\r\n",2)!=0) {
+			if (memcmp(parameter+len2 -2,_T("\r\n"),2*sizeof(HTTPCHAR))!=0) {
 				AdditionalHeader = (HTTPCHAR*)malloc((len2 +2 +1)*sizeof(HTTPCHAR) );
-				memcpy(AdditionalHeader,parameter,len2);
-				memcpy(AdditionalHeader +len2,"\r\n\x00",3);
+				memcpy(AdditionalHeader,parameter,len2*sizeof(HTTPCHAR));
+				memcpy(AdditionalHeader +len2,_T("\r\n\x00"),3*sizeof(HTTPCHAR));
 			} else {
 				AdditionalHeader = _tcsdup(parameter);
 			}
@@ -348,10 +360,21 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 		{
 			struct sockaddr_in remote;
 			lpProxyHost=_tcsdup(parameter);
-			remote.sin_addr.s_addr = inet_addr(lpProxyHost);
+#ifdef _UNICODE
+		char lpProxyHostA[256];
+		sprintf(lpProxyHostA,"%S",lpProxyHost);
+		remote.sin_addr.s_addr = inet_addr(lpProxyHostA);
+#else
+		remote.sin_addr.s_addr = inet_addr(lpProxyHost);
+#endif
+			//remote.sin_addr.s_addr = inet_addr(lpProxyHost);
 			if (remote.sin_addr.s_addr == INADDR_NONE)
 			{
+#ifdef _UNICODE				
+				struct hostent *hostend=gethostbyname(lpProxyHostA);
+#else
 				struct hostent *hostend=gethostbyname(lpProxyHost);
+#endif
 				if (!hostend) return(-1);
 				memcpy(&remote.sin_addr.s_addr, hostend->h_addr, 4);
 			}
@@ -359,10 +382,20 @@ int HTTPAPIHANDLE::SetHTTPConfig(int opt,HTTPCSTR parameter)
 		} else  {
 			struct sockaddr_in remote;
 			lpProxyHost = NULL;
-			remote.sin_addr.s_addr = inet_addr(targetDNS);
+#ifdef _UNICODE
+		char targetDNSA[256];
+		sprintf(targetDNSA,"%S",targetDNS);
+		remote.sin_addr.s_addr = inet_addr(targetDNSA);
+#else
+		remote.sin_addr.s_addr = inet_addr(targetDNS);
+#endif
 			if (remote.sin_addr.s_addr == INADDR_NONE)
 			{
+#ifdef _UNICODE
+				struct hostent *hostend=gethostbyname(targetDNSA);
+#else
 				struct hostent *hostend=gethostbyname(targetDNS);
+#endif
 				if (!hostend) return(-1);
 				memcpy(&remote.sin_addr.s_addr, hostend->h_addr, 4);
 			}

@@ -216,7 +216,7 @@ HTTPIOMapping *gunzip(void *in, size_t inSize, int what)
 		if (strm.next_in[0] != 0x1f ||
 			strm.next_in[1] != 0x8b) {
 			#ifdef _DBG_
-				printf("gunzip(): INVALID Magic gzip header\n");
+				_tprintf(_T("gunzip(): INVALID Magic gzip header\n"));
 			#endif
             	INFLATEEND(&strm);
 				return (NULL);;
@@ -238,7 +238,7 @@ HTTPIOMapping *gunzip(void *in, size_t inSize, int what)
 		if (method != Z_DEFLATED || (flags & RESERVED) != 0)
 		{
 		#ifdef _DBG_
-			printf("gunzip(): Method or flags error: %i - %i\n",method,flags);
+			_tprintf(_T("gunzip(): Method or flags error: %i - %i\n"),method,flags);
 		#endif
 			INFLATEEND(&strm);
 			return NULL;
@@ -326,7 +326,7 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPRequest* r
 		f_hLIBZ = LoadLibrary(_T("zlib1.dll"));
 		if (!f_hLIBZ)
 		{
-			printf("## FATAL - ZLIB LIBRARY NOT FOUND\n");
+			_tprintf(_T("## FATAL - ZLIB LIBRARY NOT FOUND\n"));
 			exit(1);
 		}
 		INFLATE				= (INFLATE_FUNC)GetProcAddress(f_hLIBZ,		"inflate");
@@ -344,7 +344,7 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPRequest* r
 		if (!INFLATE || !INFLATEINIT || !INFLATEEND || !INFLATEINIT2 ||
 			!DEFLATE || !DEFLATEINIT || !DEFLATEEND || !INFLATESETDICTIONARY || !DEFLATESETDICTIONARY )
 		{
-			printf("## FATAL - ZLIB LIBRARY IMPORTS ERROR\n");
+			_tprintf(_T("## FATAL - ZLIB LIBRARY IMPORTS ERROR\n"));
 		}
 	}
 #endif
@@ -389,10 +389,10 @@ int CBDeflate(int cbType,class HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPRequest* r
 				#ifdef _DBG_
 				if (decoded)
 				{
-					printf("CBDeflate(): uncompressed %i bytes to %i. Data: %s\n",response->DataSize,total,p);
+					_tprintf(_T("CBDeflate(): uncompressed %i bytes to %i. Data: %s\n"),response->DataSize,total,p);
 				} else
 				{
-					printf("CBDeflate(): Error decoding buffer with %s\n",p);
+					_tprintf(_T("CBDeflate(): Error decoding buffer with %s\n"),p);
 				}
 				#endif
 				response->UpdateAndReplaceFileMappingData(decoded);

@@ -56,7 +56,7 @@ HTTPCHAR *encoders::GetNTLMBase64Packet1(HTTPCHAR* destination)
 	#ifdef UNICODE
 	char destinationAscii[4096];
 	encodebase64A(destinationAscii,(char*)NTLMHeader,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMHeader));
-	MultiByteToWideChar(CP_ACP, 0, destinationAscii, -1, destination, 4096);
+	MultiByteToWideChar(CP_UTF8, 0, destinationAscii, -1, destination, 4096);
 	return(destination);
 	#else
 	return ( encodebase64A(destination,(char*)NTLMHeader,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMHeader)));
@@ -73,17 +73,17 @@ HTTPCHAR *encoders::GetNTLMBase64Packet3(HTTPCHAR* destination, const HTTPCHAR* 
 
 #ifdef UNICODE
 	char NTLMresponseAscii[4096];
-	WideCharToMultiByte(CP_ACP, 0, NTLMresponse, -1, NTLMresponseAscii, 4096, NULL, NULL);
+	WideCharToMultiByte(CP_UTF8, 0, NTLMresponse, -1, NTLMresponseAscii, 4096, NULL, NULL);
 	decodebase64A((char*)NTLMPacket2,NTLMresponseAscii);
 	char lpUsernameAscii[256];
 	char lpPasswordAscii[256];
-	WideCharToMultiByte(CP_ACP, 0, lpUsername, -1, lpUsernameAscii, 256, NULL, NULL);
-	WideCharToMultiByte(CP_ACP, 0, lpPassword, -1, lpPasswordAscii, 256, NULL, NULL);
+	WideCharToMultiByte(CP_UTF8, 0, lpUsername, -1, lpUsernameAscii, 256, NULL, NULL);
+	WideCharToMultiByte(CP_UTF8, 0, lpPassword, -1, lpPasswordAscii, 256, NULL, NULL);
 	/* Our NTLM library does not support Unicode, so we must convert data to an Ascii string*/
 	buildAuthResponse((tSmbNtlmAuthChallenge*)NTLMPacket2,(tSmbNtlmAuthResponse*)NTLMPacket3,0,lpUsernameAscii,lpPasswordAscii,NULL,NULL);
 	char destinationAscii[4096];
 	encodebase64A((char*)destinationAscii,(const char*)NTLMPacket3,(int)SmbLength((tSmbNtlmAuthResponse*)NTLMPacket3));
-	MultiByteToWideChar(CP_ACP, 0, destinationAscii, -1, destination, 4096);
+	MultiByteToWideChar(CP_UTF8, 0, destinationAscii, -1, destination, 4096);
 #else
 	decodebase64A((char*)NTLMPacket2,NTLMresponse);
 	buildAuthResponse((tSmbNtlmAuthChallenge*)NTLMPacket2,(tSmbNtlmAuthResponse*)NTLMPacket3,0,lpUsername,lpPassword,NULL,NULL);
@@ -173,13 +173,13 @@ HTTPCHAR* encoders::decodebase64W(HTTPCHAR *lpoutputW, const HTTPCHAR* inputW)
 	{
 		if (lpoutputW)
 		{
-			MultiByteToWideChar(CP_ACP, 0, output, olen, lpoutputW, olen+1);
+			MultiByteToWideChar(CP_UTF8, 0, output, olen, lpoutputW, olen+1);
 			free(output);
 			lpoutputW[olen]=0;
 			return(lpoutputW);
 		} else {
 			HTTPCHAR *outputW = (HTTPCHAR*)malloc(olen * sizeof(HTTPCHAR)+1);
-			MultiByteToWideChar(CP_ACP, 0, output, olen, outputW, olen+1);
+			MultiByteToWideChar(CP_UTF8, 0, output, olen, outputW, olen+1);
 			free(output);
 			outputW[olen]=0;
 			return(outputW);
@@ -194,7 +194,7 @@ HTTPCHAR* encoders::encodebase64W(HTTPCHAR *lpoutputW, HTTPCSTR inputW, size_t i
 	if (inputlen)
 	{
 		char *input = (char*)malloc(inputlen);
-		WideCharToMultiByte(CP_ACP, 0, inputW, inputlen, input, inputlen, NULL, NULL);
+		WideCharToMultiByte(CP_UTF8, 0, inputW, inputlen, input, inputlen, NULL, NULL);
 
 		BIO * b642  = BIO_NEW(BIO_F_BASE64());
 		BIO * bmem2 = BIO_NEW(BIO_S_MEM());
@@ -208,12 +208,12 @@ HTTPCHAR* encoders::encodebase64W(HTTPCHAR *lpoutputW, HTTPCSTR inputW, size_t i
 			
 			if (lpoutputW)
 			{
-				MultiByteToWideChar(CP_ACP, 0, bptr->data, bptr->length, lpoutputW, bptr->length+1);
+				MultiByteToWideChar(CP_UTF8, 0, bptr->data, bptr->length, lpoutputW, bptr->length+1);
 				lpoutputW[bptr->length]=0;
 				return(lpoutputW);
 			} else {
 				HTTPCHAR* outputW=(HTTPCHAR*)malloc(bptr->length+1);
-				MultiByteToWideChar(CP_ACP, 0, bptr->data, bptr->length, outputW, bptr->length+1);
+				MultiByteToWideChar(CP_UTF8, 0, bptr->data, bptr->length, outputW, bptr->length+1);
 				outputW[bptr->length]=0;
 				return(outputW);
 			}
@@ -360,10 +360,10 @@ HTTPCHAR* encoders::GetMD5TextHashW(HTTPCHAR *lpoutputW, const HTTPCHAR* dataW, 
 	
 	char *data = (char*)malloc(len+1);
 	char result[32+1];
-	WideCharToMultiByte(CP_ACP, 0, dataW, len, data, len, NULL, NULL);
+	WideCharToMultiByte(CP_UTF8, 0, dataW, len, data, len, NULL, NULL);
 	GetMD5TextHashA(result,data,len);
 	free(data);
-	MultiByteToWideChar(CP_ACP, 0, result, 32, lpoutputW, 32);
+	MultiByteToWideChar(CP_UTF8, 0, result, 32, lpoutputW, 32);
 	return(lpoutputW);
 }
 #endif
@@ -446,7 +446,7 @@ int qopdefined =0;
 if (!AuthenticationHeader) return (NULL);
 if (_tcslen(AuthenticationHeader)>1024-1) {
 	#ifdef _DBG_
-	printf("[*] WARNING: POSSIBLE BUFFER OVERFLOW ON REMOTE AUTHENTICATON HEADER\n%s\n",AuthenticationHeader);
+	_tprintf(_T("[*] WARNING: POSSIBLE BUFFER OVERFLOW ON REMOTE AUTHENTICATON HEADER\n%s\n"),AuthenticationHeader);
 	#endif
  	return(NULL);
 }

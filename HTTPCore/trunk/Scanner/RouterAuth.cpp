@@ -43,8 +43,8 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,
 
 	HTTPSession* new_response;
 	int CookieNeeded=0;
-    char *lpcookie=NULL;
-    char cookie[256]="";
+    HTTPCHAR *lpcookie=NULL;
+    HTTPCHAR cookie[256]=_T("");
 	int retries=MAX_TIMEOUT_RETRY;
 
 	if (!bruteforce)
@@ -62,7 +62,7 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,
     for(int k=0;k<nUsers;k++)
 	{
 #ifdef _DBG_
-		printf("!!!Enviando login/password (%i/%i): %s - %s (authmethod %i )\n",k,nUsers,userpass[k].UserName,userpass[k].Password,challenge);
+		_tprintf(_T("!!!Enviando login/password (%i/%i): %s - %s (authmethod %i )\n"),k,nUsers,userpass[k].UserName,userpass[k].Password,challenge);
 #endif
 
 		do
@@ -75,7 +75,7 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,
 				api->SetHTTPConfig(HTTPHandle,ConfigCookie,AuthData->postdata);
 				//new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,NULL,0,userpass[k].UserName,userpass[k].Password,challenge);
 				new_response=api->SendHttpRequest( HTTPHandle,NULL,AuthData->method,AuthData->authurl,NULL,0,userpass[k].UserName,userpass[k].Password);
-				api->SetHTTPConfig(HTTPHandle,ConfigCookie,(const char*)NULL);
+				api->SetHTTPConfig(HTTPHandle,ConfigCookie,NULL);
 			}
 
 			if ( (new_response) &&(new_response->IsValidHTTPResponse()) ) break;
@@ -91,7 +91,7 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,
 		if (new_response)
 		{
 #ifdef _DBG_
-			printf("ESTADO: %i\n",new_response->status);
+			_tprintf(_T("ESTADO: %i\n"),new_response->status);
 #endif
 
 			if (new_response->status <= HTTP_STATUS_REDIRECT ) //302
@@ -106,7 +106,7 @@ static int BruteforceAuth( HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* data,
                 lpcookie=data->response->GetHeaderValue(_T("Set-Cookie: "),0);
 				if (lpcookie)
 				{
-                    snprintf(cookie,sizeof(cookie)-1,"Cookie: %s",lpcookie);
+                    _sntprintf(cookie,sizeof(cookie)-1,_T("Cookie: %s"),lpcookie);
                 }
 			}
 			delete new_response;
@@ -119,7 +119,7 @@ HTTPSession* CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* dat
 {
 	HTTPSession* response;
 	int ret;
-	char *lpcookie=NULL;
+	HTTPCHAR *lpcookie=NULL;
 
 /*
  * Revisamos si el dispositivo requiere autenticacion
@@ -139,8 +139,8 @@ HTTPSession* CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* dat
 			//printf("aki: %i\n",i);
 
 #ifdef _DBG_
-			printf("Verificando %i - %s\n",i,AuthData[i].authurl);
-			printf("------------enviando---------------\n");
+			_tprintf(_("Verificando %i - %s\n"),i,AuthData[i].authurl);
+			_tprintf(_T("------------enviando---------------\n"));
 #endif
 			if (i==0) {
 				//printf("aki..........\n");
@@ -148,16 +148,16 @@ HTTPSession* CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* dat
 				//printf("aki2\n");
 			} else {
 				int CookieNeeded=0;
-				if (_tcsstr(AuthData[i].postdata,"Cookie")!=NULL)
+				if (_tcsstr(AuthData[i].postdata,_T("Cookie"))!=NULL)
 				{
 					CookieNeeded=1;
 
 					if (_tcsstr(AuthData[i].postdata,_T("Cookie: !!!UPDATECOOKIE!!!"))!=NULL)
 					{
-						char tmp[256];
+						HTTPCHAR tmp[256];
 						lpcookie=data->response->GetHeaderValue(_T("Set-Cookie: "),0);
 						if (lpcookie) {
-							snprintf(tmp,sizeof(tmp)-1,"Cookie: %s",lpcookie);
+							_sntprintf(tmp,sizeof(tmp)-1,_T("Cookie: %s"),lpcookie);
 							free(lpcookie);
 							lpcookie=_tcsdup(tmp);
 						} else CookieNeeded=0;
@@ -170,7 +170,7 @@ HTTPSession* CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* dat
 					if (CookieNeeded) {
 						api->SetHTTPConfig(HTTPHandle,ConfigCookie,lpcookie);//AuthData[i].postdata);
 						response=api->SendHttpRequest( HTTPHandle,NULL,AuthData[i].method,AuthData[i].authurl,NULL,0,NULL,NULL);
-						api->SetHTTPConfig(HTTPHandle,ConfigCookie,(const char*)NULL);
+						api->SetHTTPConfig(HTTPHandle,ConfigCookie,NULL);
 						free(lpcookie);
 					} else {
 						response=api->SendHttpRequest( HTTPHandle,NULL,AuthData[i].method,AuthData[i].authurl,AuthData[i].postdata,_tcslen(AuthData[i].postdata),NULL,NULL);
@@ -187,8 +187,8 @@ HTTPSession* CheckRouterAuth(HTTPAPI *api,HTTPHANDLE HTTPHandle,HTTPSession* dat
 		if (response)
 		 {
 #ifdef _DBG_
-			 printf("code: %i buffer: %s\n",response->status,response->response->Data);
-			 printf("/Headers: %s\n",response->response->Header);
+			 _tprintf(_T("code: %i buffer: %s\n"),response->status,response->response->Data);
+			 _tprintf(_T("/Headers: %s\n"),response->response->Header);
 			 //for(int j=0;j<response->nheaders;j++) printf("header: %s\n",response->header[j]);
 #endif
 

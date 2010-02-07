@@ -20,7 +20,7 @@ typedef struct update{
 
 int CheckConfigFile(HTTPCSTR filename,UPDATE *local)
 {
-	FILE *update=_tfopen(filename,"r");
+	FILE *update=_tfopen(filename,_T("r"));
 	HTTPCHAR line[1024];
 	if (!update)
 	{
@@ -105,49 +105,49 @@ int UpdateFHScan(HTTPAPI *api)
 	int completeupdate=0;
 
 
-	ret=CheckConfigFile("FHSCAN_release.dat",&local);
+	ret=CheckConfigFile(_T("FHSCAN_release.dat"),&local);
 	if (!ret)
 	{
-		printf("[-] Unable to locate FHSCAN_release.dat. Please manually check for updates at http://www.tarasco.org\n");
+		_tprintf(_T("[-] Unable to locate FHSCAN_release.dat. Please manually check for updates at http://www.tarasco.org\n"));
 		return(1);
 	}
 	
-	printf("[+] Installed FHScan Build: %i.%i.%i\n",local.Mayor,local.Minor,local.Build);
+	_tprintf(_T("[+] Installed FHScan Build: %i.%i.%i\n"),local.Mayor,local.Minor,local.Build);
 
 	//InitHTTPApi();
-	printf("[+] Connecting with: %s:%i SSL: %i\n",local.host,local.port,local.ssl);
+	_tprintf(_T("[+] Connecting with: %s:%i SSL: %i\n"),local.host,local.port,local.ssl);
 	HTTPHandle=api->InitHTTPConnectionHandle(local.host,local.port,local.ssl);
 	if (HTTPHandle == INVALID_HHTPHANDLE_VALUE)
 	{
-		printf("[-] Unable to resolve %s\n",local.host);
+		_tprintf(_T("[-] Unable to resolve %s\n"),local.host);
 		return(1);
 	}
 
-	DATA=api->SendHttpRequest(HTTPHandle,NULL,"GET",local.version_url,NULL,0,NULL,NULL);
+	DATA=api->SendHttpRequest(HTTPHandle,NULL,_T("GET"),local.version_url,NULL,0,NULL,NULL);
 	if ((!DATA) || (!DATA->response) )
 	{
-		printf("[-] Request error\n");
+		_tprintf(_T("[-] Request error\n"));
 		return(1);
 	}
 	if ( (DATA->status!=200) || (DATA->response->DataSize==0) )
 	{
-		printf("[-] Unable to locate http%s://%s%s:%i \n",local.ssl ? "s": "", local.host,local.version_url,local.port);
+		_tprintf(_T("[-] Unable to locate http%s://%s%s:%i \n"),local.ssl ? _T("s"): _T(""), local.host,local.version_url,local.port);
 		return(1);
 	}
-	update=_tfopen("tmp.dat","w");
+	update=_tfopen(_T("tmp.dat"),_T("w"));
 	fwrite(DATA->response->Data,1,DATA->response	->DataSize,update);
 	fclose(update);
 
-	ret=CheckConfigFile("tmp.dat",&remote);
+	ret=CheckConfigFile(_T("tmp.dat"),&remote);
 
 	if ( (remote.Mayor >local.Mayor) ||
 		 ( (remote.Mayor == local.Mayor) && (remote.Minor > local.Minor) ) ||
 		 ( (remote.Mayor == local.Mayor) && (remote.Minor == local.Minor) && (remote.Build >local.Build)) )
 	{
-		printf("[+] Current FHScan Build: %i.%i.%i\n",remote.Mayor,remote.Minor,remote.Build);
-		printf("[+] Downloading http%s://%s%s:%i \n",remote.ssl ? "s": "", remote.host,remote.package_url,remote.port);
+		_tprintf(_T("[+] Current FHScan Build: %i.%i.%i\n"),remote.Mayor,remote.Minor,remote.Build);
+		_tprintf(_T("[+] Downloading http%s://%s%s:%i \n"),remote.ssl ? "s": "", remote.host,remote.package_url,remote.port);
 		if (remote.news) {
-			printf("[+] News: %s\n",remote.news);
+			_tprintf(_T("[+] News: %s\n"),remote.news);
 		}
 		NEWHTTPHandle=api->InitHTTPConnectionHandle(remote.host,remote.port,remote.ssl);
 #ifdef __WIN32__RELEASE__
@@ -158,16 +158,16 @@ int UpdateFHScan(HTTPAPI *api)
 		if ( (DOWNLOAD) && (DOWNLOAD->response) && (DOWNLOAD->response->DataSize) )
 		{
 #ifdef __WIN32__RELEASE__
-			sprintf(tmp,"FHScan_%i.%i.%i.zip",remote.Mayor,remote.Minor,remote.Build);
+			_stprintf(tmp,_T("FHScan_%i.%i.%i.zip"),remote.Mayor,remote.Minor,remote.Build);
 #else
-			sprintf(tmp,"FHScan-%i.%i.%i-i386-Backtrack3.tgz",remote.Mayor,remote.Minor,remote.Build);
+			_stprintf(tmp,_T("FHScan-%i.%i.%i-i386-Backtrack3.tgz"),remote.Mayor,remote.Minor,remote.Build);
 #endif
-			printf("[+] Saving file as: %s  (please extract it manually)\n",tmp);
+			_tprintf(_T("[+] Saving file as: %s  (please extract it manually)\n"),tmp);
 			update=_tfopen(tmp,_T("wb"));
 			fwrite(DOWNLOAD->response->Data,1,DOWNLOAD->response->DataSize,update);
 			fclose(update);
-			printf("[+] Saving FHSCAN_release.dat\n");
-			update=_tfopen("FHSCAN_release.dat","w");
+			_tprintf(_T("[+] Saving FHSCAN_release.dat\n"));
+			update=_tfopen(_T("FHSCAN_release.dat"),_T("w"));
 			fwrite(DATA->response->Data,1,DATA->response->DataSize,update);
 			fclose(update);
 			//FreeRequest(DATA);
@@ -180,7 +180,7 @@ int UpdateFHScan(HTTPAPI *api)
 			completeupdate=1;
 			delete api;
 		} else {
-			printf("[-] Unable to download FHScan file\n");
+			_tprintf(_T("[-] Unable to download FHScan file\n"));
 		}
 		return(0);
 
@@ -188,19 +188,19 @@ int UpdateFHScan(HTTPAPI *api)
 
 	if ( ( remote.signature > local.signature ) && (!completeupdate) )
 	{
-		printf("[+] Current FHScan Build: %i.%i.%i Signature: %i\n",remote.Mayor,remote.Minor,remote.Build,remote.signature);
-		printf("[+] Downloading http%s://%s%s:%i \n",remote.ssl ? "s": "", remote.host,remote.signature_url,remote.port);
+		_tprintf(_T("[+] Current FHScan Build: %i.%i.%i Signature: %i\n"),remote.Mayor,remote.Minor,remote.Build,remote.signature);
+		_tprintf(_T("[+] Downloading http%s://%s%s:%i \n"),remote.ssl ? _T("s"): _T(""), remote.host,remote.signature_url,remote.port);
 		NEWHTTPHandle=api->InitHTTPConnectionHandle(remote.host,remote.port,remote.ssl);
-		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,"GET",remote.signature_url,NULL,0,NULL,NULL);
+		DOWNLOAD=api->SendHttpRequest(NEWHTTPHandle,NULL,_T("GET"),remote.signature_url,NULL,0,NULL,NULL);
 		if ( (DOWNLOAD) && (DOWNLOAD->response) && (DOWNLOAD->response->DataSize) && (DOWNLOAD->status==200) )
 		{
-			sprintf(tmp,"FHScan_signature_%i.%i.%i_%i.zip",remote.Mayor,remote.Minor,remote.Build,remote.signature);
-			printf("[+] Saving file as: %s (please extract it manually)\n",tmp);
-			update=_tfopen(tmp,"w");
+			_stprintf(tmp,_T("FHScan_signature_%i.%i.%i_%i.zip"),remote.Mayor,remote.Minor,remote.Build,remote.signature);
+			_tprintf(_T("[+] Saving file as: %s (please extract it manually)\n"),tmp);
+			update=_tfopen(tmp,_T("w"));
 			fwrite(DOWNLOAD->response->Data,1,DOWNLOAD->response->DataSize,update);
 			fclose(update);
-			printf("[+] Saving FHSCAN_release.dat\n");
-			update=_tfopen("FHSCAN_release.dat","w");
+			_tprintf(_T("[+] Saving FHSCAN_release.dat\n"));
+			update=_tfopen(_T("FHSCAN_release.dat"),_T("w"));
 			fwrite(DATA->response->Data,1,DATA->response->DataSize,update);
 			fclose(update);
 			delete DATA;
@@ -214,19 +214,18 @@ int UpdateFHScan(HTTPAPI *api)
 			delete api;
 
 		} else {
-			printf("[-] Unable to download FHScan siagnature file\n");
+			_tprintf(_T("[-] Unable to download FHScan siagnature file\n"));
 		}
 		return(0);
 
 	}
 
-	printf("[+] FHScan is up to date. Enjoy =) \n");
+	_tprintf(_T("[+] FHScan is up to date. Enjoy =) \n"));
 	delete(DATA);
 	api->EndHTTPConnectionHandle(HTTPHandle);
 
 
 	delete api;
-   //	CloseHTTPApi();
 	return(0);
 
 

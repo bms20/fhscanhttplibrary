@@ -237,7 +237,8 @@ int ConnectionHandling::SendData(char *data,size_t len)
 int ConnectionHandling::SendHttpResponse(HTTPResponse *response)
 {
 #ifdef _UNICODE
-
+printf("TODO4\n");
+return(1);
 #else
 	SendData((char*)response->GetHeaders(),response->GetHeaderSize());
 	if (response->DataSize)
@@ -251,83 +252,27 @@ int ConnectionHandling::SendHttpResponse(HTTPResponse *response)
 int ConnectionHandling::SendHttpRequest(HTTPRequest* request)
 {
 #ifdef _UNICODE
+/* Convert Unicode string to ASCII string */
+char *Header = (char*)malloc(request->GetHeaderSize()+1);
+int len = WideCharToMultiByte(CP_UTF8, 0, request->GetHeaders(), -1, Header, request->GetHeaderSize()+1, NULL, NULL);
+SendData((char*)Header,len-1);
+free(Header);
+
+if  (request->GetDataSize())
+{
+	char *Data =  NULL;
+	Data = (char*)malloc(request->GetDataSize()+1);
+	len = WideCharToMultiByte(CP_UTF8, 0, request->GetData(), -1, Data, request->GetDataSize()+1, NULL, NULL);
+	SendData(Data,len-1);
+	free(Data);
+}
 #else
 	SendData((char*)request->GetHeaders(),request->GetHeaderSize());
 	if (request->DataSize)
 	{
 		SendData((char*)request->Data,request->DataSize);
 	}
-	return(1);
 #endif
-
-#ifdef _UNICODE
-/* Convert Unicode string to ASCII string */
-char *Header = (char*)malloc(request->GetHeaderSize()+1);
-WideCharToMultiByte(CP_ACP, 0, request->GetHeaders(), -1, Header, request->GetHeaderSize()+1, NULL, NULL);
-char *Data =  NULL;
-if  (request->GetDataSize())
-{
-	Data = (char*)malloc(request->GetDataSize()+1);
-	WideCharToMultiByte(CP_ACP, 0, request->GetData(), -1, Data, request->GetDataSize()+1, NULL, NULL);
-}
-#endif
-
-	if (ssl) 
-	{
-#ifdef UNICODE
-		int err=SSL_WRITE(ssl, Header, (int)request->GetHeaderSize());
-		free(Header);
-#else
-		int err=SSL_WRITE(ssl, request->GetHeaders(), (int)request->GetHeaderSize());
-#endif
-		if (err>0)
-		{
-			if (request->GetDataSize())
-			{
-			#ifdef UNICODE
-				err=SSL_WRITE(ssl, Data, (int)request->GetDataSize());
-				free(Data);
-			#else
-				err=SSL_WRITE(ssl, request->GetData(), (int)request->GetDataSize());
-			#endif
-			}
-		}
-		if (err <=0)
-		{
-#ifdef _DBG_
-			printf("SSL_WRITE ERROR1: %s:%i\n",targetDNS,port);
-#endif
-			return(0);
-		}
-	} else
-	{
-#ifdef _UNICODE
-		int err = send(datasock, Header, (int)request->GetHeaderSize(), 0);
-		free(Header);
-#else
-		int err = send(datasock, request->GetHeaders(), (int)request->GetHeaderSize(), 0);
-#endif
-		if (err > 0)
-		{
-			if (request->GetDataSize())
-			{
-				#ifdef _UNICODE
-				err = send(datasock, Data, (int)request->GetDataSize(), 0);
-				free(Data);
-				#else
-				err = send(datasock, request->GetData(), (int)request->GetDataSize(), 0);
-				#endif
-			}
-		}
-		if (err <= 0)
-		{
-#ifdef _DBG_
-			printf("Send() ERROR1: %s:%i\n",targetDNS,port);
-#endif
-			return (0);
-		}
-
-	}
 	UpdateLastConnectionActivityTime();
 	return (1);
 }
@@ -1161,8 +1106,13 @@ HTTPRequest *ConnectionHandling::ReadHTTPProxyRequestData()
 	if (!request)
 	{
 		//TODO: revisar si es BufferSize
-		request = new HTTPRequest;
-		request->InitHTTPRequest(NULL,lpBuffer,BufferSize);
+		//request = new HTTPRequest;
+		//request->InitHTTPRequest(NULL,lpBuffer,BufferSize);
+
+		/* data is not a valid HTTP response so just ignore it */
+		free(lpBuffer);
+		return (new HTTPRequest);
+
 	} else
 	{
 		if (lpBuffer)

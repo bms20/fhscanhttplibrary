@@ -21,9 +21,9 @@
 
 typedef struct _report {
 	FILE *logfile;
-	char header[4096*2];
-	char *data;
-	char end[1024];
+	HTTPCHAR header[4096*2];
+	HTTPCHAR *data;
+	HTTPCHAR end[1024];
 } REPORT, *PREPORT;
 
 //functions

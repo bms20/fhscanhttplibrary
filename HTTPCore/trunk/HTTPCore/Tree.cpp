@@ -378,7 +378,7 @@ TreeNode* bTree::TreeInsert(HTTPCSTR str,TreeNode *ParentItem)
 void bTree::SubTreePrint(TreeNode *subtree) {
 	if (subtree!=NULL) {
 		SubTreePrint(subtree->GetTreeNodeLeft());
-		printf("%s: %d\n", subtree->GetTreeNodeName(), subtree->GetTreeNodeCount());
+		_tprintf(_T("%s: %d\n"), subtree->GetTreeNodeName(), subtree->GetTreeNodeCount());
 		SubTreePrint(subtree->GetTreeNodeRight());
 	}
 }

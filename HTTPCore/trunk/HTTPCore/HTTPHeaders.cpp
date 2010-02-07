@@ -148,7 +148,7 @@ HTTPCHAR* HTTPHeaders::AddHeader(HTTPCSTR newheader)
 		memcpy(Header + HeaderSize -2 + CLRFNeeded + NewSize,_T("\r\n"),2*sizeof(HTTPCHAR));
 		HeaderSize+=NewSize + CLRFNeeded;
 	}
-	Header[HeaderSize]='\0';
+	Header[HeaderSize]=_T('\0');
 	return(Header);
 
 

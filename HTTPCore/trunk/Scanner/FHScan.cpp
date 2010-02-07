@@ -2,7 +2,7 @@
 */
 #include "FHScan.h"
 #include "config.h"
-#include "time.h"
+//#include "time.h"
 #include "webservers.h"
 #include "RouterAuth.h"
 #include "webforms.h"
@@ -11,8 +11,8 @@
 #include "Input/InputHosts.h"
 #include <iostream>
 #include <string>
+//#include <tchar.h>
 using namespace std;
-
 
 
 Threading CSip;
@@ -38,10 +38,10 @@ int				csv = 0;
 extern int nvlist;
 extern VLIST    vlist[200];
 int     nKnownWebservers;
-char    **KnownWebservers;
-char	**KnownRouters;
+HTTPCHAR    **KnownWebservers;
+HTTPCHAR	**KnownRouters;
 int		nKnownRouters;
-char *ipfilepath=NULL;
+HTTPCHAR *ipfilepath=NULL;
 int TotalRequests=0;
 FILE *dump = NULL;
 int proxyScanOnly  = 0;
@@ -53,7 +53,7 @@ int IsKnownWebServer(HTTPCHAR *server, int nKnownWebservers, HTTPCHAR **KnownWeb
 	{
 		for (int i=0;i<nKnownWebservers;i++)
 		{
-			if (_tcsncicmp(server,KnownWebservers[i],strlen(KnownWebservers[i]))==0)
+			if (_tcsncicmp(server,KnownWebservers[i],_tcslen(KnownWebservers[i]))==0)
 			{
 				return(1);
 			}
@@ -62,12 +62,12 @@ int IsKnownWebServer(HTTPCHAR *server, int nKnownWebservers, HTTPCHAR **KnownWeb
 	return(0);
 }
 /*******************************************************************************/
-int IsKnownRouter(char *server, int nKnownRouters, char **KnownRouters) {
+int IsKnownRouter(HTTPCHAR *server, int nKnownRouters, HTTPCHAR **KnownRouters) {
 	if (server)
 	{
 		for (int i=0;i<nKnownRouters;i++)
 		{
-			if (strnicmp(server,KnownRouters[i],strlen(KnownRouters[i]))==0)
+			if (_tcsncicmp(server,KnownRouters[i],_tcslen(KnownRouters[i]))==0)
 			{
 				return(1);
 			}
@@ -76,7 +76,7 @@ int IsKnownRouter(char *server, int nKnownRouters, char **KnownRouters) {
 	return(0);
 }
 /*******************************************************************************/
-static long GetNextTarget(char *hostname, int dstSize, int *port, int *ssl)
+static long GetNextTarget(HTTPCHAR *hostname, int dstSize, int *port, int *ssl)
 {
 
 	int ret=0;
@@ -86,13 +86,19 @@ static long GetNextTarget(char *hostname, int dstSize, int *port, int *ssl)
 	{		
 		if (targets[currenttarget].hostname) 
 		{
-			strncpy(hostname,targets[currenttarget].hostname,dstSize-1);
+			_tcsncpy(hostname,targets[currenttarget].hostname,dstSize-1);
 		} else {
 			struct sockaddr_in ip;
 			ip.sin_addr.s_addr = htonl((long)targets[currenttarget].currentip);
-			strncpy(hostname,inet_ntoa(ip.sin_addr),dstSize-1);
+#ifdef _UNICODE
+			HTTPCHAR ipAddress[15];
+			_stprintf(hostname,_T("%S"),inet_ntoa(ip.sin_addr));
+#else
+			_tcsncpy(hostname,inet_ntoa(ip.sin_addr),dstSize-1);
+
+#endif
 		}
-		hostname[dstSize-1]='\0';
+		hostname[dstSize-1]=_T('\0');
 		*port = targets[currenttarget].port;
 		*ssl = targets[currenttarget].ssl;
 		currenttarget++;
@@ -122,10 +128,10 @@ void *ScanHosts(void *ptr) {
 	int ssl;
 
 
-	while ( GetNextTarget(hostname, sizeof(hostname),&port,&ssl) )
+	while ( GetNextTarget(hostname, sizeof(hostname)/sizeof(HTTPCHAR),&port,&ssl) )
 	{
 		if (!csv) {
-			printf("checking %15s:%5.5i\r",hostname,port);
+			_tprintf(_T("checking %15s:%5.5i\r"),hostname,port);
 			fflush(stdout);
 		}
 
@@ -150,7 +156,7 @@ void *ScanHosts(void *ptr) {
 				if (ShowAllhosts)
 				{
 					delete data;
-					data = api->SendHttpRequest(HTTPHandle,"GET","//");
+					data = api->SendHttpRequest(HTTPHandle,_T("GET"),_T("//"));
 					if (data)
 					{
 						if (data->IsValidHTTPResponse())
@@ -170,15 +176,15 @@ void *ScanHosts(void *ptr) {
 			if (data)
 			{
 				HTTPCHAR tmp[256];
-				sprintf(tmp,"%s\n",hostname);
+				_stprintf(tmp,_T("%s\n"),hostname);
 				if (dump)
 				{
-					fwrite(tmp,1,strlen(tmp),dump);
+					fwrite(tmp,1,_tcslen(tmp)*sizeof(HTTPCHAR),dump);
 				}
 				if (VulnChecks)
 				{
 
-					char *p=data->response->GetHeaderValue(_T("Server:"),0);
+					HTTPCHAR *p=data->response->GetHeaderValue(_T("Server:"),0);
 					if (!p) 
 					{
 						HTTPSession* head=api->SendHttpRequest(HTTPHandle,_T("HEAD"),_T("/"));
@@ -257,25 +263,25 @@ void *ScanHosts(void *ptr) {
 
 
 /*******************************************************************************/
-char *Fullurl = NULL;
-char *method= NULL;
-char *vhost=NULL;
-char *PostData = NULL;
+HTTPCHAR *Fullurl = NULL;
+HTTPCHAR *method= NULL;
+HTTPCHAR *vhost=NULL;
+HTTPCHAR *PostData = NULL;
 int  PostDataSize = 0;
-char *additionalheaders = NULL;
+HTTPCHAR *additionalheaders = NULL;
 int  spider = 0;
 int ShowLinks=0;
-char *LinkType = NULL;
+HTTPCHAR *LinkType = NULL;
 int ShowResponse = 0;
 
 void ManualHTTPRequestMode(HTTPAPI *api)
 {
-	int SSLREQUEST = ( (Fullurl[4]=='s') || ( Fullurl[4]=='S') );
+	int SSLREQUEST = ( (Fullurl[4]==_T('s')) || ( Fullurl[4]==_T('S')) );
 	int port;
-	char *path = NULL;
-	char *host =  Fullurl + 7 +  SSLREQUEST;
-	char *p = strchr(host,':');
-	char *x =strchr(host,'/');
+	HTTPCHAR *path = NULL;
+	HTTPCHAR *host =  Fullurl + 7 +  SSLREQUEST;
+	HTTPCHAR *p = _tcschr(host,_T(':'));
+	HTTPCHAR *x =_tcschr(host,_T('/'));
 	if  ((!p) || (p>x) ){
 		if (SSLREQUEST) {
 			port = 443;
@@ -283,17 +289,17 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 		{
 			port = 80;
 		}
-		char *newpath=strchr(host,'/');
+		HTTPCHAR *newpath=_tcschr(host,_T('/'));
 		if (newpath) {
 			path=_tcsdup(newpath);
 			*newpath=0;
 		} else {
-			path=_tcsdup("/");
+			path=_tcsdup(_T("/"));
 		}
 	} else {
 		*p=0;
 		p++;
-		char *newpath=strchr(p,'/');
+		HTTPCHAR *newpath=_tcschr(p,_T('/'));
 		if (newpath) {
 			path=_tcsdup(newpath);
 			*newpath=0;
@@ -301,7 +307,7 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 		} else
 		{
 			port = _tstoi(p);
-			path=_tcsdup("/");
+			path=_tcsdup(_T("/"));
 		}
 	}
 
@@ -310,7 +316,7 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 
 	if (HTTPHandle ==INVALID_HHTPHANDLE_VALUE) 
 	{
-		printf(" [-] Unable to resolve host: %s\n",host);
+		_tprintf(_T(" [-] Unable to resolve host: %s\n"),host);
 		free(path);
 		return;
 	}
@@ -319,24 +325,24 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 	{
 		data=  api->SendHttpRequest(HTTPHandle,method,path,PostData);
 	} else {
-		data=  api->SendHttpRequest(HTTPHandle,"GET",path,PostData);
+		data=  api->SendHttpRequest(HTTPHandle,_T("GET"),path,PostData);
 	}
 
 
 	if (data)
 	{
-		printf(" [+] Request: %s - port: %i - Url: %s\n",host,port,path);
-		printf(" [+] Response: %i bytes \n\n%s\n",data->response->DataSize,data->response->Header);
+		_tprintf(_T(" [+] Request: %s - port: %i - Url: %s\n"),host,port,path);
+		_tprintf(_T(" [+] Response: %i bytes \n\n%s\n"),data->response->DataSize,data->response->Header);
 #ifdef _SPIDER_
 		if (ShowLinks)
 		{
 			api->doSpider(host,path,data->response);
-			printf(" [+] Extracted: %i links\n",data->response->GetnUrlCrawled());
+			_tprintf(_T(" [+] Extracted: %i links\n"),data->response->GetnUrlCrawled());
 			for (int i=0;i<data->response->GetnUrlCrawled(); i++)
 			{
 				if ( (LinkType == NULL) || (stricmp(LinkType,data->response->GettagCrawled(i))==0) )
 				{
-					printf("  %3.3i) %-10s %s\n",i,data->response->GettagCrawled(i),data->response->GetUrlCrawled(i));
+					_tprintf(_T("  %3.3i) %-10s %s\n"),i,data->response->GettagCrawled(i),data->response->GetUrlCrawled(i));
 				}
 
 			}
@@ -345,11 +351,11 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 			}
 		}
 #endif
-		if (ShowResponse) printf("%s\n",data->response->Data);
+		if (ShowResponse) _tprintf(_T("%s\n"),data->response->Data);
 		delete data;
 	} else 
 	{
-		printf(" [-] No data returned\n");
+		_tprintf(_T(" [-] No data returned\n"));
 	}
     free(path);
 
@@ -367,7 +373,7 @@ int CBLog(int cbType,HTTPAPI *api, HTTPHANDLE HTTPHandle, HTTPRequest*  request,
 		HTTPCHAR *method =request->GetHTTPMethod();
 		if (method)
 		{
-			printf("%-6s %-40s %.4s %3.3i %5.i %s\n",method,api->GetHTTPConfig(HTTPHandle,ConfigHTTPHost),api->GetHTTPConfig(HTTPHandle,ConfigHTTPPort),status,response->DataSize, data);
+			_tprintf(_T("%-6s %-40s %.4s %3.3i %5.i %s\n"),method,api->GetHTTPConfig(HTTPHandle,ConfigHTTPHost),api->GetHTTPConfig(HTTPHandle,ConfigHTTPPort),status,response->DataSize, data);
 			free(method);
 		}
 		free(data);
@@ -382,7 +388,7 @@ void HTTPProxy(HTTPAPI *api)
 {
 	api->RegisterHTTPCallBack( CBTYPE_CLIENT_RESPONSE, (HTTP_IO_REQUEST_CALLBACK)CBLog,_T("HTTP Proxy Logger"));
 	api->InitHTTPProxy(_T("127.0.0.1"),_T("8080"));
-	printf("[+] Proxy running. Press any key to exit\n\n");
+	_tprintf(_T("[+] Proxy running. Press any key to exit\n\n"));
 
 	getchar();
 	api->StopHTTPProxy();
@@ -390,32 +396,35 @@ void HTTPProxy(HTTPAPI *api)
 
 /*******************************************************************************/
 #ifdef __WIN32__RELEASE__
-int __cdecl _tmain(int argc, _TCHAR *argv[]){
+//int _tmain(int argc, HTTPCHAR *argv[]){ //works with visual studio (unicode + non unicode)
+int wmain(int argc, char *argv[]){   //works with borland + unicode + wchar_t type defined
+
 	HANDLE *thread;
 #else
 int _tmain(int argc, _TCHAR *argv[]){
 	pthread_t *thread;
 #endif
-
 	int ret;
 	HTTPAPI *api = new (HTTPAPI);
+	//setlocale( LC_ALL, "Greek" );
 
-	ret = LoadConfigurationFiles( api,argc,argv);
+
+	ret = LoadConfigurationFiles( api,argc,(HTTPCHAR**)argv);
 	switch (ret) {
 		case 1:
 			/* Some kind of error detected */
 			delete api;
 			return(0);
 		case 2:
-			printf("HTTP Proxy Engine v1.4\n");
-			printf("(c) Andres Tarasco - http://www.tarasco.org/security\n\n");
-			printf("[+] Initializing HTTP/[s] Proxy Engine... \n");
+			_tprintf(_T("HTTP Proxy Engine v1.4\n"));
+			_tprintf(_T("(c) Andres Tarasco - http://www.tarasco.org/security\n\n"));
+			_tprintf(_T("[+] Initializing HTTP/[s] Proxy Engine... \n"));
 			HTTPProxy(api);
 			delete api;
 			return(1);
 		case 3:
-			printf(" FHSCAN v1.4 - Manual HTTP Request\n");
-			printf(" (c) Andres Tarasco - http://www.tarasco.org/security\n\n");
+			_tprintf(_T(" FHSCAN v1.4 - Manual HTTP Request\n"));
+			_tprintf(_T(" (c) Andres Tarasco - http://www.tarasco.org/security\n\n"));
 			ManualHTTPRequestMode(api); 
 			free(Fullurl);
 			delete api;
@@ -423,10 +432,10 @@ int _tmain(int argc, _TCHAR *argv[]){
 		default:
 			if (!csv) 
 			{
-				printf(" FHSCAN - HTTP vulnerability Scanner v1.4\n");
-				printf("(c) Andres Tarasco - http://www.tarasco.org/security\n\n");
+				_tprintf(_T(" FHSCAN - HTTP vulnerability Scanner v1.4\n"));
+				_tprintf(_T("(c) Andres Tarasco - http://www.tarasco.org/security\n\n"));
 			}			
-			api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigMaxDownloadSize,"1024000"); /*Set the maximum download limit to 1Mb */
+			api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigMaxDownloadSize,_T("1024000")); /*Set the maximum download limit to 1Mb */
 			break;
 	}
 
@@ -445,9 +454,9 @@ int _tmain(int argc, _TCHAR *argv[]){
 
 	InitHTMLReport(ipfilepath,0,0,0,NULL,nthreads,1,FullUserList,1);
 
-	dump = _tfopen("ScannerIPS.log","a+");
+	dump = _tfopen(_T("ScannerIPS.log"),_T("a+"));
 
-	if (!csv) ("Option  Server         status Port password      Path Description/banner\n");
+	if (!csv) _tprintf(_T("Option  Server         status Port password      Path Description/banner\n"));
 
 
 	for(unsigned int i=0;i<nthreads;i++)
@@ -472,7 +481,7 @@ int _tmain(int argc, _TCHAR *argv[]){
 	}
 #endif
 	if (!csv)	{
-		printf(_T("scan Finished\t\t\t\t\t\n"));fflush(stdout);
+		_tprintf(_T("scan Finished\t\t\t\t\t\n"));fflush(stdout);
 	} else fflush(stderr);
 
 	CloseHTMLReport();

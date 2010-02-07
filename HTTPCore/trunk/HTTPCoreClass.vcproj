@@ -208,10 +208,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\HTTPCore\HTTPData.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\HTTPCore\HTTPHANDLE.cpp"
 				>
 			</File>
@@ -383,10 +379,6 @@
 			</File>
 			<File
 				RelativePath=".\HTTPCore\HTTP.h"
-				>
-			</File>
-			<File
-				RelativePath=".\HTTPCore\HTTPData.h"
 				>
 			</File>
 			<File

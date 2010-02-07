@@ -43,7 +43,7 @@ SUCH DAMAGE.
 #include "misc.h"
 #include <stdio.h>
 #include <stdlib.h>
-
+//#include <time.h>
 
 
 
@@ -447,7 +447,7 @@ int CookieStatus::ParseCookieData(HTTPCHAR *lpCookieData, HTTPCSTR lpPath, HTTPC
 				if (deletecookie)
 				{
 #ifdef _DBG_
-                	printf("OLD DATE: %s\n",end);
+                	_tprintf(_T("OLD DATE: %s\n"),end);
 #endif
 
 				}
@@ -481,7 +481,7 @@ int CookieStatus::ParseCookieData(HTTPCHAR *lpCookieData, HTTPCSTR lpPath, HTTPC
 			} else
 			{
 #ifdef _DBG_
-				printf("Ignored Unknown Cookie Flag: %s\n",start);
+				_tprintf(_T("Ignored Unknown Cookie Flag: %s\n"),start);
 #endif
 			}
 		}
@@ -546,7 +546,7 @@ int CookieStatus::ParseCookieData(HTTPCHAR *lpCookieData, HTTPCSTR lpPath, HTTPC
 						List->CookieElement=(Cookie**)realloc(List->CookieElement, sizeof(Cookie*)*(List->nCookies+1 ));
 					}
 					List->CookieElement[List->nCookies] = new Cookie(name[i],value[i],expire,path,domain,secure,httponly);
-					//printf("Insertada la Cookie%i %s=%s en %s (%s)\n",List->nCookies,name[i],value[i],path,domain);
+					//_tprintf(_T("Insertada la Cookie%i %s=%s en %s (%s)\n"),List->nCookies,name[i],value[i],path,domain);
 					List->nCookies++;
 
 				}
@@ -607,11 +607,11 @@ time_t CookieStatus::ExtractDate(HTTPCHAR *lpdate )
 {
 	struct tm expirestm;
 
-	if (strptime(lpdate, COOKIETIMEFORMAT, &expirestm))
+	if (__strptime(lpdate, COOKIETIMEFORMAT, &expirestm))
 	{
 		return ( mktime(&expirestm) );
 
-	} else if (strptime(lpdate, COOKIETIMEFORMAT2, &expirestm))
+	} else if (__strptime(lpdate, COOKIETIMEFORMAT2, &expirestm))
 	{
 		expirestm.tm_year += 1900;
 		return ( mktime(&expirestm) );

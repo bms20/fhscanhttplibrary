@@ -41,12 +41,12 @@ SUCH DAMAGE.
 #undef UNICODE
 #undef _UNICODE
 
-/*
+
 #ifndef UNICODE
 #define _UNICODE
 #define UNICODE
 #endif
-*/
+
 
 #ifdef _UNICODE 
 	#define _HTTPWIDECHAR
@@ -74,6 +74,8 @@ SUCH DAMAGE.
 # else
 //  #define  _stricmp strcasecmp
 #include <winsock2.h> /* Codegear problem with WSADATA definition */
+#define _swprintf swprintf
+
 #endif
 
 #else
@@ -88,9 +90,9 @@ SUCH DAMAGE.
 #include <arpa/inet.h>
 #include <pthread.h>  //pthread
 #include <ctype.h> //toupper
-#include <time.h>
+//#include <time.h>
 #include <sys/timeb.h>
-#include <sys/time.h> //gettimeofday
+//#include <sys/time.h> //gettimeofday
 #include <sys/mman.h>  //mmap
 typedef int64_t __int64;
 typedef uint64_t __uint64;
@@ -114,7 +116,7 @@ typedef uint64_t __uint64;
 #endif
 #endif
 /****************** GLOBAL FLAGS **********************/
-
+#include <time.h>
 #ifdef _UNICODE
 #include <wchar.h>
 #ifndef _TCHAR
@@ -152,6 +154,9 @@ typedef wchar_t         _TCHAR;
 #define _tcsftime   wcsftime
 #define _tfopen     _wfopen
 #define _tprintf        wprintf
+#define _ftprintf       fwprintf
+#define _fgetts         fgetws
+
 #else
 #ifndef _TCHAR
 typedef char            _TCHAR;
@@ -187,6 +192,8 @@ typedef char            _TCHAR;
 #define _tcsftime   strftime
 #define _tfopen     fopen
 #define _tprintf        printf
+#define _ftprintf       fprintf
+#define _fgetts         fgets
 #endif
 
 
@@ -198,6 +205,8 @@ typedef char            _TCHAR;
 #define HTTPSTR  _TCHAR *
 #define HTTPCHAR _TCHAR
 #define HTTPCCHAR const _TCHAR
+
+
 
 #endif
 

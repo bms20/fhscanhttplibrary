@@ -57,7 +57,7 @@ void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, void* HTTPData, size_
 {
 	InitHTTPHeaders(HTTPHeaders);
 	Data = (HTTPCHAR*) malloc(HTTPDataSize);
-	memcpy(Data,HTTPData,HTTPDataSize);
+	memcpy(Data,HTTPData,HTTPDataSize*sizeof(HTTPCHAR));
 	DataSize = HTTPDataSize;
 //	BinaryData = 1;
 }
@@ -65,12 +65,12 @@ void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, void* HTTPData, size_
 void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize, void* HTTPData, size_t HTTPDataSize)
 {
 	Header = (HTTPCHAR*)malloc(HTTPHeaderSize+1);
-	memcpy(Header,HTTPHeaders,HTTPHeaderSize);
+	memcpy(Header,HTTPHeaders,HTTPHeaderSize*sizeof(HTTPCHAR));
 	Header[HTTPHeaderSize]=0;
 	HeaderSize = HTTPHeaderSize;
 
 	Data = (HTTPCHAR*)malloc(HTTPDataSize);
-	memcpy(Data,HTTPData,HTTPDataSize);
+	memcpy(Data,HTTPData,HTTPDataSize*sizeof(HTTPCHAR));
 	DataSize = HTTPDataSize;
 //	BinaryData = 1;
 
@@ -81,18 +81,25 @@ void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize
 #ifdef UNICODE	
 void HTTPResponse::InitHTTPResponseA(char *lpBuffer,size_t HTTPHeaderSize, void *HTTPData, size_t HTTPDataSize)
 {
-char *tmpHeader = malloc(HTTPHeaderSize+1);
+/*char *tmpHeader = (char*)malloc(HTTPHeaderSize+1);
 memcpy(tmpHeader,lpBuffer,HTTPHeaderSize);
 tmpHeader[HTTPHeaderSize]=0;
-
-int ret = MultiByteToWideChar(CP_ACP, 0, tmpHeader, -1, NULL, 1024);
-Header = (wchar_t*)malloc(ret +2);
-MultiByteToWideChar(CP_ACP, 0, tmpHeader, -1, Header, -1);
+*/
+int ret = MultiByteToWideChar(CP_UTF8, 0, lpBuffer, HTTPHeaderSize, NULL, 0);
+_tprintf(_T("Tenemos %i bytes - Necesitamos %i bytes\n"),HTTPHeaderSize,ret);
+Header = (wchar_t*)malloc((ret +1)*sizeof(HTTPCHAR));
+HeaderSize = ret;
+ret = MultiByteToWideChar(CP_UTF8, 0, lpBuffer, HTTPHeaderSize, Header, ret);
+Header[HeaderSize]=0;
 if (HTTPDataSize)
 {
+	printf("TODO");
+	getchar();
+	/*
 	Data = malloc(HTTPDataSize);
 	memcpy(Data,HTTPData,HTTPDataSize);
 	DataSize = HTTPDataSize;
+*/
 //	BinaryData = 1;
 }
 }
@@ -128,13 +135,16 @@ int HTTPResponse::GetStatus()
 	if ( (GetHeaders()) && (GetHeaderSize()>12) )
 	{
 		HTTPCHAR tmp[4];
+		//HTTP/1.0 200 Ok
+//		_tprintf(_T("%s\n"),GetHeaders());
+
 		memcpy(tmp,GetHeaders()+9,3*sizeof(HTTPCHAR));
 		tmp[3]=0;
 		StatusCode = _tstoi(tmp);
 #ifdef _DBG_
 		if (StatusCode ==0)
 		{
-			printf("HTTP Protocol Error - Invalid HTTP header data\n");
+			_tprintf(_T("HTTP Protocol Error - Invalid HTTP header data\n"));
 		}
 #endif
 	}
@@ -175,11 +185,11 @@ void HTTPResponse::UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping
 	}
 }
 /*******************************************************************************************************/
-char* HTTPResponse::Datastrstr(char* searchdata)
+HTTPCHAR* HTTPResponse::Datastrstr(HTTPCHAR* searchdata)
 {
 	if ((Data) && (DataSize))
 	{
-		return(strstr((char*)Data,searchdata));
+		return(_tcsstr(Data,searchdata));
 	}
 	return(NULL);
 }

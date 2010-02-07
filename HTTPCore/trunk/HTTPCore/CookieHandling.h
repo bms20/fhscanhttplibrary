@@ -41,7 +41,7 @@ SUCH DAMAGE.
 #include "Threading.h"
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
+//#include <time.h>
 #ifdef __WIN32__RELEASE__
  #include <windows.h>
 #else
@@ -90,6 +90,9 @@ well-defined.  */
 
 
 
+#ifndef time_t
+//#define time_t long
+#endif
 
 class Cookie
 {

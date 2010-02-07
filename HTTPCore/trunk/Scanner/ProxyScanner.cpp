@@ -1,7 +1,7 @@
 #include "FHScan.h"
 #include "Reporting/LogSettings.h"
 
-const char HTTPAKAMAIPROXYGET[]= _T("GET http://www.fbi.gov/ HTTP/1.1\r\nHost: www.fbi.gov\r\n\r\n");
+const HTTPCHAR HTTPAKAMAIPROXYGET[]= _T("GET http://www.fbi.gov/ HTTP/1.1\r\nHost: www.fbi.gov\r\n\r\n");
 #define HTTPPROXYTESTHOST  _T("www.fbi.gov")
 #define HTTPPROXYTESTPORT  80
 #define HTTPPROXYTESTURL _T("/")
@@ -18,14 +18,14 @@ Threading test;
 int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 {
 	FILE *proxy = NULL;
-	char tmp[512];
+	HTTPCHAR tmp[512];
 	HTTPSession* response;
 	int ret=0;
 
-	char *ProxyConfig = api->GetHTTPConfig (GLOBAL_HTTP_CONFIG,ConfigProxyHost);
+	HTTPCHAR *ProxyConfig = api->GetHTTPConfig (GLOBAL_HTTP_CONFIG,ConfigProxyHost);
 	if (!ProxyConfig)
 	{
-		sprintf(tmp,"GET http://%s:%i%s HTTP/1.1\r\nHost: %s\r\n\r\n",HTTPPROXYTESTHOST,HTTPPROXYTESTPORT,HTTPPROXYTESTURL,HTTPPROXYTESTHOST);
+		_stprintf(tmp,_T("GET http://%s:%i%s HTTP/1.1\r\nHost: %s\r\n\r\n"),HTTPPROXYTESTHOST,HTTPPROXYTESTPORT,HTTPPROXYTESTURL,HTTPPROXYTESTHOST);
 
 		response = api->SendRawHTTPRequest(HTTPHandle,HTTPAKAMAIPROXYGET, NULL,0);
 		if (response)
@@ -34,7 +34,7 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 				delete response;
 			} else
 			{
-				if (_tcsstr(response->response->Data,HTTPPROXYTESTMATCH) != NULL)
+				if (response->response->Datastrstr(HTTPPROXYTESTMATCH) != NULL)
 				{
 					ret=1;
 				} else {
@@ -55,7 +55,7 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 		}
 		if (!ret)
 		{
-			sprintf(tmp,"CONNECT %s:%i HTTP/1.0\r\n\r\n",HTTPPROXYTESTHOST,HTTPPROXYTESTPORT);
+			_stprintf(tmp,_T("CONNECT %s:%i HTTP/1.0\r\n\r\n"),HTTPPROXYTESTHOST,HTTPPROXYTESTPORT);
 			response = api->SendRawHTTPRequest(HTTPHandle, tmp,NULL,0);
 			if (response)
 			{
@@ -66,7 +66,7 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 					response = api->SendHttpRequest(HTTPHandle,HTTPPROXYTESTHOST,_T("GET"),HTTPPROXYTESTURL,NULL,0,NULL,NULL);
 					if (response)
 					{
-						if ( (response->response->Data) && (_tcsstr(response->response->Data,HTTPPROXYTESTMATCH) != NULL) )
+						if ( (response->response->Data) && (response->response->Datastrstr(HTTPPROXYTESTMATCH) != NULL) )
 						{
 							ret=3;
 						} else {
@@ -83,7 +83,7 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 									response = api->SendRawHTTPRequest(HTTPHandle, _T("GET http://127.0.0.1:22/ HTTP/1.0\r\n\r\n"),NULL,0);
 									if (response)
 									{
-										if ( (response->response->Data) && (_tcsstr(response->response->Data,_T("OpenSSH"))!=NULL) ) {
+										if ( (response->response->Data) && (response->response->Datastrstr(_T("OpenSSH"))!=NULL) ) {
 											ret=5;
 										} else {
 											//FreeRequest(response);
@@ -108,8 +108,8 @@ int ProxyTest(HTTPAPI *api,HTTPHANDLE HTTPHandle)
 		if (ret){
 			test.LockMutex();
 			proxy = _tfopen(_T("ProxyList.txt"), _T("a+"));
-			sprintf(tmp,"%s:%s\r\n",api->GetHTTPConfig(HTTPHandle,ConfigHTTPHost),api->GetHTTPConfig(HTTPHandle,ConfigHTTPPort));
-			fwrite(tmp, 1, strlen(tmp), proxy);
+			_stprintf(tmp,_T("%s:%s\r\n"),api->GetHTTPConfig(HTTPHandle,ConfigHTTPHost),api->GetHTTPConfig(HTTPHandle,ConfigHTTPPort));
+			fwrite(tmp, 1, _tcslen(tmp), proxy);
 			fclose(proxy);
 			test.UnLockMutex();
 		}
