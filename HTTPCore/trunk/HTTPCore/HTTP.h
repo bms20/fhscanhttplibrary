@@ -142,7 +142,7 @@ public:
 	HTTPSTR    GetHTTPConfig(HTTPHANDLE HTTPHandle, enum HttpOptions opt);
 		
 	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath);
-	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPSTR PostData);
+	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPSTR PostData);	
 	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPSTR PostData,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPCSTR VHost,HTTPCSTR HTTPMethod,HTTPCSTR lpPath,HTTPSTR PostData,size_t PostDataSize,HTTPCSTR lpUsername,HTTPCSTR lpPassword);
 	HTTPSession*   SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPRequest* request);

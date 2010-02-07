@@ -60,7 +60,7 @@ void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders, HTTPCHAR* HTTPData, siz
 {
 	InitHTTPHeaders(HTTPHeaders);
 	Data = (HTTPCHAR*)malloc(HTTPDataSize);
-	memcpy(Data,HTTPData,HTTPDataSize);
+	memcpy(Data,HTTPData,HTTPDataSize*sizeof(HTTPCHAR));
 	DataSize = HTTPDataSize;
 	BinaryData = 1;
 }
@@ -68,10 +68,10 @@ void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders, HTTPCHAR* HTTPData, siz
 void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize, HTTPCHAR* HTTPData, size_t HTTPDataSize)
 {
 	Header = (HTTPCHAR*)malloc(HTTPHeaderSize+1);
-	memcpy(Header,HTTPHeaders,HTTPHeaderSize);
+	memcpy(Header,HTTPHeaders,HTTPHeaderSize*sizeof(HTTPCHAR));
 	Header[HTTPHeaderSize]=0;
 	Data =(HTTPCHAR*) malloc(HTTPDataSize);
-	memcpy(Data,HTTPData,HTTPDataSize);
+	memcpy(Data,HTTPData,HTTPDataSize*sizeof(HTTPCHAR));
 	DataSize = HTTPDataSize;
 	BinaryData = 1;
 
@@ -80,19 +80,25 @@ void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize, 
 #ifdef UNICODE	
 void HTTPRequest::InitHTTPRequestA(char *lpBuffer,size_t HTTPHeaderSize, void *HTTPData, size_t HTTPDataSize)
 {
-char *tmpHeader = malloc(HTTPHeaderSize+1);
+char *tmpHeader = (char*) malloc(HTTPHeaderSize+1);
 memcpy(tmpHeader,lpBuffer,HTTPHeaderSize);
 tmpHeader[HTTPHeaderSize]=0;
 
-int ret = MultiByteToWideChar(CP_ACP, 0, tmpHeader, -1, NULL, 1024);
+int ret = MultiByteToWideChar(CP_UTF8, 0, tmpHeader, -1, NULL, 1024);
 Header = (wchar_t*)malloc(ret +2);
-MultiByteToWideChar(CP_ACP, 0, tmpHeader, -1, Header, -1);
+MultiByteToWideChar(CP_UTF8, 0, tmpHeader, -1, Header, -1);
 
-	Data = malloc(HTTPDataSize);
+if (HTTPDataSize)
+{
+	printf("TODO2");
+	getchar();
+/*
+Data = malloc(HTTPDataSize);
 	memcpy(Data,HTTPData,HTTPDataSize);
 	DataSize = HTTPDataSize;
 	BinaryData = 1;
-
+*/
+}
 }
 #endif
 
@@ -109,7 +115,8 @@ HTTPRequest::~HTTPRequest()
 		HTTPMethod = NULL;
 	}
 	if (Data) {
-		free(Data);
+		//free(Data);
+		//TODO - Revisar
 		Data = NULL;
 	}
 	DataSize = 0;
@@ -184,7 +191,9 @@ void HTTPRequest::SetData(HTTPCHAR *lpData)
 #ifdef _UNICODE
 void HTTPRequest::SetData(char *lpData)
 {
-	Data = lpData;
+printf("Todo3");
+getchar();
+	//Data = lpData;
 	BinaryData = TRUE;
 }
 #endif
