@@ -70,7 +70,7 @@ void HTTPSession::ParseReturnedBuffer(HTTPRequest * HTTPrequest,HTTPResponse *HT
 		{
 
 
-			_tcsncpy(Method,line,sizeof(Method)-1);
+			_tcsncpy(Method,line,sizeof(Method)/sizeof(HTTPCHAR));
 			HTTPCHAR *parameters= _tcschr(url,_T('?'));
 			//if (!parameters) parameters= strchr(url,';');
 			if (!parameters) parameters= _tcschr(url,_T('&'));

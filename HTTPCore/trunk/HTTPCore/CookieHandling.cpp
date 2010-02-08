@@ -32,17 +32,15 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 */
-/** \file CookieHandling.h
+/** \file CookieHandling.cpp
 * Fast HTTP Auth Scanner - HTTP Engine v1.4
 * This include file contains functions needed to Handle Cookies From the HTTP API.
 * \author Andres Tarasco Acuna - http://www.tarasco.org
 */
-#include "Build.h"
+//#include "Build.h"
 #include "CookieHandling.h"
 #include "HtmlParser.h"
 #include "misc.h"
-#include <stdio.h>
-#include <stdlib.h>
 //#include <time.h>
 
 

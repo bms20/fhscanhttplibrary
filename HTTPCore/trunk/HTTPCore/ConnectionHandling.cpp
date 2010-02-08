@@ -32,6 +32,12 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 */
+
+/** \file ConnectionHandling.cpp
+ * Fast HTTP Auth Scanner - HTTP Engine v1.4.
+ * ..
+ * \author Andres Tarasco Acuna - http://www.tarasco.org
+ */
 #include "ConnectionHandling.h"
 #include "misc.h"
 
@@ -442,11 +448,14 @@ HTTPResponse *GetHttpHeadersFromBuffer(char *lpBuffer)
 		return(NULL);
 	}
 	HTTPResponse *response = new HTTPResponse;
+	response->InitHTTPHeaders(lpBuffer,(HeadersEnd - lpBuffer) + offset);
+	/*
 #ifdef UNICODE	
 	response->InitHTTPResponseA(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
 #else
 	response->InitHTTPResponse(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
 #endif
+	*/
 	
 	return (response);
 }
@@ -476,11 +485,14 @@ HTTPRequest *GetHTTPRequestFromBuffer(char *lpBuffer)
 		return(NULL);
 	}
 	HTTPRequest *request = new HTTPRequest;
+	request->InitHTTPHeaders(lpBuffer,(HeadersEnd - lpBuffer) + offset);
+	/*
 #ifdef UNICODE	
 	request->InitHTTPRequestA(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
 #else
 	request->InitHTTPRequest(lpBuffer,(HeadersEnd - lpBuffer) + offset,NULL,0);
 #endif
+	*/
 	
 	return (request);
 }
@@ -1086,8 +1098,8 @@ HTTPRequest *ConnectionHandling::ReadHTTPProxyRequestData()
 					printf("Content-Length Error: %s\n",request->Data);
 #endif
 				}
-				request->SetData(lpBuffer);
-				request->SetDataSize(BufferSize);
+				request->SetData(lpBuffer,BufferSize);
+				//request->SetDataSize(BufferSize);
 			}
 
 			if (ContentLength)
@@ -1121,8 +1133,8 @@ HTTPRequest *ConnectionHandling::ReadHTTPProxyRequestData()
 			{
 				free(request->GetData());
 			}
-			request->SetData(lpBuffer);
-			request->SetDataSize(BufferSize);
+			request->SetData(lpBuffer,BufferSize);
+			//request->SetDataSize(BufferSize);
 		}
 	}
 /*

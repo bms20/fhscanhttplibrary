@@ -46,13 +46,15 @@ HTTPResponse::HTTPResponse()
 
 }
 /*******************************************************************************************************/
-void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, HTTPCHAR *HTTPData)
+/*void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, HTTPCHAR *HTTPData)
 {
 	InitHTTPHeaders(HTTPHeaders);
 	Data = _tcsdup(HTTPData);
 	DataSize = _tcslen(HTTPData);
 }
+*/
 /*******************************************************************************************************/
+/*
 void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, void* HTTPData, size_t HTTPDataSize)
 {
 	InitHTTPHeaders(HTTPHeaders);
@@ -61,7 +63,9 @@ void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, void* HTTPData, size_
 	DataSize = HTTPDataSize;
 //	BinaryData = 1;
 }
+*/
 /*******************************************************************************************************/
+/*
 void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize, void* HTTPData, size_t HTTPDataSize)
 {
 	Header = (HTTPCHAR*)malloc(HTTPHeaderSize+1);
@@ -75,16 +79,14 @@ void HTTPResponse::InitHTTPResponse(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize
 //	BinaryData = 1;
 
 }
+*/
 /*******************************************************************************************************/
 
 /*******************************************************************************************************/
+/*
 #ifdef UNICODE	
 void HTTPResponse::InitHTTPResponseA(char *lpBuffer,size_t HTTPHeaderSize, void *HTTPData, size_t HTTPDataSize)
 {
-/*char *tmpHeader = (char*)malloc(HTTPHeaderSize+1);
-memcpy(tmpHeader,lpBuffer,HTTPHeaderSize);
-tmpHeader[HTTPHeaderSize]=0;
-*/
 int ret = MultiByteToWideChar(CP_UTF8, 0, lpBuffer, HTTPHeaderSize, NULL, 0);
 _tprintf(_T("Tenemos %i bytes - Necesitamos %i bytes\n"),HTTPHeaderSize,ret);
 Header = (wchar_t*)malloc((ret +1)*sizeof(HTTPCHAR));
@@ -95,15 +97,15 @@ if (HTTPDataSize)
 {
 	printf("TODO");
 	getchar();
-	/*
-	Data = malloc(HTTPDataSize);
-	memcpy(Data,HTTPData,HTTPDataSize);
-	DataSize = HTTPDataSize;
-*/
+	
+//	Data = malloc(HTTPDataSize);
+//	memcpy(Data,HTTPData,HTTPDataSize);
+//	DataSize = HTTPDataSize;
 //	BinaryData = 1;
 }
 }
 #endif
+*/
 /*******************************************************************************************************/
 HTTPResponse::~HTTPResponse()
 {

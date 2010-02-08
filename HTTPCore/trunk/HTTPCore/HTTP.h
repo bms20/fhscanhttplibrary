@@ -43,6 +43,7 @@ SUCH DAMAGE.
 //#include "HTTPHANDLE.h"
 //#include "HTTPData.h"
 //#include "HTTPResponse.h"
+#include "Build.h"
 #include "HTTPSession.h"
 #include "Threading.h"
 #include "CallBacks.h"

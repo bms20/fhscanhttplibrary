@@ -32,11 +32,17 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+/** \file Callbacks.cpp
+ * Fast HTTP Auth Scanner - HTTP Engine v1.4.
+ * ..
+ * \author Andres Tarasco Acuna - http://www.tarasco.org
+ */
+
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <string.h>
 #include "CallBacks.h"
-#include "Build.h"
+//#include "Build.h"
 
 
 /*******************************************************************************************************/

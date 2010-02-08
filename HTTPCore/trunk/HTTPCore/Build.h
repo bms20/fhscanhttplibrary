@@ -31,8 +31,15 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
-
 */
+
+/** \file build.h
+ * Fast HTTP Auth Scanner - HTTP Engine v1.4.
+ * ..
+ * \author Andres Tarasco Acuna - http://www.tarasco.org
+ */
+
+
 #ifndef __BUILD_H_
 #define __BUILD_H_
 #define __TCHAR_H /* force compatibility with codegear includes */
@@ -53,6 +60,8 @@ SUCH DAMAGE.
 #endif
 
 
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifndef LINUX
 #include <windows.h>

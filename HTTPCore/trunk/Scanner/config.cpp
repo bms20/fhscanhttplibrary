@@ -254,7 +254,7 @@ int LoadUserList(HTTPCSTR path) {
 
 		while( (!feof(userlist)) )
 		{
-			memset(user,'\0',sizeof(user));
+			memset(user,0,sizeof(user));
 			_fgetts(user,sizeof(user)/sizeof(HTTPCHAR)-1,userlist);
 			if ( (_tcslen(user)>1) && (user[0]!=_T('#')) )
 			{
@@ -504,7 +504,7 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, HTTPCHAR *argv[]){
 	}
 	for (i=1;i<argc;i++)
 	{
-    	_tprintf(_T("Mirando: %s\n"),argv[i]);
+		_tprintf(_T("Mirando: %s\n"),argv[i]);
 		if ( argv[i][0]==_T('-'))
 		{
 
@@ -513,151 +513,151 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, HTTPCHAR *argv[]){
 				Fullurl = _tcsdup(argv[i+1]);
 				i++;
 			} else
-			if (_tcscmp( argv[i],_T("--showresponse"))==0)
-			{
-				ShowResponse=1;
-			} else
+				if (_tcscmp( argv[i],_T("--showresponse"))==0)
+				{
+					ShowResponse=1;
+				} else
 
-			if (_tcscmp( argv[i],_T("--showlinks"))==0)
-			{
-				ShowLinks=1;
-				if ( (argc>i+1) && (argv[i+1][0]!='-') ) {
-					LinkType = _tcsdup(argv[i+1]);
-					i++;
-				}
+					if (_tcscmp( argv[i],_T("--showlinks"))==0)
+					{
+						ShowLinks=1;
+						if ( (argc>i+1) && (argv[i+1][0]!='-') ) {
+							LinkType = _tcsdup(argv[i+1]);
+							i++;
+						}
 
-			} else
-
-			if (_tcscmp( argv[i],_T("--method"))==0)
-			{
-				method = _tcsdup(argv[i+1]);
-				i++;
-			} else
-			if (_tcscmp( argv[i],_T("--data"))==0)
-			{
-				PostData = _tcsdup(argv[i+1]);
-				PostDataSize = (int)_tcslen(PostData);
-				i++;
-			} else
-			if (_tcscmp( argv[i],_T("--vhost"))==0)
-			{
-				vhost = _tcsdup(argv[i+1]);
-				i++;
-			} else
-			if (_tcscmp( argv[i],_T("--proxyScanOnly"))==0)
-			{
-				proxyScanOnly = 1;
-				bruteforce = 0;
-			} else
-			if (_tcscmp( argv[i],_T("--nobruteforce"))==0)
-			{
-				bruteforce=0;
-			} else
-			 if (_tcscmp( argv[i],_T("--EnableProxy"))==0) {
-				return(2);
-			 } else
-				if (_tcscmp(argv[i],_T("--update"))==0) {
-						UpdateFHScan(api); exit(1);
 					} else
-						if (_tcscmp( argv[i],_T("--fulluserlist"))==0) {
-							FullUserList=1;
+
+						if (_tcscmp( argv[i],_T("--method"))==0)
+						{
+							method = _tcsdup(argv[i+1]);
+							i++;
 						} else
-							if (_tcscmp( argv[i],_T("--verbose"))==0) {
-								ShowAllhosts=1;
+							if (_tcscmp( argv[i],_T("--data"))==0)
+							{
+								PostData = _tcsdup(argv[i+1]);
+								PostDataSize = (int)_tcslen(PostData);
+								i++;
 							} else
-								if (_tcscmp( argv[i],_T("--logdir"))==0) {
-									_tcscpy(DirectoryLog,argv[i+1]);
+								if (_tcscmp( argv[i],_T("--vhost"))==0)
+								{
+									vhost = _tcsdup(argv[i+1]);
 									i++;
 								} else
-									if (_tcscmp( argv[i],_T("--csv"))==0) {
-										csv = 1;
+									if (_tcscmp( argv[i],_T("--proxyScanOnly"))==0)
+									{
+										proxyScanOnly = 1;
+										bruteforce = 0;
 									} else
-										if ((_tcscmp( argv[i],_T("--ports"))==0) || (_tcscmp( argv[i],_T("--port"))==0) ) {
-											p=_tcstok(argv[i+1],_T(","));
-											while (p!=NULL) {
-												ports[nports].port=_tstoi(p);
-												ports[nports].ssl=0;
-												p=_tcstok(NULL,_T(","));
-												nports++;
-											}
-											i++;
+										if (_tcscmp( argv[i],_T("--nobruteforce"))==0)
+										{
+											bruteforce=0;
 										} else
-
-											if ( (_tcscmp( argv[i],_T("--sslports"))==0) || (_tcscmp( argv[i],_T("--sslport"))==0) ){
-												p=_tcstok(argv[i+1],_T(","));
-												while (p!=NULL) {
-													ports[nports].port=_tstoi(p);
-													ports[nports].ssl=1;
-													p=_tcstok(NULL,_T(","));
-													nports++;
-												}
-												i++;
+											if (_tcscmp( argv[i],_T("--EnableProxy"))==0) {
+												return(2);
 											} else
-
-
-												if (_tcscmp( argv[i],_T("--threads"))==0) {
-													nthreads=_tstoi(argv[i+1]);
-													i++;
+												if (_tcscmp(argv[i],_T("--update"))==0) {
+													UpdateFHScan(api); exit(1);
 												} else
-													if (_tcscmp( argv[i],_T("--proxy"))==0)
-													{
-                                                    	_tprintf(_T("estableciendo proxy...\n"));
-														HTTPCHAR proxyhost[512];
-														HTTPCHAR proxyport[10];
-														if ( _stscanf( argv[i+1], _T("http://%[^:/]:%s"), proxyhost, proxyport ) == 2 )
-														{
-															api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyHost,proxyhost);
-															api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyPort,proxyport);
-														}  else {
-															_tprintf(_T(" [-] Invalid proxy parameter %s\n"),argv[i+1]);
-															_tprintf(_T(" [-] Should be http://host:port\n"));
-															return(1);
-                                                        }
-
-														i++;
+													if (_tcscmp( argv[i],_T("--fulluserlist"))==0) {
+														FullUserList=1;
 													} else
-														if (_tcscmp( argv[i],_T("--proxyauth"))==0) {
-															api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyUser,argv[i+1]);
-															api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyPass,argv[i+2]);
-															i+=2;
+														if (_tcscmp( argv[i],_T("--verbose"))==0) {
+															ShowAllhosts=1;
 														} else
-
-															if (_tcscmp( argv[i],_T("--ipfile"))==0) 
-															{
-																ipfilepath=argv[i+1];
-																ipfile=_tfopen(ipfilepath,_T("r"));
-																if (ipfile) {
-																	_tprintf(_T("[+] Loaded ips from %s\n"),argv[i+1]);
-																} else {
-																	_tprintf(_T("[-] Unable to load ips from %s\n"),argv[i+1]);
-																	usage();
-																	return(1);
-																}
+															if (_tcscmp( argv[i],_T("--logdir"))==0) {
+																_tcscpy(DirectoryLog,argv[i+1]);
 																i++;
 															} else
-																#ifdef XML_LIBRARY
-																if ( (_tcscmp( argv[i],_T("--NmapFile"))==0) || (_tcscmp( argv[i],_T("--nmapfile"))==0) )
-																{
-																	nmap = argv[i+1];
-																	i++;
-																} else 
-																#endif
-																if ( (_tcscmp( argv[i],_T("--hosts"))==0) || (_tcscmp( argv[i],_T("--host"))==0) )
-																{
-																	hosts= argv[i+1];																	
-																	i++;
-																} else {
-																	usage();
-																	_tprintf(_T("Invalid parameter %s\n"),argv[i]);
-																	return(1);
-																}
+																if (_tcscmp( argv[i],_T("--csv"))==0) {
+																	csv = 1;
+																} else
+																	if ((_tcscmp( argv[i],_T("--ports"))==0) || (_tcscmp( argv[i],_T("--port"))==0) ) {
+																		p=_tcstok(argv[i+1],_T(","));
+																		while (p!=NULL) {
+																			ports[nports].port=_tstoi(p);
+																			ports[nports].ssl=0;
+																			p=_tcstok(NULL,_T(","));
+																			nports++;
+																		}
+																		i++;
+																	} else
+
+																		if ( (_tcscmp( argv[i],_T("--sslports"))==0) || (_tcscmp( argv[i],_T("--sslport"))==0) ){
+																			p=_tcstok(argv[i+1],_T(","));
+																			while (p!=NULL) {
+																				ports[nports].port=_tstoi(p);
+																				ports[nports].ssl=1;
+																				p=_tcstok(NULL,_T(","));
+																				nports++;
+																			}
+																			i++;
+																		} else
+
+
+																			if (_tcscmp( argv[i],_T("--threads"))==0) {
+																				nthreads=_tstoi(argv[i+1]);
+																				i++;
+																			} else
+																				if (_tcscmp( argv[i],_T("--proxy"))==0)
+																				{
+																					_tprintf(_T("estableciendo proxy...\n"));
+																					HTTPCHAR proxyhost[512];
+																					HTTPCHAR proxyport[10];
+																					if ( _stscanf( argv[i+1], _T("http://%[^:/]:%s"), proxyhost, proxyport ) == 2 )
+																					{
+																						api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyHost,proxyhost);
+																						api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyPort,proxyport);
+																					}  else {
+																						_tprintf(_T(" [-] Invalid proxy parameter %s\n"),argv[i+1]);
+																						_tprintf(_T(" [-] Should be http://host:port\n"));
+																						return(1);
+																					}
+
+																					i++;
+																				} else
+																					if (_tcscmp( argv[i],_T("--proxyauth"))==0) {
+																						api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyUser,argv[i+1]);
+																						api->SetHTTPConfig(GLOBAL_HTTP_CONFIG,ConfigProxyPass,argv[i+2]);
+																						i+=2;
+																					} else
+
+																						if (_tcscmp( argv[i],_T("--ipfile"))==0) 
+																						{
+																							ipfilepath=argv[i+1];
+																							ipfile=_tfopen(ipfilepath,_T("r"));
+																							if (ipfile) {
+																								_tprintf(_T("[+] Loaded ips from %s\n"),argv[i+1]);
+																							} else {
+																								_tprintf(_T("[-] Unable to load ips from %s\n"),argv[i+1]);
+																								usage();
+																								return(1);
+																							}
+																							i++;
+																						} else
+#ifdef XML_LIBRARY
+																							if ( (_tcscmp( argv[i],_T("--NmapFile"))==0) || (_tcscmp( argv[i],_T("--nmapfile"))==0) )
+																							{
+																								nmap = argv[i+1];
+																								i++;
+																							} else 
+#endif
+																								if ( (_tcscmp( argv[i],_T("--hosts"))==0) || (_tcscmp( argv[i],_T("--host"))==0) )
+																								{
+																									hosts= argv[i+1];																	
+																									i++;
+																								} else {
+																									usage();
+																									_tprintf(_T("Invalid parameter %s\n"),argv[i]);
+																									return(1);
+																								}
 		}
 	}
 
 	//manual requests
 	if (Fullurl) {
-         return(3);
-	 }
+		return(3);
+	}
 
 
 	if (FullUserList) {
@@ -724,9 +724,9 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, HTTPCHAR *argv[]){
 		ports[0].ssl=0;
 	}
 
-	#ifdef XML_LIBRARY
+#ifdef XML_LIBRARY
 	if (nmap) ParseNmapXMLFile(nmap);
-	#endif
+#endif
 	if (hosts) nhosts = ParseHosts(hosts);
 	if (ipfile) nhosts += Parseipfile(ipfile);
 
@@ -751,7 +751,7 @@ int LoadConfigurationFiles(HTTPAPI *api,int argc, HTTPCHAR *argv[]){
 			printf("%s",dbg);
 			*/
 		}
-		
+
 		_tprintf(_T("[+] Scanning %i ports - bruteforce is %s\n\n"),nports,bruteforce ? _T("active") : _T("Inactive"));
 	}
 

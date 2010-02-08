@@ -33,12 +33,20 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 
 */
+
+/** \file CookieHandling.h
+ * Fast HTTP Auth Scanner - HTTP Engine v1.4.
+ * ..
+ * \author Andres Tarasco Acuna - http://www.tarasco.org
+ */
+
 #ifndef __COOKIEHANDLING_H
 #define __COOKIEHANDLING_H
 
 #include "Build.h"
 #include "Tree.h"
 #include "Threading.h"
+/*
 #include <stdio.h>
 #include <string.h>
 //#include <time.h>
@@ -48,7 +56,7 @@ SUCH DAMAGE.
  #include <unistd.h>
  #include <pthread.h>  //pthread
 #endif
-
+*/
 #define COOKIETIMEFORMAT  _T("%a, %d-%b-%Y %H:%M:%S GMT") /* time formats in cookie headers */
 #define COOKIETIMEFORMAT2 _T("%a, %d-%b-%y %H:%M:%S GMT") /* some idiotic websites send the year without the century */
 #define GetDataWithoutSpaces(data) \

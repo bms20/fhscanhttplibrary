@@ -33,6 +33,11 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 
 */
+/** \file ConnectionHandling.h
+ * Fast HTTP Auth Scanner - HTTP Engine v1.4.
+ * ..
+ * \author Andres Tarasco Acuna - http://www.tarasco.org
+ */
 #ifndef __CONNECTIONHANDLING_H__
 #define __CONNECTIONHANDLING_H__
 

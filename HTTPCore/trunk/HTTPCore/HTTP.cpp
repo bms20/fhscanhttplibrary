@@ -32,9 +32,17 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 */
-#include <stdio.h>
-#include <stdlib.h>
-#include "Build.h"
+
+/** \file HTTP.cpp
+ * Fast HTTP Auth Scanner - HTTP Engine v1.4.
+ * This include file contains all needed information to manage the HTTP interface from the user side.
+ * \author Andres Tarasco Acuna - http://www.tarasco.org
+ */
+
+
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include "Build.h"
 #include "HTTP.h"
 #include "ConnectionHandling.h"
 #include "CookieHandling.h"
@@ -392,7 +400,7 @@ HTTPRequest* HTTPAPI::BuildHTTPProxyTunnelConnection( HTTPHANDLE HTTPHandle)
 
 	_sntprintf(tmp,sizeof(tmp)-1,_T("CONNECT %s:%s HTTP/1.1\r\n\r\n"),GetHTTPConfig(HTTPHandle,ConfigHTTPHost),GetHTTPConfig(HTTPHandle,ConfigHTTPPort));
 	HTTPRequest* request = new HTTPRequest;
-	request->InitHTTPRequest(tmp);
+	request->InitHTTPHeaders(tmp);
 
 	if ( (GetHTTPConfig(HTTPHandle,ConfigProxyUser))  && (GetHTTPConfig(HTTPHandle,ConfigProxyPass)) )
 	{
@@ -620,7 +628,7 @@ HTTPSession* HTTPAPI::SendHttpRequest(HTTPHANDLE HTTPHandle,HTTPRequest* request
 
 	HTTPSession *DATA = new HTTPSession;
 	DATA->ParseReturnedBuffer(request,response);
-	_tcsncpy(DATA->hostname,GetHTTPConfig(HTTPHandle,ConfigHTTPHost),sizeof(DATA->hostname)-1);
+	_tcsncpy(DATA->hostname,GetHTTPConfig(HTTPHandle,ConfigHTTPHost),(sizeof(DATA->hostname)-1)/sizeof(HTTPCHAR));
 	//printf("hostname: %s\n",DATA->hostname);
 	DATA->port = _tstoi ( GetHTTPConfig(HTTPHandle,ConfigHTTPPort) );
 	//DATA->ip=target;
@@ -831,7 +839,9 @@ HTTPSession*	HTTPAPI::SendHttpRequest(HTTPCSTR Fullurl)
 HTTPSession* HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers, HTTPSTR postdata, size_t PostDataSize)
 {
 	HTTPRequest* request= new HTTPRequest;
-	request->InitHTTPRequest((HTTPSTR)headers,(HTTPSTR)postdata, PostDataSize);
+//	request->InitHTTPRequest((HTTPSTR)headers,(HTTPSTR)postdata, PostDataSize);
+	request->InitHTTPHeaders(headers);
+	request->SetData(postdata,PostDataSize);
 
 	HTTPResponse*		response = DispatchHTTPRequest(HTTPHandle,request);
 	if (!response)
@@ -841,7 +851,7 @@ HTTPSession* HTTPAPI::SendRawHTTPRequest(HTTPHANDLE HTTPHandle,HTTPCSTR headers,
 	}
 	HTTPSession *data = new HTTPSession;
 	data->ParseReturnedBuffer(request,response);
-	_tcsncpy(data->hostname,GetHTTPConfig(HTTPHandle,ConfigHTTPHost),sizeof(data->hostname)-1);
+	_tcsncpy(data->hostname,GetHTTPConfig(HTTPHandle,ConfigHTTPHost),sizeof(data->hostname)/sizeof(HTTPCHAR)-1);
 	data->port = _tstoi ( GetHTTPConfig(HTTPHandle,ConfigHTTPPort) );
 	//data->ip=target;
 	data->NeedSSL = GetHTTPConfig(HTTPHandle,ConfigSSLConnection)!=NULL;
@@ -1017,7 +1027,7 @@ int	HTTPAPI::InitHTTPProxy(HTTPCSTR hostname, unsigned short port)
 	} else
 	{
 		BindPort=port;
-		_tcsncpy(BindIpAdress,hostname,sizeof(BindIpAdress)-1);
+		_tcsncpy(BindIpAdress,hostname,sizeof(BindIpAdress)/sizeof(HTTPCHAR)-1);
 		BindIpAdress[sizeof(BindIpAdress)-1]=0;
 		ForceDefaultHTTPPorts = 1;
 		AnonymousProxy        = 1;

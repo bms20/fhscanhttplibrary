@@ -16,6 +16,10 @@ public:
 	HTTPHeaders(HTTPCSTR header);
 	~HTTPHeaders();
 	void InitHTTPHeaders(HTTPCSTR header);
+	void InitHTTPHeaders(HTTPCSTR header, size_t length);
+	#ifdef UNICODE
+	void InitHTTPHeaders(char* header, size_t length);
+	#endif
 	const HTTPSTR Headerstrstr(HTTPCSTR searchdata);
 	HTTPCHAR* GetHeaders(void);
 	size_t GetHeaderSize(void);
@@ -25,6 +29,5 @@ public:
 	HTTPCHAR* RemoveHeader(HTTPCSTR Header);	
 
 };
-
 
 #endif

@@ -209,12 +209,12 @@ HTTPCHAR* encoders::encodebase64W(HTTPCHAR *lpoutputW, HTTPCSTR inputW, size_t i
 			if (lpoutputW)
 			{
 				MultiByteToWideChar(CP_UTF8, 0, bptr->data, bptr->length, lpoutputW, bptr->length+1);
-				lpoutputW[bptr->length]=0;
+				lpoutputW[bptr->length-1]=0;
 				return(lpoutputW);
 			} else {
 				HTTPCHAR* outputW=(HTTPCHAR*)malloc(bptr->length+1);
 				MultiByteToWideChar(CP_UTF8, 0, bptr->data, bptr->length, outputW, bptr->length+1);
-				outputW[bptr->length]=0;
+				outputW[bptr->length-1]=0;
 				return(outputW);
 			}
 		}

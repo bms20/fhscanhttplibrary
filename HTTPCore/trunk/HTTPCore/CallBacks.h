@@ -40,7 +40,7 @@ SUCH DAMAGE.
  */
 #ifndef __CALLBACKS_H__
 #define __CALLBACKS_H__
-
+#include "Build.h"
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
 

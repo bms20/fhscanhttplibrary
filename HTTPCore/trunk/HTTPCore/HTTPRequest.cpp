@@ -38,70 +38,14 @@ SUCH DAMAGE.
 HTTPRequest::HTTPRequest()
 {
 	Data = NULL;
+#ifdef _UNICODE
+	DataA = NULL;
+#endif
 	DataSize = 0;
 	requestedurl = NULL;
 	HTTPMethod = NULL;
 	BinaryData = 0;
 }
-/*******************************************************************************************************/
-void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders)
-{
-	InitHTTPHeaders(HTTPHeaders);
-}
-/*******************************************************************************************************/
-void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders, HTTPCHAR *HTTPData)
-{
-	InitHTTPHeaders(HTTPHeaders);
-	Data = _tcsdup(HTTPData);
-	DataSize = _tcslen(HTTPData);
-}
-/*******************************************************************************************************/
-void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders, HTTPCHAR* HTTPData, size_t HTTPDataSize)
-{
-	InitHTTPHeaders(HTTPHeaders);
-	Data = (HTTPCHAR*)malloc(HTTPDataSize);
-	memcpy(Data,HTTPData,HTTPDataSize*sizeof(HTTPCHAR));
-	DataSize = HTTPDataSize;
-	BinaryData = 1;
-}
-/*******************************************************************************************************/
-void HTTPRequest::InitHTTPRequest(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize, HTTPCHAR* HTTPData, size_t HTTPDataSize)
-{
-	Header = (HTTPCHAR*)malloc(HTTPHeaderSize+1);
-	memcpy(Header,HTTPHeaders,HTTPHeaderSize*sizeof(HTTPCHAR));
-	Header[HTTPHeaderSize]=0;
-	Data =(HTTPCHAR*) malloc(HTTPDataSize);
-	memcpy(Data,HTTPData,HTTPDataSize*sizeof(HTTPCHAR));
-	DataSize = HTTPDataSize;
-	BinaryData = 1;
-
-}
-/*******************************************************************************************************/
-#ifdef UNICODE	
-void HTTPRequest::InitHTTPRequestA(char *lpBuffer,size_t HTTPHeaderSize, void *HTTPData, size_t HTTPDataSize)
-{
-char *tmpHeader = (char*) malloc(HTTPHeaderSize+1);
-memcpy(tmpHeader,lpBuffer,HTTPHeaderSize);
-tmpHeader[HTTPHeaderSize]=0;
-
-int ret = MultiByteToWideChar(CP_UTF8, 0, tmpHeader, -1, NULL, 1024);
-Header = (wchar_t*)malloc(ret +2);
-MultiByteToWideChar(CP_UTF8, 0, tmpHeader, -1, Header, -1);
-
-if (HTTPDataSize)
-{
-	printf("TODO2");
-	getchar();
-/*
-Data = malloc(HTTPDataSize);
-	memcpy(Data,HTTPData,HTTPDataSize);
-	DataSize = HTTPDataSize;
-	BinaryData = 1;
-*/
-}
-}
-#endif
-
 /*******************************************************************************************************/
 HTTPRequest::~HTTPRequest()
 {
@@ -115,13 +59,19 @@ HTTPRequest::~HTTPRequest()
 		HTTPMethod = NULL;
 	}
 	if (Data) {
-		//free(Data);
-		//TODO - Revisar
+		free(Data);
 		Data = NULL;
 	}
 	DataSize = 0;
 	BinaryData = 0;
+#ifdef _UNICODE
+	if (DataA)
+	{
+		free(DataA);
+		DataA = NULL;
+	}
 
+#endif
 }
 /*******************************************************************************************************/
 HTTPSTR HTTPRequest::GetRequestedURL()
@@ -168,9 +118,7 @@ HTTPCHAR *HTTPRequest::GetHTTPMethod()
 	} else {
 		return(NULL);
 	}
-
 }
-
 /*******************************************************************************************************/
 HTTPSTR HTTPRequest::GetData(void)
 {
@@ -182,26 +130,98 @@ size_t HTTPRequest::GetDataSize(void)
 	return(DataSize);
 }
 /*******************************************************************************************************/
+void HTTPRequest::SetData(HTTPCHAR *lpData, size_t DataLength)
+{
+	if (Data)
+	{
+		free(Data);
+		Data = NULL;
+		DataSize = 0;
+	}
+	if (lpData)
+	{
+		Data = (HTTPCHAR*)malloc((DataLength+1)*sizeof(HTTPCHAR));
+		if (Data)
+		{
+			memcpy(Data,lpData,DataLength*sizeof(HTTPCHAR));
+			Data[DataLength]=0;
+			DataSize = DataLength;
+			BinaryData = 0;
+		}
+	}
+}
+/*******************************************************************************************************/
 void HTTPRequest::SetData(HTTPCHAR *lpData)
 {
-	Data = lpData;
-	DataSize = _tcslen(Data);
+	if (lpData)
+	{
+		SetData(lpData,_tcslen(lpData));
+	} else
+	{
+		SetData((HTTPCHAR*)NULL,0);
+	} 
 }
 /*******************************************************************************************************/
 #ifdef _UNICODE
+void HTTPRequest::SetData(char *lpData, size_t DataLength)
+{
+	if (Data)
+	{
+		free(Data);
+		Data = NULL;
+		DataSize = 0;
+	}
+	if (lpData)
+	{
+		if (strlen(lpData) == DataLength) /* No binary data */
+		{
+			/* Unicode conversion */
+			DataSize = MultiByteToWideChar(CP_UTF8, 0, lpData, DataLength, NULL, 0);
+			if (DataSize)
+			{
+				_tprintf(_T("Source Buffer: %i bytes - Destination %i bytes\n"),DataLength,DataSize);
+				Data = (wchar_t*)malloc((DataSize +1)*sizeof(HTTPCHAR));
+				if (Data) 
+				{
+					/* Validate allocation */
+					MultiByteToWideChar(CP_UTF8, 0, lpData, DataLength, Data, DataSize);
+					Data[DataSize]=0;
+					return;
+				} else {
+					/* Memory Allocation error */
+					DataSize = 0;
+				}
+			} else {
+				/* For some reason utf-8 conversion failed */
+				BinaryData = 1;
+			}
+		} else {
+			BinaryData  = 1;
+		}
+		/* Also copy the data, to be send as is */
+		DataA = (char*)malloc(DataLength+1);
+		DataSize = DataLength;
+		memcpy(DataA,lpData,DataLength);
+		Data[DataSize]=0;
+
+	}
+}
+/*******************************************************************************************************/
 void HTTPRequest::SetData(char *lpData)
 {
-printf("Todo3");
-getchar();
-	//Data = lpData;
-	BinaryData = TRUE;
+	if (lpData)
+	{
+		SetData(lpData,strlen(lpData));
+	} else 
+	{
+		SetData((char*)NULL,0);
+	} 
+}
+/*******************************************************************************************************/
+char *HTTPRequest::GetDataA(void)
+{
+	return ( DataA );	
 }
 #endif
 
 /*******************************************************************************************************/
-void HTTPRequest::SetDataSize(size_t datasize)
-{
-	DataSize = datasize;
-}
-/*******************************************************************************************************/
-

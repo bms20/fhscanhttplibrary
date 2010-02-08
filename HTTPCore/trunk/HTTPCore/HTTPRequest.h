@@ -44,33 +44,30 @@ class HTTPRequest : public HTTPHeaders
 private:
 	HTTPCHAR *requestedurl;
 	HTTPCHAR *HTTPMethod;
+#ifdef _UNICODE
+	char *DataA; /* Store raw data */
+#endif
 public:
 	HTTPCHAR* Data;
     /*!< Pointer to a null terminated HTTPCHAR string that stores the HTTP Data. */
-	size_t DataSize;
+	size_t  DataSize;
     /*!< Size of the HTTP Data. */
-	BOOL BinaryData;
+	BOOL    BinaryData;
 
 	HTTPRequest();
 	~HTTPRequest();
-	void InitHTTPRequest(HTTPCHAR *HTTPHeaders);
-	void InitHTTPRequest(HTTPCHAR *HTTPHeaders, HTTPCHAR *HTTPData);
-	void InitHTTPRequest(HTTPCHAR *HTTPHeaders, HTTPCHAR* HTTPData, size_t HTTPDataSize);
-	void InitHTTPRequest(HTTPCHAR *HTTPHeaders,size_t HTTPHeaderSize, HTTPCHAR* HTTPData, size_t HTTPDataSize);
-#ifdef UNICODE	
-	void InitHTTPRequestA(char *lpBuffer,size_t HTTPHeaderSize,void *HTTPData, size_t HTTPDataSize);
-#endif
+	void    SetData ( HTTPCHAR *lpData );
+	void    SetData ( HTTPCHAR *lpData, size_t Datalength);
+	#ifdef _UNICODE
+	void    SetData ( char *lpData );
+	void    SetData ( char *lpData, size_t Datalength);
+	char*   GetDataA( void);
+	#endif
+	HTTPSTR GetData ( void);
+	size_t  GetDataSize(void);
 
 	/* Information gathering */
 	HTTPSTR GetRequestedURL();
-	HTTPSTR GetHTTPMethod();	
-	HTTPSTR GetData(void);
-	size_t GetDataSize(void);
-void SetData(HTTPCHAR *lpData);
-#ifdef _UNICODE
-void SetData(char *lpData);
-#endif
-void SetDataSize(size_t datasize);
-
+	HTTPSTR GetHTTPMethod();		
 };
 #endif

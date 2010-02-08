@@ -172,7 +172,7 @@ int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR UserName, HTTPCSTR Pas
 
 
 		_sntprintf(buffer,sizeof(buffer)-1,_T("   <tr> <td><a href=\"%s://%s:%i%s\" target=\"_blank\">+</a>%s</td> <td>%i</td> <td>%i</td> <td>%s</td>"),data->NeedSSL ? _T("https") : _T("http") ,data->hostname,data->port,url ? url : _T("/"),data->hostname,data->port,data->status,title);
-		fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
+//		fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 
 		
 		switch(FROM)
@@ -204,7 +204,7 @@ int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR UserName, HTTPCSTR Pas
 		case MESSAGE_ROUTER_PASSFOUND:
 //		case MESSAGE_WEBFORM_PASSFOUND:
 			_sntprintf(buffer,sizeof(buffer)-1,_T("<td>%s</td> <td>%s</td> <td>%s</td> "),(UserName!=NULL) ? UserName : _T(""),(Password!=NULL) ? Password : _T(""),url);
-			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
+//			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 
 			if (csv) {
 					_ftprintf(stdout,_T("RTPASS|%s|%i|%i|%s|%s|%s|%s|%s\n"),data->hostname,data->port,data->status,title,(UserName!=NULL) ? UserName : _T(""),(Password!=NULL) ? Password : _T(""),url,data->server);
@@ -215,7 +215,7 @@ int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR UserName, HTTPCSTR Pas
 		case MESSAGE_WEBFORMS_PASSNOTFOUND:  //router 401 & webform authentication
 
 			_sntprintf(buffer,sizeof(buffer)-1,_T("<td>%s</td> "),url);
-			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
+//			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 			if (csv) {
 					_ftprintf(stdout,_T("RUPASS|%s|%i|%i|%s|%s|%s\n"),data->hostname,data->port,data->status,title,url,data->server);
 			} else {
@@ -233,7 +233,7 @@ int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR UserName, HTTPCSTR Pas
 //		case MESSAGE_WEBSERVER_VULNERABILITY_AUTHNEEDED:
 //		case MESSAGE_WEBSERVER_PASSFOUND:
 			_sntprintf(buffer,sizeof(buffer)-1,_T("<td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> "),url,(UserName!=NULL) ? UserName : _T(""),(Password!=NULL) ? Password : _T(""),(VulnDescription!=NULL) ? VulnDescription : _T(""));
-			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
+//			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 
 			if (csv) {
 					_ftprintf(stdout,_T("WEBVUL|%s|%i|%i|%s|%s|%s|%s|%s|%s\n"),data->hostname,data->port,data->status,title,(UserName!=NULL) ? UserName : _T(""),(Password!=NULL) ? Password : _T(""),url,(VulnDescription!=NULL) ? VulnDescription : _T(""),data->server);
@@ -250,19 +250,19 @@ int UpdateHTMLReport(HTTPSession* data,int FROM, HTTPCSTR UserName, HTTPCSTR Pas
 				_sntprintf(tmp,sizeof(tmp)/sizeof(buffer)-1,_T(" (%s)"),VulnDescription);
 			} 	else tmp[0]=_T('\0');
 			_sntprintf(buffer,sizeof(buffer)-1,_T("<td id=\"IP%s\" onmouseover=\"testfunc(this.id);\" onmouseout=\"setVisibility('foo','none');\">%s %s "),data->hostname,data->server,tmp);
-			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
+//			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 			_sntprintf(buffer,sizeof(buffer)-1,_T("<div id=\"headers_IP%s\" class=\"hideme\"> "),data->hostname);
-			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
+//			fwrite(buffer,1,_tcslen(buffer),report[FROM].logfile);
 
 			while (	p=data->response->GetHeaderValueByID(j++) ){
-				fwrite(p,1,_tcslen(p),report[FROM].logfile);
-				fwrite(_T("<br/>"),1,5*sizeof(HTTPCHAR),report[FROM].logfile);
+//				fwrite(p,1,_tcslen(p),report[FROM].logfile);
+//				fwrite(_T("<br/>"),1,5*sizeof(HTTPCHAR),report[FROM].logfile);
 				free(p);
 			}
-			fwrite(_T("</div></td>"),1,11*sizeof(HTTPCHAR),report[FROM].logfile);
-			fwrite(_T("</tr>\n"),1,6*sizeof(HTTPCHAR),report[FROM].logfile);
+//			fwrite(_T("</div></td>"),1,11*sizeof(HTTPCHAR),report[FROM].logfile);
+//			fwrite(_T("</tr>\n"),1,6*sizeof(HTTPCHAR),report[FROM].logfile);
 
-			fflush( report[FROM].logfile);
+//			fflush( report[FROM].logfile);
 			fflush(stdout);
 
 
@@ -285,6 +285,7 @@ struct _ports *ports,
 	int fulluserlist,
 	int vulnchecks) {
 
+	return(1);
 //return(0);
 		//InitMutex(&lock);
 
@@ -330,8 +331,12 @@ struct _ports *ports,
 			//Read HTML Template
 			while (!feof(TemplateHTML)) {
 				memset((void*)tmp,0,sizeof(tmp));
-				readbytes=fread(tmp,1,sizeof(tmp)/sizeof(HTTPCHAR)-1,TemplateHTML);
-				//				printf("leidos: %i - Total: %i\n",readbytes,total);
+				_fgetts(tmp,sizeof(tmp)/sizeof(HTTPCHAR),TemplateHTML);
+				readbytes = _tcslen(tmp);
+						printf("leidos: %i - Total: %i\n",readbytes,total);
+						if (readbytes==0) {
+                            printf("PUN\n");
+						}
 				lpHTML=(HTTPCHAR *)realloc((HTTPCHAR *)lpHTML,(total+readbytes+1)*sizeof(HTTPCHAR));
 				_tcsncpy(lpHTML+total,tmp,readbytes);
 				total+=readbytes;
@@ -510,6 +515,7 @@ struct _ports *ports,
 															fflush(report[i].logfile);
 														}
 														free(lpHTML);
+														lpHTML = NULL;
 														fclose(TemplateHTML);
 														return(1);
 													}

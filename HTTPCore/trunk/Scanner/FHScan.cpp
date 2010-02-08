@@ -2,7 +2,6 @@
 */
 #include "FHScan.h"
 #include "config.h"
-//#include "time.h"
 #include "webservers.h"
 #include "RouterAuth.h"
 #include "webforms.h"
@@ -11,8 +10,6 @@
 #include "Input/InputHosts.h"
 #include <iostream>
 #include <string>
-//#include <tchar.h>
-using namespace std;
 
 
 Threading CSip;
@@ -143,14 +140,14 @@ void *ScanHosts(void *ptr) {
 			if (
 				(data) &&
 				(
-					(!data->IsValidHTTPResponse()) ||
-					(
-						(data->status==400)  &&
-						(data->server)  &&
-						(_tcscmp(data->server,_T("micro_httpd"))==0 )
-					)
+				(!data->IsValidHTTPResponse()) ||
+				(
+				(data->status==400)  &&
+				(data->server)  &&
+				(_tcscmp(data->server,_T("micro_httpd"))==0 )
 				)
-			   ) //Hack to detect micro_http devices that returns "400 Bad Request"
+				)
+				) //Hack to detect micro_http devices that returns "400 Bad Request"
 			{
 
 				if (ShowAllhosts)
@@ -179,7 +176,7 @@ void *ScanHosts(void *ptr) {
 				_stprintf(tmp,_T("%s\n"),hostname);
 				if (dump)
 				{
-					fwrite(tmp,1,_tcslen(tmp)*sizeof(HTTPCHAR),dump);
+//					fwrite(tmp,1,_tcslen(tmp)*sizeof(HTTPCHAR),dump);
 				}
 				if (VulnChecks)
 				{
@@ -357,7 +354,7 @@ void ManualHTTPRequestMode(HTTPAPI *api)
 	{
 		_tprintf(_T(" [-] No data returned\n"));
 	}
-    free(path);
+	free(path);
 
 	return;
 
@@ -408,6 +405,12 @@ int _tmain(int argc, _TCHAR *argv[]){
 	HTTPAPI *api = new (HTTPAPI);
 	//setlocale( LC_ALL, "Greek" );
 
+HTTPCHAR test[]=_T("esto es una prueba");
+HTTPCHAR *p = test;
+HTTPCHAR *q=p+1;
+_tprintf(_T("!%s!\n"),q);
+printf("!%i!\n",q-p);
+
 
 	ret = LoadConfigurationFiles( api,argc,(HTTPCHAR**)argv);
 	switch (ret) {
@@ -448,7 +451,7 @@ int _tmain(int argc, _TCHAR *argv[]){
 
 #ifdef __WIN32__RELEASE__
 	thread=(HANDLE*)malloc(sizeof(HANDLE)*nthreads);
-	#else
+#else
 	thread = (pthread_t*)malloc(sizeof(pthread_t)*nthreads);
 #endif
 

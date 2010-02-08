@@ -59,11 +59,13 @@ public:
 	HTTPResponse();
 	~HTTPResponse();
 	HTTPSTR GetServerVersion();
+
+	/*
 	void InitHTTPResponseA(char *lpBuffer,size_t HTTPHeaderSize, void *HTTPData, size_t HTTPDataSize);
 	void InitHTTPResponse(HTTPCHAR *HTTPHeaders, HTTPCHAR *HTTPData);
 	void InitHTTPResponse(HTTPCHAR *HTTPHeaders, void* HTTPData, size_t HTTPDataSize);
 	void InitHTTPResponse(HTTPCHAR *HTTPHeaders, size_t HTTPHeaderSize, void* HTTPData, size_t HTTPDataSize);
-	
+	*/
 	int   GetStatus();
 	void  UpdateAndReplaceFileMappingData(HTTPIOMapping *newFileMapping);
 	HTTPCHAR* Datastrstr(HTTPCHAR* searchdata);

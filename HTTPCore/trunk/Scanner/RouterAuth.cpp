@@ -21,14 +21,20 @@ HTTPSession* DuplicateData(HTTPSession* data)
 
 	HTTPSession* new_data= new HTTPSession;
 	new_data->ip=data->ip;
-	_tcsncpy(new_data->hostname,data->hostname,sizeof(new_data->hostname)-1);
+	_tcsncpy(new_data->hostname,data->hostname,sizeof(new_data->hostname)/sizeof(HTTPCHAR)-1);
 	new_data->port=data->port;
 	new_data->NeedSSL=data->NeedSSL;
 
 	new_data->request = new HTTPRequest;
-	new_data->request->InitHTTPRequest((HTTPCHAR*)data->request->GetHeaders(),data->request->Data,data->request->DataSize);
+//	new_data->request->InitHTTPRequest((HTTPCHAR*)data->request->GetHeaders(),data->request->Data,data->request->DataSize);
+	new_data->request->InitHTTPHeaders(data->request->GetHeaders(),data->request->GetHeaderSize());
+	new_data->request->SetData(data->request->Data,data->request->DataSize);
+
 	new_data->response = new HTTPResponse;
-	new_data->response->InitHTTPResponse((HTTPCHAR*)data->response->GetHeaders(),data->response->Data,data->response->DataSize);
+	//new_data->response->InitHTTPResponse((HTTPCHAR*)data->response->GetHeaders(),data->response->Data,data->response->DataSize);
+	new_data->response->InitHTTPHeaders(data->response->GetHeaders(),data->response->GetHeaderSize());
+//	new_data->response->SetData(data->response->Data,data->response->DataSize);
+		new_data->response->SetData(data->response->Data);
 
 	new_data->url= _tcsdup(data->url);
 	new_data->server=_tcsdup(data->server);
