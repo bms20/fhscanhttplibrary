@@ -1,37 +1,37 @@
 /*
-Copyright (C) 2007 - 2009  fhscan project.
-Andres Tarasco - http://www.tarasco.org/security
+ Copyright (C) 2007 - 2012  fhscan project.
+ Andres Tarasco - http://www.tarasco.org/security - http://www.tarlogic.com
 
-All rights reserved.
+ All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. All advertising materials mentioning features or use of this software
-   must display the following acknowledgement:
-    This product includes software developed by Andres Tarasco fhscan 
-    project and its contributors.
-4. Neither the name of the project nor the names of its contributors
-   may be used to endorse or promote products derived from this software
-   without specific prior written permission.
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+ notice, this _sntprintf of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
+ 3. All advertising materials mentioning features or use of this software
+ must display the following acknowledgement:
+ This product includes software developed by Andres Tarasco fhscan
+ project and its contributors.
+ 4. Neither the name of the project nor the names of its contributors
+ may be used to endorse or promote products derived from this software
+ without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGE.
-*/
+ THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
+ */
 
 /** \file build.h
  * Fast HTTP Auth Scanner - HTTP Engine v1.4.
@@ -39,34 +39,38 @@ SUCH DAMAGE.
  * \author Andres Tarasco Acuna - http://www.tarasco.org
  */
 
-
 #ifndef __BUILD_H_
 #define __BUILD_H_
-#define __TCHAR_H /* force compatibility with codegear includes */
-#define __STDC_ISO_10646__  200104L
+#ifndef __TCHAR_H
+	#define __TCHAR_H /* force compatibility with codegear includes */
+#endif
+#ifndef __STDC_ISO_10646__
+	#define __STDC_ISO_10646__  200104L
+#endif
 /****************** GLOBAL FLAGS **********************/
 #undef UNICODE
 #undef _UNICODE
 
+//#define IPV6
+
 
 #ifndef UNICODE
-#define _UNICODE
-#define UNICODE
+//#define _UNICODE
+//#define UNICODE
 #endif
 
-
-#ifdef _UNICODE 
-	#define _HTTPWIDECHAR
+#ifdef _UNICODE
+#define _HTTPWIDECHAR
 #endif
-
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifndef LINUX
-#include <windows.h>
+#ifndef __linux
+#include <winsock2.h>
+#include <Ws2tcpip.h>
 #include <winnls.h>
-//#include <tchar.h>
+// #include <tchar.h>
 #ifndef __WIN32__RELEASE__
 #define __WIN32__RELEASE__
 #endif
@@ -75,21 +79,22 @@ SUCH DAMAGE.
 #define socklen_t int
 
 # if defined(_MSC_VER)
- # ifndef _CRT_SECURE_NO_DEPRECATE
-  # define _CRT_SECURE_NO_DEPRECATE (1)
- # endif
- # pragma warning(disable : 4996)
- #define stricmp  _stricmp
+# ifndef _CRT_SECURE_NO_DEPRECATE
+# define _CRT_SECURE_NO_DEPRECATE (1)
+# endif
+# pragma warning(disable : 4996)
+#define stricmp  _stricmp
 # else
-//  #define  _stricmp strcasecmp
+// #define  _stricmp strcasecmp
 #include <winsock2.h> /* Codegear problem with WSADATA definition */
 #define _swprintf swprintf
 
 #endif
 
 #else
-
-
+	#ifndef LINUX
+	#define LINUX
+	#endif
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -99,15 +104,15 @@ SUCH DAMAGE.
 #include <arpa/inet.h>
 #include <pthread.h>  //pthread
 #include <ctype.h> //toupper
-//#include <time.h>
+// #include <time.h>
 #include <sys/timeb.h>
-//#include <sys/time.h> //gettimeofday
+// #include <sys/time.h> //gettimeofday
 #include <sys/mman.h>  //mmap
 typedef int64_t __int64;
 typedef uint64_t __uint64;
 #define MAXIMUM_WAIT_OBJECTS 64
 #define MAX_PATH 256
-//#define __tcsdup strdup
+// #define __tcsdup strdup
 #define BOOL int
 #define closesocket close
 #define strnicmp strncasecmp
@@ -122,14 +127,21 @@ typedef uint64_t __uint64;
 #define INVALID_HANDLE_VALUE -1
 #define LPVOID void*
 #define SOCKET_ERROR -1
+#define _snprintf snprintf
 #endif
 #endif
+
+#ifndef uint64
+#define uint64 unsigned long
+#define __uint64 unsigned long
+#endif
+
 /****************** GLOBAL FLAGS **********************/
 #include <time.h>
 #ifdef _UNICODE
 #include <wchar.h>
 #ifndef _TCHAR
-typedef wchar_t         _TCHAR;
+typedef wchar_t _TCHAR;
 #endif
 #define _T(x)           L ## x
 #define _tcsdup         _wcsdup
@@ -168,7 +180,7 @@ typedef wchar_t         _TCHAR;
 
 #else
 #ifndef _TCHAR
-typedef char            _TCHAR;
+typedef char _TCHAR;
 #endif
 #define _T(x)           x
 #define _tcsdup         strdup
@@ -205,18 +217,13 @@ typedef char            _TCHAR;
 #define _fgetts         fgets
 #endif
 
-
-#define HTTPCSTR const _TCHAR * 
+#define HTTPCSTR const _TCHAR *
 #define HTTPSTR  _TCHAR *
 #define HTTPCHAR _TCHAR
 
-#define HTTPCSTR const _TCHAR * 
+#define HTTPCSTR const _TCHAR *
 #define HTTPSTR  _TCHAR *
 #define HTTPCHAR _TCHAR
 #define HTTPCCHAR const _TCHAR
 
-
-
 #endif
-
-

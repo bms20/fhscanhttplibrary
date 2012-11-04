@@ -1,6 +1,6 @@
 /*
-Copyright (C) 2007 - 2009  fhscan project.
-Andres Tarasco - http://www.tarasco.org/security
+ Copyright (C) 2007 - 2012  fhscan project.
+ Andres Tarasco - http://www.tarasco.org/security - http://www.tarlogic.com
 
 All rights reserved.
 
@@ -8,17 +8,17 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
 are met:
 1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
+notice, this list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
-   must display the following acknowledgement:
-    This product includes software developed by Andres Tarasco fhscan 
-    project and its contributors.
+must display the following acknowledgement:
+This product includes software developed by Andres Tarasco fhscan
+project and its contributors.
 4. Neither the name of the project nor the names of its contributors
-   may be used to endorse or promote products derived from this software
-   without specific prior written permission.
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -34,19 +34,20 @@ SUCH DAMAGE.
 
 */
 /** \file ConnectionHandling.h
- * Fast HTTP Auth Scanner - HTTP Engine v1.4.
- * ..
- * \author Andres Tarasco Acuna - http://www.tarasco.org
- */
+* Fast HTTP Auth Scanner - HTTP Engine v1.4.
+* ..
+* \author Andres Tarasco Acuna - http://www.tarasco.org
+*/
 #ifndef __CONNECTIONHANDLING_H__
 #define __CONNECTIONHANDLING_H__
 
 #include "Build.h"
-//#include "Threading.h"
+// #include "Threading.h"
 #include "HTTPHANDLE.h"
 #include "HTTP.h"
 #include "FileMapping.h"
 #include "SSLModule.h"
+//#include <time.h>
 
 #ifndef __WIN32__RELEASE__
 #define FILETIME time_t
@@ -56,8 +57,6 @@ SUCH DAMAGE.
 #define CA_LIST		"root.pem"
 #define PASSWORD	"password"
 #define DHFILE		"dh1024.pem"
-
-
 
 #define HTTP_READ_TIMEOUT		10
 #define HTTP_CONN_TIMEOUT		10
@@ -79,79 +78,89 @@ SUCH DAMAGE.
 #define SOCKET_ERROR (-1)
 #endif
 
-class ConnectionHandling : public SSLModule 
-{
-	long 			 target;
-	HTTPCHAR		 targetDNS[256];
-	unsigned short	 port;
-	int 			 SSLRequired; /*Signals if the connection is against an SSL service */
-	int				 ConnectionAgainstProxy; /* Signals if HTTP Proxy is enabled */
+class ConnectionHandling : public SSLModule {
 
-	SSL_CTX *		 ctx;
-	SSL *			 ssl; /* Signals if the ssl connection have already been initialized */
-	BIO				*bio_err;
+	HTTPCHAR HACK_TargetDNS[256];
+	HTTPSTR HACK_lpProxyHost;
 
-	unsigned int	 datasock; /* connection socket */
-	struct sockaddr_in webserver;
-	unsigned int	 NumberOfRequests; /* Number of HTTP requests performed since connected */
-	unsigned int	 InputOutputOperation;  /* Signals if the connection is currently trying to connect to a remote host*/
+	//long m_target;
+	//HTTPCHAR targetDNS[256];
+	unsigned short port;
+	int SSLRequired; /* Signals if the connection is against an SSL service */
+	int ConnectionAgainstProxy; /* Signals if HTTP Proxy is enabled */
 
-	unsigned int	 BwLimit; /*Bandwith limit */
-	unsigned int	 DownloadLimit; /* Download size limit */
-#ifdef __WIN32__RELEASE__
-	int				 ThreadID;  /*Thread Identifier of the calling process */
+	SSL_CTX * ctx;
+	SSL * ssl; /* Signals if the ssl connection have already been initialized */
+	BIO *bio_err;
+
+	unsigned int datasock; /* connection socket */
+#ifdef IPV6
+	struct sockaddr_in6 webserver;
 #else
-	pthread_t		 ThreadID;
+	struct sockaddr_in webserver;
 #endif
-	FILETIME 		LastConnectionActivity; /* Called externally by CleanConnectionTable() */
+	unsigned int NumberOfRequests;
+	/* Number of HTTP requests performed since connected */
+	unsigned int InputOutputOperation;
+	/* Signals if the connection is currently trying to connect to a remote host */
 
-	char *           HTTPServerResponseBuffer;
-	unsigned int     HTTPServerResponseSize;
-	char *           HTTPProxyClientRequestBuffer;
-	unsigned int     HTTPProxyClientRequestSize;
-	int              pending; /* Signals if there is cached data available for reading under an SSL connection*/
-	BOOL			 ConnectionClose;
-	int              LimitIOBandwidth(unsigned long ChunkSize, struct timeval LastTime, struct timeval CurrentTime, int MAX_BW_LIMIT);
-	int              StablishConnection(void);
-	int              InitSSLConnection();
-	int              ReadBytes(char *buf, size_t bufsize,struct timeval *tv);
-	double 			 ReadChunkNumber(char *encodedData, size_t encodedlen, char *chunkcode);
-	int				 SendBufferToProxyClient(class ConnectionHandling *ProxyClientConnection, char *buf,int read_size);
-	HTTPResponse	*ReadHTTPResponseData(class ConnectionHandling *ProxyClientConnection, HTTPRequest* request, int *ErrorCode);
-	void             CloseSocket(void);
-	int				 SendData(char *data,size_t len);
+	unsigned int BwLimit; /* Bandwith limit */
+	unsigned int DownloadLimit; /* Download size limit */
+#ifdef __WIN32__RELEASE__
+	int ThreadID; /* Thread Identifier of the calling process */
+#else
+	pthread_t ThreadID;
+#endif
+	FILETIME LastConnectionActivity;
+	/* Called externally by CleanConnectionTable() */
+
+	char * HTTPServerResponseBuffer;
+	unsigned int HTTPServerResponseSize;
+	char * HTTPProxyClientRequestBuffer;
+	unsigned int HTTPProxyClientRequestSize;
+	int pending;
+	/* Signals if there is cached data available for reading under an SSL connection */
+	BOOL ConnectionClose;
+
+	int LimitIOBandwidth(unsigned long ChunkSize, struct timeval LastTime,
+	struct timeval CurrentTime, int MAX_BW_LIMIT);
+	int StablishConnection(void);
+	int InitSSLConnection();
+	int ReadBytes(char *buf, size_t bufsize, struct timeval *tv);
+	long ReadChunkNumber(char *encodedData, size_t encodedlen, char *chunkcode);
+	int SendBufferToProxyClient(class ConnectionHandling *ProxyClientConnection,char *buf, int read_size);
+	HTTPResponse *ReadHTTPResponseData
+		(class ConnectionHandling *ProxyClientConnection, HTTPRequest* request, int *ErrorCode);
+	void CloseSocket(void);
+	int SendData(char *data, size_t len);
+
 public:
 	ConnectionHandling();
 	~ConnectionHandling();
-	int 			 Connectionid;
-	class Threading IoOperationLock;	//support pipelining
-	
-	
-	int				InitializeConnection(class HTTPAPIHANDLE *HTTPHandle);	
-	void            Disconnect(int level);
+
+	int Connectionid;
+	class Threading IoOperationLock; // support pipelining
+
+	int InitializeConnection(class HTTPAPIHANDLE *HTTPHandle);
+	void Disconnect(int level);
 	HTTPRequest *ReadHTTPProxyRequestData();
-	int				SendHttpRequest(HTTPRequest* request);
-	int				SendHttpResponse(HTTPResponse *response);
+	int SendHttpRequest(HTTPRequest* request);
+	int SendHttpResponse(HTTPResponse *response);
 
+	HTTPResponse *SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle, HTTPRequest *request);
 
-	HTTPResponse		*SendAndReadHTTPData(class HTTPAPIHANDLE *HTTPHandle,HTTPRequest *request);
-		
-	
-
-	void            Acceptdatasock( SOCKET ListenSocket );
-	HTTPCHAR*       GettargetDNS(void);
-	long            GetTarget(void);
-	int             GetPort(void);
-	int             GetThreadID(void);
-	unsigned int    Getio(void);
-	void            Setio(unsigned int value);
-	int             GetConnectionAgainstProxy(void);
-	void            UpdateLastConnectionActivityTime(void);
-	FILETIME        GetLastConnectionActivityTime(void);
-	void *          IsSSLInitialized(void);
-	void            SetBioErr(void *bio);
-	void            SetCTX(void *proxyctx);
+	void Acceptdatasock(SOCKET ListenSocket);
+	HTTPCHAR* GettargetDNS(void);
+	//long GetTarget(void);
+	int GetPort(void);
+	int GetThreadID(void);
+	unsigned int Getio(void);
+	void Setio(unsigned int value);
+	int GetConnectionAgainstProxy(void);
+	void UpdateLastConnectionActivityTime(void);
+	FILETIME GetLastConnectionActivityTime(void);
+	void * IsSSLInitialized(void);
+	void SetBioErr(void *bio);
+	int SetCTX(void *proxyctx);
 };
 #endif
-
-

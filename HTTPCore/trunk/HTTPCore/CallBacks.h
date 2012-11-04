@@ -1,38 +1,38 @@
 /*
-Copyright (C) 2007 - 2009  fhscan project.
-Andres Tarasco - http://www.tarasco.org/security
+ Copyright (C) 2007 - 2012  fhscan project.
+ Andres Tarasco - http://www.tarasco.org/security - http://www.tarlogic.com
 
-All rights reserved.
+ All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. All advertising materials mentioning features or use of this software
-   must display the following acknowledgement:
-    This product includes software developed by Andres Tarasco fhscan 
-    project and its contributors.
-4. Neither the name of the project nor the names of its contributors
-   may be used to endorse or promote products derived from this software
-   without specific prior written permission.
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+ notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
+ 3. All advertising materials mentioning features or use of this software
+ must display the following acknowledgement:
+ This product includes software developed by Andres Tarasco fhscan
+ project and its contributors.
+ 4. Neither the name of the project nor the names of its contributors
+ may be used to endorse or promote products derived from this software
+ without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGE.
+ THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
 
-*/
+ */
 /** \file CallBacks.h
  * Fast HTTP Auth Scanner - HTTP Engine v1.4.
  * This include file contains all needed information to manage the CallBacks interface .
@@ -44,61 +44,63 @@ SUCH DAMAGE.
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
 
-
 #ifdef __WIN32__RELEASE__
 
-#ifdef _DEBUG 
-typedef int (__stdcall *HTTP_IO_REQUEST_CALLBACK) ( //The Visual studio 200x Win32 DEBUG target requires __stdcall to work.. :?
+#ifdef _DEBUG
+// typedef int (__stdcall *HTTP_IO_REQUEST_CALLBACK) ( //The Visual studio 200x Win32 DEBUG target requires __stdcall to work.. :?
+typedef int(__cdecl*HTTP_IO_REQUEST_CALLBACK)(
+	// typedef int (__fastcall* HTTP_IO_REQUEST_CALLBACK) (
 #else
-typedef int (__cdecl* HTTP_IO_REQUEST_CALLBACK) (
+	typedef int(__cdecl*HTTP_IO_REQUEST_CALLBACK)(
 #endif
-    int         cbType,
-	void *api,
-    HTTPHANDLE  HTTPHandle,
-	HTTPRequest   *request,
-    HTTPResponse  *response);
+	int cbType, void *api, HTTPHANDLE HTTPHandle, HTTPRequest * request,
+	HTTPResponse * response);
 #else
-typedef int (*HTTP_IO_REQUEST_CALLBACK) (int cbType, void *api,HTTPHANDLE HTTPHandle,HTTPRequest* request,HTTPResponse* response);// __attribute__((stdcall));
+typedef int(*HTTP_IO_REQUEST_CALLBACK)(int cbType, void *api,
+	HTTPHANDLE HTTPHandle, HTTPRequest * request, HTTPResponse * response);
+// __attribute__((stdcall));
 #endif
 
-//Callbacks types (You can register custom callbacks if needed)
+// Callbacks types (You can register custom callbacks if needed)
 
 #define CBTYPE_CLIENT_REQUEST   0x01 //OUTGOING HTTP Request Generated by FHScan Core API
 #define CBTYPE_CLIENT_RESPONSE  0x02 //INCOMING HTTP Response returned by FHScan Core API to the caller
 
-//Advanced CallBacks needed for handling Internal HTTP PROXY
+// Advanced CallBacks needed for handling Internal HTTP PROXY
 
 #define CBTYPE_PROXY_REQUEST   0x04  //Request generated by the HTTP Client (Browser) or FHScan Core API against a PROXY Server
 #define CBTYPE_PROXY_RESPONSE  0x08  //Response returned by the HTTP PROXY Server
 #define CBTYPE_CALLBACK_ALL     0xFFFFFFFF
-#define CBTYPE_UNKNOWN_CALLBACK 0xFFFFFFF0 
+#define CBTYPE_UNKNOWN_CALLBACK 0xFFFFFFF0
 
-
-//Callback return value:
+// Callback return value:
 #define CBRET_STATUS_NEXT_CB_CONTINUE 0
 #define CBRET_STATUS_NEXT_CB_BLOCK    1
 #define CBRET_STATUS_CANCEL_REQUEST   2
 
-
-typedef struct _cb_list{
-    unsigned int cbType;
-    HTTP_IO_REQUEST_CALLBACK cb;   
+typedef struct _cb_list {
+	unsigned int cbType;
+	HTTP_IO_REQUEST_CALLBACK cb;
 	HTTPCHAR* lpDescription;
 } CB_LIST, *PCB_LIST;
-
 
 class HTTPCALLBACK {
 	PCB_LIST CBList;
 	unsigned int CBItems;
 	void *ParentHTTPApi;
+
 public:
 	HTTPCALLBACK();
 	~HTTPCALLBACK();
-	void SetHTTPApiInstance(void *api) { ParentHTTPApi = api; }
-	int RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,HTTPCSTR Description);
-	int  RemoveHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb);
-	int DoCallBack(int cbType,HTTPHANDLE HTTPHandle,HTTPRequest* request,HTTPResponse* response);
-};
 
+	void SetHTTPApiInstance(void *api) {
+		ParentHTTPApi = api;
+	}
+	int RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb,
+		HTTPCSTR Description);
+	int RemoveHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb);
+	int DoCallBack(int cbType, HTTPHANDLE HTTPHandle, HTTPRequest* request,
+		HTTPResponse* response);
+};
 
 #endif
