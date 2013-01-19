@@ -1,6 +1,6 @@
 /*
- Copyright (C) 2007 - 2012  fhscan project.
- Andres Tarasco - http://www.tarasco.org/security - http://www.tarlogic.com
+ Copyright (C) 2007 - 2013  fhscan project.
+ Andres Tarasco - http://www.tarasco.org/security
 
  All rights reserved.
 
@@ -38,17 +38,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 TreeNode::TreeNode() {
 	TreeNode(NULL, NULL);
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 TreeNode::TreeNode(HTTPCSTR lpTreeNodeName) {
 	TreeNode(lpTreeNodeName, NULL);
 }
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 TreeNode::TreeNode(HTTPCSTR lpTreeNodeName, TreeNode *Parent) {
 	text = NULL;
@@ -66,7 +66,7 @@ TreeNode::TreeNode(HTTPCSTR lpTreeNodeName, TreeNode *Parent) {
 		SetTreeNodeParentItem(Parent);
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 TreeNode::~TreeNode() {
 	count = 0;
 	if (left) {
@@ -91,7 +91,7 @@ TreeNode::~TreeNode() {
 	data = NULL;
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 void TreeNode::SetTreeNodeName(HTTPCSTR lpTreeNodeName) {
 	if (text)
 		free(text);
@@ -103,7 +103,7 @@ void TreeNode::SetTreeNodeName(HTTPCSTR lpTreeNodeName) {
 	}
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 void TreeNode::SetTreeNodeRight(TreeNode *newright) {
 	right = newright;
 
@@ -118,31 +118,32 @@ void TreeNode::SetTreeNodeRight(TreeNode *newright) {
 
 }
 
-//-----------------------------------------------------------------------------
- void TreeNode::SetTreeNodeLeft(TreeNode *newleft) {
+// -----------------------------------------------------------------------------
+void TreeNode::SetTreeNodeLeft(TreeNode *newleft) {
 
- left = newleft;
+	left = newleft;
 
- TreeNode *parent = this;
- do
- {
- parent->count++;
- parent = parent->ParentItem;
+	TreeNode *parent = this;
+	do {
+		parent->count++;
+		parent = parent->ParentItem;
 
- } while (parent);
- }
-//-----------------------------------------------------------------------------
+	}
+	while (parent);
+}
+
+// -----------------------------------------------------------------------------
 class TreeNode* TreeNode::GetTreeNodeItemID(int n) {
 	return (ParentTree->GetTreeNodeItemID(n));
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 class bTree* TreeNode::GetNewTreeNodeSubTree() {
 	ChildTree = new bTree;
 	return (ChildTree);
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 class bTree* TreeNode::GetNewTreeNodeSubTree(HTTPCHAR * lpSubTree) {
 	ChildTree = new bTree(lpSubTree);
 	return (ChildTree);
@@ -156,26 +157,26 @@ class TreeNode* TreeNode::GetTreeNodeParentItemTop(void) {
 	return (top);
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 bTree::bTree() {
 	text = NULL;
 	root = NULL;
 	count = 0;
 }
 
-//-----------------------------------------------------------------------------
- bTree::bTree(HTTPCCHAR *lpTreeName)
- {
- if (lpTreeName)
- {
- text= _tcsdup(lpTreeName);
- } else {
- text = NULL;
- }
- root = NULL;
- count = 0;
- }
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+bTree::bTree(HTTPCCHAR *lpTreeName) {
+	if (lpTreeName) {
+		text = _tcsdup(lpTreeName);
+	}
+	else {
+		text = NULL;
+	}
+	root = NULL;
+	count = 0;
+}
+
+// -----------------------------------------------------------------------------
 void bTree::SetTreeName(HTTPCSTR lpTreeName) {
 	if (text) {
 		free(text);
@@ -185,23 +186,21 @@ void bTree::SetTreeName(HTTPCSTR lpTreeName) {
 		text = _tcsdup(lpTreeName);
 	}
 }
-//-----------------------------------------------------------------------------
- bTree::~bTree()
- {
- if (text)
- {
- free(text);
- text = NULL;
- }
- if (root) {
- delete root;
- root = NULL;
- }
- count = 0;
- }
 
+// -----------------------------------------------------------------------------
+bTree::~bTree() {
+	if (text) {
+		free(text);
+		text = NULL;
+	}
+	if (root) {
+		delete root;
+		root = NULL;
+	}
+	count = 0;
+}
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 TreeNode *bTree::TreeExistItem(HTTPCSTR lpTreeItemName) {
 	TreeNode *x;
@@ -211,7 +210,7 @@ TreeNode *bTree::TreeExistItem(HTTPCSTR lpTreeItemName) {
 	/* search the tree */
 	x = root;
 	while (x != NULL) {
-		int ret = _tcscmp(x->GetTreeNodeName(), lpTreeItemName);
+		int ret = _tcscmp(lpTreeItemName,x->GetTreeNodeName());
 
 		if (ret == 0) {
 			return (x);
@@ -229,7 +228,7 @@ TreeNode *bTree::TreeExistItem(HTTPCSTR lpTreeItemName) {
 	return (NULL);
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 /*
  Returns a TreeNode element from the tree.
  Elements are returned from the tree as if they come from a linear and sorted array.
@@ -258,7 +257,6 @@ TreeNode *bTree::GetTreeNodeItemID(int value) {
 				else {
 					node = node->GetTreeNodeRight();
 				}
-
 			}
 		}
 		else if (node->GetTreeNodeRight()) {
@@ -283,7 +281,7 @@ TreeNode *bTree::GetTreeNodeItemID(int value) {
 	}
 	return (NULL);
 }
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 /* Insert a text value into the tree - if the value doesn´t already exists, increment
  the count for parent nodes. */
@@ -291,120 +289,119 @@ TreeNode *bTree::GetTreeNodeItemID(int value) {
 TreeNode* bTree::TreeInsert(HTTPCSTR str) {
 	return (TreeInsert(str, NULL));
 }
-//-----------------------------------------------------------------------------
- TreeNode* bTree::TreeInsert(HTTPCSTR str,TreeNode *ParentItem)
- {
- if (ParentItem == NULL)
- {
- if (root==NULL)
- {
- TreeNode *newnode = new TreeNode(str,NULL);
- newnode->SetTreeNodeParentTree(this);
- root = newnode;
- count++;
- return ( root);
- } else
- {
- TreeNode *y=NULL;
- TreeNode *x=root;
 
- while (x != NULL) {
- if (_tcscmp(x->GetTreeNodeName(), str)==0)
- {
-/* already Exists */
-return (x);
-} y = x;
-if (_tcscmp(str, x->GetTreeNodeName()) < 0)
-x = x->GetTreeNodeLeft();
-else
-x = x->GetTreeNodeRight();
-}
-/* str doesn't yet exist in tree - add it in */
+// -----------------------------------------------------------------------------
+TreeNode* bTree::TreeInsert(HTTPCSTR str, TreeNode *ParentItem) {
+	if (ParentItem == NULL) {
+		if (root == NULL) {
+			TreeNode *newnode = new TreeNode(str, NULL);
+			newnode->SetTreeNodeParentTree(this);
+			root = newnode;
+			count++;
+			return (root);
+		}
+		else {
+			TreeNode *y = NULL;
+			TreeNode *x = root;
 
-TreeNode *newnode = new TreeNode(str, y);
-newnode->SetTreeNodeParentTree(this);
-if (_tcscmp(str, y->GetTreeNodeName()) < 0) {
-y->SetTreeNodeLeft(newnode);
-}
-else {
-y->SetTreeNodeRight(newnode);
-}
-this->count++; /* Add an additional element to the tree counter */
-return (newnode);
-}}
-else {
-TreeNode*newnode = ParentItem->GetTreeNodeChildTree()->TreeInsert(str, NULL);
-return (newnode);
-}
+			while (x != NULL) {
+				if (_tcscmp(x->GetTreeNodeName(), str) == 0) {
+					/* already Exists */
+					return (x);
+				}
+				y = x;
+				if (_tcscmp(str, x->GetTreeNodeName()) < 0)
+					x = x->GetTreeNodeLeft();
+				else
+					x = x->GetTreeNodeRight();
+			}
+			/* str doesn't yet exist in tree - add it in */
+
+			TreeNode *newnode = new TreeNode(str, y);
+			newnode->SetTreeNodeParentTree(this);
+			if (_tcscmp(str, y->GetTreeNodeName()) < 0) {
+				y->SetTreeNodeLeft(newnode);
+			}
+			else {
+				y->SetTreeNodeRight(newnode);
+			}
+			this->count++; /* Add an additional element to the tree counter */
+			return (newnode);
+		}
+	}
+	else {
+		TreeNode*newnode = ParentItem->GetTreeNodeChildTree()->TreeInsert(str, NULL);
+		return (newnode);
+	}
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 /* Print the entire tree in sorted order */
 
 void bTree::SubTreePrint(TreeNode *subtree) {
-if (subtree != NULL) {
-SubTreePrint(subtree->GetTreeNodeLeft());
-_tprintf(_T("%s: %d\n"), subtree->GetTreeNodeName(),
-	subtree->GetTreeNodeCount());
-SubTreePrint(subtree->GetTreeNodeRight());
-}
+	if (subtree != NULL) {
+		SubTreePrint(subtree->GetTreeNodeLeft());
+		_tprintf(_T("%s: %d\n"), subtree->GetTreeNodeName(),
+			subtree->GetTreeNodeCount());
+		SubTreePrint(subtree->GetTreeNodeRight());
+	}
 }
 
 void bTree::TreePrint() {
-SubTreePrint(root);
+	SubTreePrint(root);
 }
 
 #if 0
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 // Insert a Full path of Items and creates all new nodes
 TreeNode *TreeInsertItems(Tree *tree, TreeNode *parent, HTTPCHAR *strpath) {
 
-TreeNode *node;
-HTTPCHAR *str = _tcsdup(strpath);
-int IsFolder = (str[strlen(str) - 1] == '/');
-HTTPCHAR *path = _tcstok(str, "/");
+	TreeNode *node;
+	HTTPCHAR *str = _tcsdup(strpath);
+	int IsFolder = (str[strlen(str) - 1] == '/');
+	HTTPCHAR *path = _tcstok(str, "/");
 
-if (!path) {
-node = TreeInsert(tree, parent, "");
-}
-else {
-TreeNode *currentparent = parent;
-Tree *base = tree;
-do {
-node = TreeInsert(base, currentparent, path);
-path = _tcstok(NULL, "/");
-if ((path) || (IsFolder)) {
-if (!node->SubItems) {
-node->SubItems = TreeInitialize("/");
-}
-currentparent = node;
-base = node->SubItems;
-}
-else {
-break;
-}
-}
-while (path != NULL);
-}
-free(str);
-return (node);
+	if (!path) {
+		node = TreeInsert(tree, parent, "");
+	}
+	else {
+		TreeNode *currentparent = parent;
+		Tree *base = tree;
+		do {
+			node = TreeInsert(base, currentparent, path);
+			path = _tcstok(NULL, "/");
+			if ((path) || (IsFolder)) {
+				if (!node->SubItems) {
+					node->SubItems = TreeInitialize("/");
+				}
+				currentparent = node;
+				base = node->SubItems;
+			}
+			else {
+				break;
+			}
+		}
+		while (path != NULL);
+	}
+	free(str);
+	return (node);
 }
 
 int SubTreeToArray(HTTPCHAR **array, TreeNode *subtree, int pos, int n) {
-HTTPCHAR line[MXLINELEN];
-int added = 0;
+	HTTPCHAR line[MXLINELEN];
+	int added = 0;
 
-if (subtree != NULL) {
-added = SubTreeToArray(array, subtree->left, pos, n);
-if (subtree->count >= n) {
-sprintf(line, "%s (%d)", subtree->text, subtree->count);
-array[pos + added] = _tcsdup(line);
-added++;
-}
-added += SubTreeToArray(array, subtree->right, pos + added, n);
-}
-return added;
+	if (subtree != NULL) {
+		added = SubTreeToArray(array, subtree->left, pos, n);
+		if (subtree->count >= n) {
+			sprintf(line, "%s (%d)", subtree->text, subtree->count);
+			array[pos + added] = _tcsdup(line);
+			added++;
+		}
+		added += SubTreeToArray(array, subtree->right, pos + added, n);
+	}
+	return added;
 }
 
 /* Create a linear array of pointers to char which point to each of the
@@ -413,15 +410,15 @@ return added;
  memory. */
 
 HTTPCHAR** TreeToArray(Tree *tree, int n) {
-HTTPCHAR **array;
-int size;
+	HTTPCHAR **array;
+	int size;
 
-size = TreeCount(tree->root, n);
-array = (HTTPCHAR * *)malloc(sizeof(HTTPCHAR*)*(size + 1));
-if (array) {
-SubTreeToArray(array, tree->root, 0, n);
-array[size] = NULL;
-}
-return array;
+	size = TreeCount(tree->root, n);
+	array = (HTTPCHAR * *)malloc(sizeof(HTTPCHAR*)*(size + 1));
+	if (array) {
+		SubTreeToArray(array, tree->root, 0, n);
+		array[size] = NULL;
+	}
+	return array;
 }
 #endif
