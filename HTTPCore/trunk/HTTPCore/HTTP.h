@@ -1,6 +1,6 @@
 /*
- Copyright (C) 2007 - 2012  fhscan project.
- Andres Tarasco - http://www.tarasco.org/security - http://www.tarlogic.com
+Copyright (C) 2007 - 2013  fhscan project.
+Andres Tarasco - http://www.tarasco.org/security
 
 All rights reserved.
 
@@ -33,7 +33,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 */
 /** \file HTTP.h
-* Fast HTTP Auth Scanner - HTTP Engine v1.4.
+* Fast HTTP Auth Scanner - HTTP Engine v1.5.
 * This include file contains all needed information to manage the HTTP interface from the user side.
 * \author Andres Tarasco Acuna - http://www.tarasco.org
 */
@@ -122,6 +122,9 @@ class HTTPAPI : public encoders
 	HTTPCHAR *GetPathFromLocationHeader(HTTPResponse* response, int ssl,const HTTPCHAR* domain);
 	enum AuthenticationType GetSupportedAuthentication(HTTPResponse *response);
 
+HTTPCHAR* BuildHTTPVerbHeader(HTTPCHAR *DestionationHeader, HTTPHANDLE HTTPHandle,HTTPCSTR HTTPMethod,HTTPCSTR url,HTTPCSTR PostData,size_t PostDataSize);
+BOOL  ProxyTunnelConnectionRequired(HTTPHANDLE HTTPHandle);
+
 public:
 	HTTPAPI();
 	~HTTPAPI();
@@ -153,6 +156,7 @@ public:
 	int RegisterHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb, 	HTTPCSTR Description);
 	int RemoveHTTPCallBack(unsigned int cbType, HTTP_IO_REQUEST_CALLBACK cb);
 	void CancelHTTPRequest(HTTPHANDLE HTTPHandle);
+	int SetCookie(HTTPCHAR *lpCookieData, HTTPCSTR lpPath,HTTPCSTR lpDomain);
 #ifdef _SPIDER_
 	void doSpider(HTTPSTR host, HTTPSTR FullPath, HTTPResponse* response);
 #endif
